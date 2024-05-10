@@ -1,18 +1,21 @@
 import tkinter as tk
 from tkinter import messagebox
 from SingleCurve import SingleCurve
+import copy
 
 class HillChartCalculator(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('Hill Chart Calculator')
-        self.geometry("350x350")
+        self.geometry("350x600")
         
         self.checkbox_vars = []
         self.checkboxes = []
         self.options = ["Head H [m]", "Flow rate Q [m^3/s]", "Rotational speed n [rpm]", "Runner diameter D [m]"]
 
         self.create_widgets()
+
+        self.datapath = 'SampleHillChart.csv'
 
     def create_widgets(self):
         tk.Label(self, text="Select two parameters and press Next:").pack()
@@ -38,6 +41,9 @@ class HillChartCalculator(tk.Tk):
 
         self.result_text = tk.Text(self, height=10, width=40)
         self.result_text.pack()
+
+        self.result_text2 = tk.Text(self, height=10, width=40)
+        self.result_text2.pack()
 
     def create_checkbox(self, text, value):
         var = tk.IntVar()
@@ -74,19 +80,34 @@ class HillChartCalculator(tk.Tk):
             messagebox.showerror("Input error", "Please enter valid numbers.")
             return
         
-        testCalculation = SingleCurve([var.get() for var in self.checkbox_vars if var.get() != 0], self.options, var1, var2)
-        testCalculation.calculate_cases()
-        curve_data = testCalculation.return_values()
+        
+        hill_values = SingleCurve()
+        hill_values.read_hill_chart_values(self.datapath)
+        BEP_values = copy.deepcopy(hill_values)
+        BEP_values.filter_for_maximum_efficiency()
+        BEP_values.calculate_cases([var.get() for var in self.checkbox_vars if var.get() != 0], self.options, var1, var2)
+        BEP_data = BEP_values.return_values()
+
+        hill_values.prepare_hill_chart_data()
+        hill_values.plot_hill_chart()        
+        curve_values = copy.deepcopy(hill_values)
+        curve_values.prepare_hill_chart_data(BEP_data.n11[0])
+        curve_values.overwrite_with_slice()      
+        curve_values.calculate_cases([3,4], self.options, BEP_data.n[0], BEP_data.D[0])
+        curve_data = curve_values.return_values()
+        curve_values.plot_efficiency_vs_Q()
+        
+
 
         # Clear previous results
         self.result_text.delete(1.0, tk.END)
         
         # Display new results for each index in the lists
-        num_sets = len(curve_data.H)  # Assuming all lists are of the same length
+        num_sets = len(BEP_data.H)  # Assuming all lists are of the same length
         for index in range(num_sets):
-            self.result_text.insert(tk.END, f"Set {index + 1}:\n")
+            self.result_text.insert(tk.END, f"BEP values:\n")
             for attr in ['H', 'Q', 'n', 'D', 'efficiency', 'power']:
-                value = getattr(curve_data, attr)[index] if getattr(curve_data, attr) else 'N/A'
+                value = getattr(BEP_data, attr)[index] if getattr(BEP_data, attr) else 'N/A'
                 if isinstance(value, float):
                     value_format = f"{value:.2f}"
                 else:
@@ -94,6 +115,22 @@ class HillChartCalculator(tk.Tk):
                 self.result_text.insert(tk.END, f"{attr} = {value_format}\n")
             self.result_text.insert(tk.END, "\n")  # Add a newline for spacing between sets 
 
+              
+                # Clear previous results
+        self.result_text2.delete(1.0, tk.END)
+        
+        # Display new results for each index in the lists
+        num_sets = len(curve_data.H)  # Assuming all lists are of the same length
+        for index in range(num_sets):
+            self.result_text2.insert(tk.END, f"Set {index + 1}:\n")
+            for attr in ['H', 'Q', 'n', 'D', 'efficiency', 'power']:
+                value = getattr(curve_data, attr)[index] if getattr(curve_data, attr) else 'N/A'
+                if isinstance(value, float):
+                    value_format = f"{value:.2f}"
+                else:
+                    value_format = str(value)
+                self.result_text2.insert(tk.END, f"{attr} = {value_format}\n")
+            self.result_text2.insert(tk.END, "\n")  # Add a newline for spacing between sets 
 
 
 if __name__ == "__main__":
