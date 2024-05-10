@@ -1,81 +1,99 @@
-class SingleCurve:
+from dataclasses import dataclass, field
+from typing import List
 
+@dataclass
+class CurveData:
+    H: List[float] = field(default_factory=list)
+    Q: List[float] = field(default_factory=list)
+    n: List[float] = field(default_factory=list)
+    D: List[float] = field(default_factory=list)
+    Q11: List[float] = field(default_factory=list)
+    n11: List[float] = field(default_factory=list)
+    efficiency: List[float] = field(default_factory=list)
+    power: List[float] = field(default_factory=list)
+
+
+
+class SingleCurve:
     def __init__(self, selected_values, options, var1, var2):
-        
         self.selected_values = selected_values
         self.options = options
         self.var1 = var1
         self.var2 = var2
-        self.H = 0
-        self.Q = 0
-        self.n = 0
-        self.D = 0
-        self.Q11 = 0
-        self.n11 = 0
-        self.efficiency = 0
-        self.power = 0
+        self.data = CurveData()
 
-    def get_BEP_values(self):
-        self.Q11 = 0.876
-        self.n11 = 127.609
-        self.efficiency = 0.820
-    
-    def cases(self):
-        #print(self.selected_values)
-        if self.selected_values ==[1,2]:
-            # Case 1
-            #print("Case H and Q Inputs")      
-            self.H = self.var1
-            self.Q = self.var2
-            self.D = (self.Q/(self.Q11*(self.H)**0.5))**0.5
-            self.n = (self.H**0.5) * self.n11/self.D
-        
-        elif self.selected_values ==[1,3]:
-            # Case 2
-            #print("Case H and n")
-            self.H = self.var1
-            self.n = self.var2
-            self.D = (self.H**0.5) * self.n11 / self.n
-            self.Q = self.D**2 * self.Q11 * (self.H**0.5)
-            
-        
-        elif self.selected_values ==[1,4]:
-            # Case 3: H and D Inputs
-            #print("Case H and D")
-            self.H = self.var1
-            self.D = self.var2
-            self.n = (self.H ** 0.5) * self.n11 / self.D
-            self.Q = self.D ** 2 * self.Q11 * (self.H ** 0.5)
+    def read_hill_chart_values(self):
+        try:
+            # Setting multiple BEP values directly to the data instance
+            #self.data.Q11.extend([0.876, 0.85, 0.83])
+            #self.data.n11.extend([127.609, 125.0, 120.0])
+            #self.data.efficiency.extend([0.820, 0.810, 0.800])
 
-        elif self.selected_values ==[2,3]:
-            # Case 4: Q and n Inputs
-            #print("Case Q and n")
-            self.Q = self.var1
-            self.n = self.var2
-            self.D = (self.Q*self.n11/(self.Q11*self.n))**(1/3)
-            self.H = (self.n*self.D/self.n11)**2
+            self.data.Q11.extend([0.876])
+            self.data.n11.extend([127.609])
+            self.data.efficiency.extend([0.820])
+        except Exception as e:
+            print(f"Error reading BEP values: {e}")
+            raise
 
-        elif self.selected_values ==[2,4]:
-            # Case 5: Q and D Inputs
-            #print("Case Q and D")
-            self.Q = self.var1
-            self.D = self.var2
-            self.H = (self.Q / (self.Q11 * (self.D ** 2))) ** 2
-            self.n = (self.H ** 0.5) * self.n11 / self.D
+    def calculate_cases(self):
+        try:
+            self.read_hill_chart_values()
 
-        elif self.selected_values ==[3,4]:
-            # Case 6: n and D Inputs
-            #print("Case n and D")
-            self.n = self.var1
-            self.D = self.var2
-            self.H = (self.n * self.D / self.n11) ** 2
-            self.Q = self.D ** 2 * self.Q11 * (self.H ** 0.5)
-        
-        else:
-            # Default case
-            print("Default case")
+            # Calculate values for each set of BEP values
+            for i in range(len(self.data.Q11)):
+                if self.selected_values == [1, 2]:  # H, Q provided
+                    H = self.var1
+                    Q = self.var2
+                    D = (Q / (self.data.Q11[i] * (H)**0.5))**0.5
+                    n = (H**0.5) * self.data.n11[i] / D
+                
+                elif self.selected_values == [1, 3]:  # H, n provided
+                    H = self.var1
+                    n = self.var2
+                    D = (H**0.5) * self.data.n11[i] / n
+                    Q = D**2 * self.data.Q11[i] * (H**0.5)
+                    
+                elif self.selected_values == [1, 4]:  # H, D provided
+                    H = self.var1
+                    D = self.var2
+                    n = (H**0.5) * self.data.n11[i] / D
+                    Q = D**2 * self.data.Q11[i] * (H**0.5)
 
-        self.power = self.Q * self.H * 1000*9.8 * self.efficiency
-        #     
+                elif self.selected_values == [2, 3]:  # Q, n provided
+                    Q = self.var1
+                    n = self.var2
+                    D = (Q * self.data.n11[i] / (self.data.Q11[i] * n))**(1/3)
+                    H = (n * D / self.data.n11[i])**2
+
+                elif self.selected_values == [2, 4]:  # Q, D provided
+                    Q = self.var1
+                    D = self.var2
+                    H = (Q / (self.data.Q11[i] * (D**2)))**2
+                    n = (H**0.5) * self.data.n11[i] / D
+
+                elif self.selected_values == [3, 4]:  # n, D provided
+                    n = self.var1
+                    D = self.var2
+                    H = (n * D / self.data.n11[i])**2
+                    Q = D**2 * self.data.Q11[i] * (H**0.5)
+
+                else:
+                    print("Invalid selected values, no calculation performed.")
+                    continue
+
+                self.data.H.append(H)
+                self.data.Q.append(Q)
+                self.data.n.append(n)
+                self.data.D.append(D)
+                power = Q * H * 1000 * 9.8 * self.data.efficiency[i]
+                self.data.power.append(power)
+
+        except Exception as e:
+            print(f"Error in case calculations: {e}")
+            raise
+
     def return_values(self):
-        return self.H, self.Q, self.n, self.D, self.efficiency, self.power
+        return self.data
+
+

@@ -1,97 +1,101 @@
-#To create standalon exe use the line below:
-#pyinstaller.exe --onefile Calculator.py -w
-from tkinter import *
+import tkinter as tk
+from tkinter import messagebox
 from SingleCurve import SingleCurve
 
-def create_checkbox(text, value):
-    var = IntVar()
-    chk = Checkbutton(top, text=text, variable=var, onvalue=value, offvalue=0, command=update_count)
-    chk.pack(anchor=W)
-    checkbox_vars.append(var)
-    checkboxes.append(chk)
+class HillChartCalculator(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title('Hill Chart Calculator')
+        self.geometry("350x350")
+        
+        self.checkbox_vars = []
+        self.checkboxes = []
+        self.options = ["Head H [m]", "Flow rate Q [m^3/s]", "Rotational speed n [rpm]", "Runner diameter D [m]"]
 
-def update_count():
-    selected_values = [var.get() for var in checkbox_vars if var.get() != 0]
-    selected_count = len(selected_values)        
-    if selected_count == 2:
-        for var, chk in zip(checkbox_vars, checkboxes):
-            if var.get() == 0:
-                chk.config(state='disabled')
-        next_button.config(state='normal')
-    else:
-        for chk in checkboxes:
-            chk.config(state='normal')
-        next_button.config(state='disabled')
+        self.create_widgets()
 
-def set_inputs():
-    selected_values = [var.get() for var in checkbox_vars if var.get() != 0]        
-    var_entry_1.config(state='normal')
-    var_entry_2.config(state='normal')
-    var_label_1.config(text=options[selected_values[0]-1])
-    var_label_2.config(text=options[selected_values[1]-1])
-    calculate_button.config(state='normal')
+    def create_widgets(self):
+        tk.Label(self, text="Select two parameters and press Next:").pack()
+        
+        for i, option in enumerate(self.options):
+            self.create_checkbox(option, i + 1)
+        
+        self.next_button = tk.Button(self, text="Next", command=self.set_inputs, state='disabled')
+        self.next_button.pack()
 
-def calculate():
-    #this is where the calculation will take place
-    selected_values = [var.get() for var in checkbox_vars if var.get() != 0]
-    var1 = float(var_entry_1.get())
-    var2 = float(var_entry_2.get())
-    testCalculation = SingleCurve(selected_values,options,var1,var2)
-    testCalculation.get_BEP_values()
-    testCalculation.cases()
-    H,Q,n,D,Efficiency,Power = testCalculation.return_values()
-    
-    # Clear previous results
-    result_text.delete(1.0, END)
-    
-    # Display the results in the text box
-    result_text.insert(END, options[0] + ' = {:.2f}\n'.format(H))
-    result_text.insert(END, options[1] + ' = {:.2f}\n'.format(Q))
-    result_text.insert(END, options[2] + ' = {:.2f}\n'.format(n))
-    result_text.insert(END, options[3] + ' = {:.2f}\n'.format(D))
-    result_text.insert(END, 'Efficiency η [-]= {:.2f}\n'.format(Efficiency))
-    result_text.insert(END, 'Power P [W] = {:.0f}\n'.format(Power))
+        self.var_label_1 = tk.Label(self, text="Input value 1")
+        self.var_label_1.pack()
+        self.var_entry_1 = tk.Entry(self, state='disabled')
+        self.var_entry_1.pack()
 
-    #print(H,Q,n,D)
-    #print(options[0],'=',H)
-    #print(options[1],'=',Q)
-    #print(options[2],'=',n)
-    #print(options[3],'=',D)
-    
-  
+        self.var_label_2 = tk.Label(self, text="Input value 2")
+        self.var_label_2.pack()
+        self.var_entry_2 = tk.Entry(self, state='disabled')
+        self.var_entry_2.pack()
 
-top = Tk()  
-top.title('Hill Chart Calculator')
-top.geometry("350x350") 
+        self.calculate_button = tk.Button(self, text="Calculate", command=self.calculate, state='disabled')
+        self.calculate_button.pack()
 
-checkbox_vars = []
-checkboxes = []
+        self.result_text = tk.Text(self, height=10, width=40)
+        self.result_text.pack()
 
-lbl = Label(text="Select two paramenters and press Next:")  
-lbl.pack()  
+    def create_checkbox(self, text, value):
+        var = tk.IntVar()
+        chk = tk.Checkbutton(self, text=text, variable=var, onvalue=value, offvalue=0, command=self.update_count)
+        chk.pack(anchor=tk.W)
+        self.checkbox_vars.append(var)
+        self.checkboxes.append(chk)
 
-options = ["Head H [m]", "Flow rate Q [m^3/s]", "Rotational speed n [rpm]", "Runner diameter D [m]"]
-values = [1, 2, 3, 4]
+    def update_count(self):
+        selected_values = [var.get() for var in self.checkbox_vars if var.get() != 0]
+        selected_count = len(selected_values)
+        if selected_count == 2:
+            for var, chk in zip(self.checkbox_vars, self.checkboxes):
+                chk.config(state='disabled' if var.get() == 0 else 'normal')
+            self.next_button.config(state='normal')
+        else:
+            for chk in self.checkboxes:
+                chk.config(state='normal')
+            self.next_button.config(state='disabled')
 
-for option, value in zip(options, values):
-    create_checkbox(option, value)
+    def set_inputs(self):
+        selected_values = [var.get() for var in self.checkbox_vars if var.get() != 0]
+        self.var_entry_1.config(state='normal')
+        self.var_entry_2.config(state='normal')
+        self.var_label_1.config(text=self.options[selected_values[0]-1])
+        self.var_label_2.config(text=self.options[selected_values[1]-1])
+        self.calculate_button.config(state='normal')
 
-next_button = Button(top, text="Next", command=set_inputs, state='disabled')
-next_button.pack()
+    def calculate(self):
+        try:
+            var1 = float(self.var_entry_1.get())
+            var2 = float(self.var_entry_2.get())
+        except ValueError:
+            messagebox.showerror("Input error", "Please enter valid numbers.")
+            return
+        
+        testCalculation = SingleCurve([var.get() for var in self.checkbox_vars if var.get() != 0], self.options, var1, var2)
+        testCalculation.calculate_cases()
+        curve_data = testCalculation.return_values()
 
-var_label_1 = Label(top, text="Input value 1")
-var_label_1.pack()
-var_entry_1 = Entry(top, state='disabled')
-var_entry_1.pack()
-var_label_2 = Label(top, text="Input value 2")
-var_label_2.pack()
-var_entry_2 = Entry(top, state='disabled')
-var_entry_2.pack()
+        # Clear previous results
+        self.result_text.delete(1.0, tk.END)
+        
+        # Display new results for each index in the lists
+        num_sets = len(curve_data.H)  # Assuming all lists are of the same length
+        for index in range(num_sets):
+            self.result_text.insert(tk.END, f"Set {index + 1}:\n")
+            for attr in ['H', 'Q', 'n', 'D', 'efficiency', 'power']:
+                value = getattr(curve_data, attr)[index] if getattr(curve_data, attr) else 'N/A'
+                if isinstance(value, float):
+                    value_format = f"{value:.2f}"
+                else:
+                    value_format = str(value)
+                self.result_text.insert(tk.END, f"{attr} = {value_format}\n")
+            self.result_text.insert(tk.END, "\n")  # Add a newline for spacing between sets 
 
-calculate_button = Button(top, text="Calculate", command=calculate, state='disabled')
-calculate_button.pack()
 
-result_text = Text(top, height=10, width=40)
-result_text.pack()
 
-top.mainloop()
+if __name__ == "__main__":
+    app = HillChartCalculator()
+    app.mainloop()
