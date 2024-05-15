@@ -1,3 +1,6 @@
+#To create standalon exe use the line below:
+#pyinstaller.exe --onefile Calculator.py -w
+
 import tkinter as tk
 from tkinter import messagebox
 from SingleCurve import SingleCurve
