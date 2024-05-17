@@ -34,7 +34,7 @@ class SingleCurve:
         try:
             with open(filename, newline='', encoding='utf-8-sig') as csvfile:
                 reader = csv.DictReader(csvfile)
-                print("CSV Headers:", reader.fieldnames)  # Should now correctly show headers without BOM
+                #print("CSV Headers:", reader.fieldnames)  # Should now correctly show headers without BOM
                 
                 self.data.Q11.clear()
                 self.data.n11.clear()
@@ -96,6 +96,7 @@ class SingleCurve:
             ax.set_title('Hill Chart')
             fig.colorbar(surf, shrink=0.5, aspect=5)  # Add a color bar
             plt.show(block=False)
+            print("Hill Chart Created")
         except Exception as e:
             print(f"Error in plotting hill chart: {e}")        
 
@@ -109,9 +110,25 @@ class SingleCurve:
             plt.title(f'n = {self.data.n[0]:.1f}, H = {self.data.H[0]:.2f}, D = {self.data.D[0]:.2f}')
             plt.grid(True)
             plt.legend()
-            plt.show()
+            plt.show(block=False)
+            print("Efficiency Curve Created")
         except Exception as e:
-            print(f"Error in plotting Efficiency vs Q11: {e}")
+            print(f"Error in plotting Efficiency vs Q: {e}")
+
+    def plot_power_vs_Q(self):
+        try:           
+
+            plt.figure(figsize=(10, 6))
+            plt.plot(self.data.Q, self.data.power, 'bo-', label='Power vs Q')
+            plt.xlabel('Q (Flow Rate)')
+            plt.ylabel('Power')
+            plt.title(f'n = {self.data.n[0]:.1f}, H = {self.data.H[0]:.2f}, D = {self.data.D[0]:.2f}')
+            plt.grid(True)
+            plt.legend()
+            plt.show(block=False)
+            print("Power Curve Created")
+        except Exception as e:
+            print(f"Error in plotting Power vs Q: {e}")
 
     def filter_for_maximum_efficiency(self):
         try:
@@ -133,7 +150,7 @@ class SingleCurve:
             self.data.n11 = [max_n11]
             self.data.efficiency = [max_efficiency]
 
-            print("Filtered to maximum efficiency data.")
+            #print("Filtered to maximum efficiency data.")
         except Exception as e:
             print(f"Error filtering data for maximum efficiency: {e}")
             raise

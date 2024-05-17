@@ -1,11 +1,12 @@
 #To create standalon exe use the line below:
-#pyinstaller.exe --onefile Calculator.py -w
+#pyinstaller.exe --onefile Hill_Chart_Calculator_0.1.2.py -w
 
 import tkinter as tk
 from tkinter import messagebox
 from SingleCurve import SingleCurve
 import copy
 
+print("Hello, this is a tool for hydro turbine scaling")
 class HillChartCalculator(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -99,11 +100,13 @@ class HillChartCalculator(tk.Tk):
         curve_values.calculate_cases([3,4], self.options, BEP_data.n[0], BEP_data.D[0])
         curve_data = curve_values.return_values()
         curve_values.plot_efficiency_vs_Q()
+        curve_values.plot_power_vs_Q()
         
 
 
         # Clear previous results
         self.result_text.delete(1.0, tk.END)
+        print("Cleared previous BEP text data")
         
         # Display new results for each index in the lists
         num_sets = len(BEP_data.H)  # Assuming all lists are of the same length
@@ -117,10 +120,12 @@ class HillChartCalculator(tk.Tk):
                     value_format = str(value)
                 self.result_text.insert(tk.END, f"{attr} = {value_format}\n")
             self.result_text.insert(tk.END, "\n")  # Add a newline for spacing between sets 
+        print("Displayed new BEP text data")
 
               
                 # Clear previous results
         self.result_text2.delete(1.0, tk.END)
+        print("Cleared previous data set text data")
         
         # Display new results for each index in the lists
         num_sets = len(curve_data.H)  # Assuming all lists are of the same length
@@ -134,6 +139,8 @@ class HillChartCalculator(tk.Tk):
                     value_format = str(value)
                 self.result_text2.insert(tk.END, f"{attr} = {value_format}\n")
             self.result_text2.insert(tk.END, "\n")  # Add a newline for spacing between sets 
+        print("Displayed new data set text data")
+        print("------------------------")
 
 
 if __name__ == "__main__":
