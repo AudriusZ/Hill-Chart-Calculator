@@ -1,12 +1,10 @@
-#To create standalon exe use the line below:
-#pyinstaller.exe --onefile Hill_Chart_Calculator_0.1.2.py -w
-
 import tkinter as tk
 from tkinter import messagebox
 from SingleCurve import SingleCurve
 import copy
 
 print("Hello, this is a tool for hydro turbine scaling")
+
 class HillChartCalculator(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -20,6 +18,9 @@ class HillChartCalculator(tk.Tk):
         self.create_widgets()
 
         self.datapath = 'SampleHillChart.csv'
+        
+        # Bypass selection process for debugging
+        # self.bypass_selection()
 
     def create_widgets(self):
         tk.Label(self, text="Select two parameters and press Next:").pack()
@@ -84,25 +85,35 @@ class HillChartCalculator(tk.Tk):
             messagebox.showerror("Input error", "Please enter valid numbers.")
             return
         
-        
         hill_values = SingleCurve()
         hill_values.read_hill_chart_values(self.datapath)
         BEP_values = copy.deepcopy(hill_values)
         BEP_values.filter_for_maximum_efficiency()
-        BEP_values.calculate_cases([var.get() for var in self.checkbox_vars if var.get() != 0], self.options, var1, var2)
+        BEP_values.calculate_cases([var.get() for var in self.checkbox_vars if var.get() != 0], var1, var2)
         BEP_data = BEP_values.return_values()
 
         hill_values.prepare_hill_chart_data()
-        hill_values.plot_hill_chart()        
-        curve_values = copy.deepcopy(hill_values)
-        curve_values.prepare_hill_chart_data(BEP_data.n11[0])
-        curve_values.overwrite_with_slice()      
-        curve_values.calculate_cases([3,4], self.options, BEP_data.n[0], BEP_data.D[0])
-        curve_data = curve_values.return_values()
-        curve_values.plot_efficiency_vs_Q()
-        curve_values.plot_power_vs_Q()
-        
+        hill_values.plot_hill_chart()     
+        hill_values.plot_hill_chart_contour() 
 
+        hill_values_nD = copy.deepcopy(hill_values)
+        hill_values_nD.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])
+        #hill_values_nD.plot_hill_chart_nD()
+        hill_values_nD.plot_hill_chart_contour_nD() 
+
+        q_curve_values = copy.deepcopy(hill_values)
+        q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0],selected_Q11=None)        
+        q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])
+        
+        q_curve_values.plot_efficiency_vs_Q()
+        q_curve_values.plot_power_vs_Q()
+
+        n_curve_values = copy.deepcopy(hill_values)
+        n_curve_values.slice_hill_chart_data(selected_n11=None,selected_Q11=BEP_data.Q11[0])        
+        n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
+
+        n_curve_values.plot_efficiency_vs_n()
+        n_curve_values.plot_power_vs_n()
 
         # Clear previous results
         self.result_text.delete(1.0, tk.END)
@@ -122,11 +133,11 @@ class HillChartCalculator(tk.Tk):
             self.result_text.insert(tk.END, "\n")  # Add a newline for spacing between sets 
         print("Displayed new BEP text data")
 
-              
-                # Clear previous results
+        # Clear previous results
         self.result_text2.delete(1.0, tk.END)
         print("Cleared previous data set text data")
         
+        '''
         # Display new results for each index in the lists
         num_sets = len(curve_data.H)  # Assuming all lists are of the same length
         for index in range(num_sets):
@@ -141,6 +152,17 @@ class HillChartCalculator(tk.Tk):
             self.result_text2.insert(tk.END, "\n")  # Add a newline for spacing between sets 
         print("Displayed new data set text data")
         print("------------------------")
+        '''
+
+    def bypass_selection(self):
+        # Directly set the selected options and input values
+        self.checkbox_vars[0].set(1)  # Select "Head H [m]"
+        self.checkbox_vars[3].set(4)  # Select "Runner diameter D [m]"
+        self.set_inputs()
+        self.var_entry_1.insert(0, '2.15')  # Set value for "Head H [m]"
+        self.var_entry_2.insert(0, '1.65')  # Set value for "Runner diameter D [m]"
+        self.calculate_button.config(state='normal')
+        self.calculate()
 
 
 if __name__ == "__main__":

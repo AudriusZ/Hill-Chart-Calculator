@@ -8,6 +8,7 @@ from scipy.interpolate import griddata
 import copy
 
 
+
 @dataclass
 class CurveData:
     H: List[float] = field(default_factory=list)
@@ -48,48 +49,68 @@ class SingleCurve:
         except Exception as e:
             print(f"Error reading BEP values from CSV: {e}")
             raise       
-    def prepare_hill_chart_data(self, selected_n11=None):
-        self.hilldata=CurveData()
+    def prepare_hill_chart_data(self):        
         x = np.array(self.data.n11)
         y = np.array(self.data.Q11)
         z = np.array(self.data.efficiency)
 
         # Create grid coordinates for the surface
-        x_grid = np.linspace(x.min(), x.max(), num=100)
-        y_grid = np.linspace(y.min(), y.max(), num=100)
-        self.hilldata.n11, self.hilldata.Q11 = np.meshgrid(x_grid, y_grid)
+        x_grid = np.linspace(x.min(), x.max(), num=51)
+        y_grid = np.linspace(y.min(), y.max(), num=51)
+        self.data.n11, self.data.Q11 = np.meshgrid(x_grid, y_grid)
 
         # Interpolate unstructured D-dimensional data
-        self.hilldata.efficiency = griddata((x, y), z, (self.hilldata.n11, self.hilldata.Q11), method='cubic')
+        self.data.efficiency = griddata((x, y), z, (self.data.n11, self.data.Q11), method='cubic')
 
-        # Check if a specific n11 value is requested for slicing
+        return self.data.n11, self.data.Q11, self.data.efficiency
+    
+    def slice_hill_chart_data(self, selected_n11=None, selected_Q11=None):
         if selected_n11 is not None:
-            # Filter Q11 and efficiency values based on selected_n11
-            indices = np.where(x == selected_n11)[0]
+            # Find the index of the closest value in n11 grid
+            idx = (np.abs(self.data.n11[0, :] - selected_n11)).argmin()
+            
+            # Extract the slice along n11
+            n11_slice = self.data.n11[:, idx]
+            Q11_slice = self.data.Q11[:, idx]
+            efficiency_slice = self.data.efficiency[:, idx]
 
-            filtered_Q11 = y[indices]
-            filtered_efficiency = z[indices]
-            # Repeat the selected n11 value to match the length of filtered Q11
-            filtered_n11 = np.full(filtered_Q11.shape, selected_n11)
+            # Update self.data to only contain the sliced values
+            self.data.n11 = n11_slice
+            self.data.Q11 = Q11_slice
+            self.data.efficiency = efficiency_slice
 
-            # Convert arrays to lists
-            self.hilldata.Q11 = filtered_Q11.tolist()
-            self.hilldata.efficiency = filtered_efficiency.tolist()
-            self.hilldata.n11 = filtered_n11.tolist()
+            return n11_slice, Q11_slice, efficiency_slice
+        
+        elif selected_Q11 is not None:
+            # Find the index of the closest value in Q11 grid
+            idx = (np.abs(self.data.Q11[:, 0] - selected_Q11)).argmin()
+            
+            # Extract the slice along Q11
+            n11_slice = self.data.n11[idx, :]
+            Q11_slice = self.data.Q11[idx, :]
+            efficiency_slice = self.data.efficiency[idx, :]
 
-            return self.hilldata.Q11, self.hilldata.efficiency
+            # Update self.data to only contain the sliced values
+            self.data.n11 = n11_slice
+            self.data.Q11 = Q11_slice
+            self.data.efficiency = efficiency_slice
 
-        return self.hilldata.n11, self.hilldata.Q11, self.hilldata.efficiency
+            return n11_slice, Q11_slice, efficiency_slice
+        
+        else:
+            raise ValueError("Either selected_n11 or selected_Q11 must be provided")
+
+        
     
     def overwrite_with_slice(self):
-        self.data = copy.deepcopy(self.hilldata)
+        self.data = copy.deepcopy(self.data)
 
     def plot_hill_chart(self):       
 
         try:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
-            surf = ax.plot_surface(self.hilldata.n11, self.hilldata.Q11, self.hilldata.efficiency, cmap='viridis', edgecolor='none')
+            surf = ax.plot_surface(self.data.n11, self.data.Q11, self.data.efficiency, cmap='viridis', edgecolor='none')
             ax.set_xlabel('n11 (Rotational Speed)')
             ax.set_ylabel('Q11 (Flow Rate)')
             ax.set_zlabel('Efficiency')
@@ -99,6 +120,119 @@ class SingleCurve:
             print("Hill Chart Created")
         except Exception as e:
             print(f"Error in plotting hill chart: {e}")        
+
+    def plot_hill_chart_contour(self):
+        try:
+            # Ensure the data does not contain NaN or infinite values
+            n11 = np.array(self.data.n11)
+            Q11 = np.array(self.data.Q11)
+            efficiency = np.array(self.data.efficiency)
+
+            # Filter out invalid values
+            valid_mask = ~np.isnan(n11) & ~np.isnan(Q11) & ~np.isnan(efficiency) & ~np.isinf(n11) & ~np.isinf(Q11) & ~np.isinf(efficiency)
+            n11 = n11[valid_mask]
+            Q11 = Q11[valid_mask]
+            efficiency = efficiency[valid_mask]
+
+            # Create grid coordinates for the surface
+            n11_grid = np.linspace(n11.min(), n11.max(), num=100)
+            Q11_grid = np.linspace(Q11.min(), Q11.max(), num=100)
+            n11_grid, Q11_grid = np.meshgrid(n11_grid, Q11_grid)
+
+            # Interpolate unstructured D-dimensional data
+            efficiency_grid = griddata((n11, Q11), efficiency, (n11_grid, Q11_grid), method='cubic')
+
+            fig, ax = plt.subplots()
+
+            # Create the contour plot
+            levels = np.round(np.linspace(np.nanmin(efficiency_grid), np.nanmax(efficiency_grid), num=15), 3)
+            contour = ax.contourf(n11_grid, Q11_grid, efficiency_grid, levels=levels, cmap='viridis')
+
+            # Add contour lines
+            contour_lines = ax.contour(n11_grid, Q11_grid, efficiency_grid, levels=levels, colors='k', linewidths=0.5)
+
+            # Add labels to the contour lines
+            ax.clabel(contour_lines, inline=False, fontsize=8, fmt='%.2f')
+
+            # Add color bar
+            cbar = fig.colorbar(contour)
+            cbar.set_label('Efficiency')
+
+            # Labels and title
+            ax.set_xlabel('n11 (Rotational Speed)')
+            ax.set_ylabel('Q11 (Flow Rate)')
+            ax.set_title('Hill Chart')
+
+            plt.show(block=False)
+
+            print("Hill Chart Created")
+        except Exception as e:
+            print(f"Error in plotting hill chart: {e}")
+    
+    def plot_hill_chart_contour_nD(self):
+        try:
+            # Ensure the data does not contain NaN or infinite values
+            n = np.array(self.data.n)
+            Q = np.array(self.data.Q)
+            efficiency = np.array(self.data.efficiency)
+
+            # Filter out invalid values
+            valid_mask = ~np.isnan(n) & ~np.isnan(Q) & ~np.isnan(efficiency) & ~np.isinf(n) & ~np.isinf(Q) & ~np.isinf(efficiency)
+            n = n[valid_mask]
+            Q = Q[valid_mask]
+            efficiency = efficiency[valid_mask]
+
+            # Create grid coordinates for the surface
+            n_grid = np.linspace(n.min(), n.max(), num=100)
+            Q_grid = np.linspace(Q.min(), Q.max(), num=100)
+            n_grid, Q_grid = np.meshgrid(n_grid, Q_grid)
+
+            # Interpolate unstructured D-dimensional data
+            efficiency_grid = griddata((n, Q), efficiency, (n_grid, Q_grid), method='cubic')
+
+            fig, ax = plt.subplots()
+
+            # Create the contour plot
+            levels = np.round(np.linspace(np.nanmin(efficiency_grid), np.nanmax(efficiency_grid), num=15), 3)
+            contour = ax.contourf(n_grid, Q_grid, efficiency_grid, levels=levels, cmap='viridis')
+
+            # Add contour lines
+            contour_lines = ax.contour(n_grid, Q_grid, efficiency_grid, levels=levels, colors='k', linewidths=0.5)
+
+            # Add labels to the contour lines
+            ax.clabel(contour_lines, inline=False, fontsize=8, fmt='%.2f')
+
+            # Add color bar
+            cbar = fig.colorbar(contour)
+            cbar.set_label('Efficiency')
+
+            # Labels and title
+            ax.set_xlabel('n (Rotational Speed)')
+            ax.set_ylabel('Q (Flow Rate)')
+            ax.set_title('Hill Chart')
+
+            plt.show(block=False)
+
+            print("Hill Chart Created")
+        except Exception as e:
+            print(f"Error in plotting hill chart: {e}")
+
+    def plot_hill_chart_nD(self):       
+
+        try:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            surf = ax.plot_surface(self.data.n, self.data.Q, self.data.efficiency, cmap='viridis', edgecolor='none')
+            ax.set_xlabel('n (Rotational Speed)')
+            ax.set_ylabel('Q (Flow Rate)')
+            ax.set_zlabel('Efficiency')
+            ax.set_title('Hill Chart')
+            fig.colorbar(surf, shrink=0.5, aspect=5)  # Add a color bar
+            plt.show(block=False)
+            print("Hill Chart Created")
+        except Exception as e:
+            print(f"Error in plotting hill chart: {e}")        
+
 
     def plot_efficiency_vs_Q(self):
         try:           
@@ -115,6 +249,21 @@ class SingleCurve:
         except Exception as e:
             print(f"Error in plotting Efficiency vs Q: {e}")
 
+    def plot_efficiency_vs_n(self):
+        try:           
+
+            plt.figure(figsize=(10, 6))
+            plt.plot(self.data.n, self.data.efficiency, 'bo-', label='Efficiency vs n')
+            plt.xlabel('n (Rotational Speed)')
+            plt.ylabel('Efficiency')
+            plt.title(f'Q = {self.data.Q[0]:.1f}, H = {self.data.H[0]:.2f}, D = {self.data.D[0]:.2f}')
+            plt.grid(True)
+            plt.legend()
+            plt.show(block=False)
+            print("Efficiency Curve Created")
+        except Exception as e:
+            print(f"Error in plotting Efficiency vs n: {e}")
+
     def plot_power_vs_Q(self):
         try:           
 
@@ -129,6 +278,21 @@ class SingleCurve:
             print("Power Curve Created")
         except Exception as e:
             print(f"Error in plotting Power vs Q: {e}")
+
+    def plot_power_vs_n(self):
+        try:           
+
+            plt.figure(figsize=(10, 6))
+            plt.plot(self.data.n, self.data.power, 'bo-', label='Power vs n')
+            plt.xlabel('n (Rotational Speed)')
+            plt.ylabel('Power')
+            plt.title(f'Q = {self.data.Q[0]:.1f}, H = {self.data.H[0]:.2f}, D = {self.data.D[0]:.2f}')
+            plt.grid(True)
+            plt.legend()
+            plt.show(block=False)
+            print("Power Curve Created")
+        except Exception as e:
+            print(f"Error in plotting Power vs n: {e}")
 
     def filter_for_maximum_efficiency(self):
         try:
@@ -156,7 +320,7 @@ class SingleCurve:
             raise
 
 
-    def calculate_cases(self, selected_values, options, var1, var2):
+    def calculate_cases(self, selected_values, var1, var2):
         try:
             #self.read_hill_chart_values()
             if not self.data:
