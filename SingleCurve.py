@@ -111,8 +111,8 @@ class SingleCurve:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             surf = ax.plot_surface(self.data.n11, self.data.Q11, self.data.efficiency, cmap='viridis', edgecolor='none')
-            ax.set_xlabel('n11 (Rotational Speed)')
-            ax.set_ylabel('Q11 (Flow Rate)')
+            ax.set_xlabel('n11 (unit speed)')
+            ax.set_ylabel('Q11 (unit flow)')
             ax.set_zlabel('Efficiency')
             ax.set_title('Hill Chart')
             fig.colorbar(surf, shrink=0.5, aspect=5)  # Add a color bar
@@ -159,8 +159,8 @@ class SingleCurve:
             cbar.set_label('Efficiency')
 
             # Labels and title
-            ax.set_xlabel('n11 (Rotational Speed)')
-            ax.set_ylabel('Q11 (Flow Rate)')
+            ax.set_xlabel('n11 (unit speed)')
+            ax.set_ylabel('Q11 (unit flow)')
             ax.set_title('Hill Chart')
 
             plt.show(block=False)
@@ -207,9 +207,9 @@ class SingleCurve:
             cbar.set_label('Efficiency')
 
             # Labels and title
-            ax.set_xlabel('n (Rotational Speed)')
-            ax.set_ylabel('Q (Flow Rate)')
-            ax.set_title('Hill Chart')
+            ax.set_xlabel('n [rpm]')
+            ax.set_ylabel('Q [$m^3$/s]')
+            ax.set_title(f'Hill Chart for constant H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
 
             plt.show(block=False)
 
@@ -223,10 +223,10 @@ class SingleCurve:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             surf = ax.plot_surface(self.data.n, self.data.Q, self.data.efficiency, cmap='viridis', edgecolor='none')
-            ax.set_xlabel('n (Rotational Speed)')
-            ax.set_ylabel('Q (Flow Rate)')
+            ax.set_xlabel('n [rpm]')
+            ax.set_ylabel('Q [$m^3$/s]')
             ax.set_zlabel('Efficiency')
-            ax.set_title('Hill Chart')
+            ax.set_title(f'Hill Chart for constant H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
             fig.colorbar(surf, shrink=0.5, aspect=5)  # Add a color bar
             plt.show(block=False)
             print("Hill Chart Created")
@@ -239,9 +239,9 @@ class SingleCurve:
 
             plt.figure(figsize=(10, 6))
             plt.plot(self.data.Q, self.data.efficiency, 'bo-', label='Efficiency vs Q')
-            plt.xlabel('Q (Flow Rate)')
+            plt.xlabel('Q [$m^3$/s]')
             plt.ylabel('Efficiency')
-            plt.title(f'n = {self.data.n[0]:.1f}, H = {self.data.H[0]:.2f}, D = {self.data.D[0]:.2f}')
+            plt.title(f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
             plt.grid(True)
             plt.legend()
             plt.show(block=False)
@@ -254,9 +254,9 @@ class SingleCurve:
 
             plt.figure(figsize=(10, 6))
             plt.plot(self.data.n, self.data.efficiency, 'bo-', label='Efficiency vs n')
-            plt.xlabel('n (Rotational Speed)')
+            plt.xlabel('n (rpm)')
             plt.ylabel('Efficiency')
-            plt.title(f'Q = {self.data.Q[0]:.1f}, H = {self.data.H[0]:.2f}, D = {self.data.D[0]:.2f}')
+            plt.title(f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f}[m]')
             plt.grid(True)
             plt.legend()
             plt.show(block=False)
@@ -269,9 +269,9 @@ class SingleCurve:
 
             plt.figure(figsize=(10, 6))
             plt.plot(self.data.Q, self.data.power, 'bo-', label='Power vs Q')
-            plt.xlabel('Q (Flow Rate)')
-            plt.ylabel('Power')
-            plt.title(f'n = {self.data.n[0]:.1f}, H = {self.data.H[0]:.2f}, D = {self.data.D[0]:.2f}')
+            plt.xlabel('Q [$m^3$/s]')
+            plt.ylabel('Power [W]')
+            plt.title(f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
             plt.grid(True)
             plt.legend()
             plt.show(block=False)
@@ -284,9 +284,9 @@ class SingleCurve:
 
             plt.figure(figsize=(10, 6))
             plt.plot(self.data.n, self.data.power, 'bo-', label='Power vs n')
-            plt.xlabel('n (Rotational Speed)')
-            plt.ylabel('Power')
-            plt.title(f'Q = {self.data.Q[0]:.1f}, H = {self.data.H[0]:.2f}, D = {self.data.D[0]:.2f}')
+            plt.xlabel('n [rpm]')
+            plt.ylabel('Power [W]')
+            plt.title(f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
             plt.grid(True)
             plt.legend()
             plt.show(block=False)

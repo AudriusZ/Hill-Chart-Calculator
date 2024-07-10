@@ -9,7 +9,7 @@ class HillChartCalculator(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('Hill Chart Calculator')
-        self.geometry("350x600")
+        self.geometry("350x450")
         
         self.checkbox_vars = []
         self.checkboxes = []
@@ -47,8 +47,8 @@ class HillChartCalculator(tk.Tk):
         self.result_text = tk.Text(self, height=10, width=40)
         self.result_text.pack()
 
-        self.result_text2 = tk.Text(self, height=10, width=40)
-        self.result_text2.pack()
+        #self.result_text2 = tk.Text(self, height=10, width=40)
+        #self.result_text2.pack()
 
     def create_checkbox(self, text, value):
         var = tk.IntVar()
@@ -134,8 +134,8 @@ class HillChartCalculator(tk.Tk):
         print("Displayed new BEP text data")
 
         # Clear previous results
-        self.result_text2.delete(1.0, tk.END)
-        print("Cleared previous data set text data")
+        #self.result_text2.delete(1.0, tk.END)
+        #print("Cleared previous data set text data")
         
         '''
         # Display new results for each index in the lists
