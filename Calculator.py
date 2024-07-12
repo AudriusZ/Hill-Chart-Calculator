@@ -1,5 +1,8 @@
+#To create standalon exe use the line below:
+#pyinstaller --onefile --name Hill_Chart_Calculator_0.1.3 --icon=icon.ico Calculator.py
+
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from SingleCurve import SingleCurve
 import copy
 
@@ -17,13 +20,17 @@ class HillChartCalculator(tk.Tk):
 
         self.create_widgets()
 
-        self.datapath = 'SampleHillChart.csv'
+        self.datapath = None  # Initially, no turbine data is selected
+        # Bypass selection process for debugging        
+        #self.bypass_selection()
         
-        # Bypass selection process for debugging
-        # self.bypass_selection()
-
     def create_widgets(self):
-        tk.Label(self, text="Select two parameters and press Next:").pack()
+        tk.Label(self, text="First, select the turbine:").pack()
+        
+        self.select_turbine_button = tk.Button(self, text="Select Turbine", command=self.load_turbine_data)
+        self.select_turbine_button.pack()
+        
+        tk.Label(self, text="\nThen, select two parameters and press Next:").pack()
         
         for i, option in enumerate(self.options):
             self.create_checkbox(option, i + 1)
@@ -47,27 +54,25 @@ class HillChartCalculator(tk.Tk):
         self.result_text = tk.Text(self, height=10, width=40)
         self.result_text.pack()
 
-        #self.result_text2 = tk.Text(self, height=10, width=40)
-        #self.result_text2.pack()
-
     def create_checkbox(self, text, value):
         var = tk.IntVar()
-        chk = tk.Checkbutton(self, text=text, variable=var, onvalue=value, offvalue=0, command=self.update_count)
+        chk = tk.Checkbutton(self, text=text, variable=var, onvalue=value, offvalue=0, command=self.update_count, state='disabled')
         chk.pack(anchor=tk.W)
         self.checkbox_vars.append(var)
         self.checkboxes.append(chk)
 
     def update_count(self):
-        selected_values = [var.get() for var in self.checkbox_vars if var.get() != 0]
-        selected_count = len(selected_values)
-        if selected_count == 2:
-            for var, chk in zip(self.checkbox_vars, self.checkboxes):
-                chk.config(state='disabled' if var.get() == 0 else 'normal')
-            self.next_button.config(state='normal')
-        else:
-            for chk in self.checkboxes:
-                chk.config(state='normal')
-            self.next_button.config(state='disabled')
+        if self.datapath:  # Ensure that turbine data has been selected
+            selected_values = [var.get() for var in self.checkbox_vars if var.get() != 0]
+            selected_count = len(selected_values)
+            if selected_count == 2:
+                for var, chk in zip(self.checkbox_vars, self.checkboxes):
+                    chk.config(state='disabled' if var.get() == 0 else 'normal')
+                self.next_button.config(state='normal')
+            else:
+                for chk in self.checkboxes:
+                    chk.config(state='normal')
+                self.next_button.config(state='disabled')
 
     def set_inputs(self):
         selected_values = [var.get() for var in self.checkbox_vars if var.get() != 0]
@@ -98,7 +103,6 @@ class HillChartCalculator(tk.Tk):
 
         hill_values_nD = copy.deepcopy(hill_values)
         hill_values_nD.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])
-        #hill_values_nD.plot_hill_chart_nD()
         hill_values_nD.plot_hill_chart_contour_nD() 
 
         q_curve_values = copy.deepcopy(hill_values)
@@ -133,26 +137,14 @@ class HillChartCalculator(tk.Tk):
             self.result_text.insert(tk.END, "\n")  # Add a newline for spacing between sets 
         print("Displayed new BEP text data")
 
-        # Clear previous results
-        #self.result_text2.delete(1.0, tk.END)
-        #print("Cleared previous data set text data")
-        
-        '''
-        # Display new results for each index in the lists
-        num_sets = len(curve_data.H)  # Assuming all lists are of the same length
-        for index in range(num_sets):
-            self.result_text2.insert(tk.END, f"Set {index + 1}:\n")
-            for attr in ['H', 'Q', 'n', 'D', 'efficiency', 'power']:
-                value = getattr(curve_data, attr)[index] if getattr(curve_data, attr) else 'N/A'
-                if isinstance(value, float):
-                    value_format = f"{value:.2f}"
-                else:
-                    value_format = str(value)
-                self.result_text2.insert(tk.END, f"{attr} = {value_format}\n")
-            self.result_text2.insert(tk.END, "\n")  # Add a newline for spacing between sets 
-        print("Displayed new data set text data")
-        print("------------------------")
-        '''
+    def load_turbine_data(self):
+        file_path = filedialog.askopenfilename(title="Select Turbine Data File", filetypes=[("CSV files", "*.csv")])
+        if file_path:
+            self.datapath = file_path
+            print(f"Loaded data from {file_path}")
+            # Enable the checkboxes now that a turbine file is selected
+            for chk in self.checkboxes:
+                chk.config(state='normal')
 
     def bypass_selection(self):
         # Directly set the selected options and input values
@@ -163,7 +155,6 @@ class HillChartCalculator(tk.Tk):
         self.var_entry_2.insert(0, '1.65')  # Set value for "Runner diameter D [m]"
         self.calculate_button.config(state='normal')
         self.calculate()
-
 
 if __name__ == "__main__":
     app = HillChartCalculator()
