@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import messagebox, filedialog
 from SingleCurve import SingleCurve
 import copy
+import matplotlib.pyplot as plt
 
 print("Hello, this is a tool for hydro turbine scaling")
 
@@ -92,32 +93,51 @@ class HillChartCalculator(tk.Tk):
         
         hill_values = SingleCurve()
         hill_values.read_hill_chart_values(self.datapath)
+        raw_data = copy.deepcopy(hill_values)
         BEP_values = copy.deepcopy(hill_values)
         BEP_values.filter_for_maximum_efficiency()
         BEP_values.calculate_cases([var.get() for var in self.checkbox_vars if var.get() != 0], var1, var2)
-        BEP_data = BEP_values.return_values()
-
+        BEP_data = BEP_values.return_values()        
         hill_values.prepare_hill_chart_data()
-        hill_values.plot_hill_chart()     
-        hill_values.plot_hill_chart_contour() 
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
 
+        # Plot both the surface and scatter on the same axis
+        hill_values.plot_hill_chart(ax=ax)
+        raw_data.plot_3d_scatter(ax=ax)
+
+        plt.show(block=False)    
+                
+        _, axs = plt.subplots(1, 2, figsize=(15, 7))  # Adjust size and layout as needed
+         # Adjust layout
+        hill_values.plot_hill_chart_contour(ax=axs[0], data_type='default')                 
+        
         hill_values_nD = copy.deepcopy(hill_values)
         hill_values_nD.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])
-        hill_values_nD.plot_hill_chart_contour_nD() 
-
+        hill_values_nD.plot_hill_chart_contour(ax=axs[1], data_type='nD') 
+        plt.tight_layout()
+        plt.show(block=False)
+        
+        
         q_curve_values = copy.deepcopy(hill_values)
         q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0],selected_Q11=None)        
         q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])
         
-        q_curve_values.plot_efficiency_vs_Q()
-        q_curve_values.plot_power_vs_Q()
+        _, axs2 = plt.subplots(2, 2, figsize=(15, 10))  # Adjust size and layout as needed
+
+        q_curve_values.plot_efficiency_vs_Q(ax=axs2[0,0])
+        q_curve_values.plot_power_vs_Q(ax=axs2[1,0])
 
         n_curve_values = copy.deepcopy(hill_values)
         n_curve_values.slice_hill_chart_data(selected_n11=None,selected_Q11=BEP_data.Q11[0])        
         n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
 
-        n_curve_values.plot_efficiency_vs_n()
-        n_curve_values.plot_power_vs_n()
+        n_curve_values.plot_efficiency_vs_n(ax=axs2[0,1])
+        n_curve_values.plot_power_vs_n(ax=axs2[1,1])
+
+        #plt.tight_layout()
+        plt.show(block=False)        
 
         # Clear previous results
         self.result_text.delete(1.0, tk.END)

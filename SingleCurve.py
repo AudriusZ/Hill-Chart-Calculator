@@ -23,11 +23,7 @@ class CurveData:
 
 
 class SingleCurve:
-    def __init__(self):
-        '''self.selected_values = selected_values
-        self.options = options
-        self.var1 = var1
-        self.var2 = var2'''
+    def __init__(self):        
         self.data = CurveData()
 
 
@@ -105,192 +101,162 @@ class SingleCurve:
     def overwrite_with_slice(self):
         self.data = copy.deepcopy(self.data)
 
-    def plot_hill_chart(self):       
-
+    def plot_hill_chart(self, ax=None):       
         try:
-            fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
+            if ax is None:
+                raise ValueError("An Axes3D object must be provided for plotting.")
+            
+            # Plot the surface on the provided Axes3D object
             surf = ax.plot_surface(self.data.n11, self.data.Q11, self.data.efficiency, cmap='viridis', edgecolor='none')
             ax.set_xlabel('n11 (unit speed)')
             ax.set_ylabel('Q11 (unit flow)')
             ax.set_zlabel('Efficiency')
             ax.set_title('Hill Chart')
-            fig.colorbar(surf, shrink=0.5, aspect=5)  # Add a color bar
-            plt.show(block=False)
-            print("Hill Chart Created")
+            # Add a color bar to the existing plot
+            fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)  
+            print("3D hill chart created successfully")
         except Exception as e:
-            print(f"Error in plotting hill chart: {e}")        
+            print(f"Error in plotting 3D hill chart: {e}")
 
-    def plot_hill_chart_contour(self):
+    def plot_3d_scatter(self, ax=None):
         try:
-            # Ensure the data does not contain NaN or infinite values
-            n11 = np.array(self.data.n11)
-            Q11 = np.array(self.data.Q11)
-            efficiency = np.array(self.data.efficiency)
+            if ax is None:
+                raise ValueError("An Axes3D object must be provided for plotting.")
+            
+            # Plot the scatter on the provided Axes3D object
+            scatter = ax.scatter(self.data.n11, self.data.Q11, self.data.efficiency, c='red', marker='o')
+            print("3D scatter plot created successfully")
+        except Exception as e:
+            print(f"Error in plotting 3D scatter plot: {e}")
+
+
+    def plot_hill_chart_contour(self, ax=None, data_type='default'):
+        try:
+            if ax is None:
+                fig, ax = plt.subplots()
+            else:
+                fig = plt.gcf()
+                
+            # Select the data based on the type
+            if data_type == 'default':
+                x = np.array(self.data.n11)
+                y = np.array(self.data.Q11)
+                z = np.array(self.data.efficiency)
+                xlabel = 'n11 (unit speed)'
+                ylabel = 'Q11 (unit flow)'
+                title = 'Hill Chart'
+            elif data_type == 'nD':
+                x = np.array(self.data.n)
+                y = np.array(self.data.Q)
+                z = np.array(self.data.efficiency)
+                xlabel = 'n [rpm]'
+                ylabel = 'Q [$m^3$/s]'
+                title = f'Hill Chart for constant H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'
+            else:
+                raise ValueError("Invalid data_type. Use 'default' or 'nD'.")
 
             # Filter out invalid values
-            valid_mask = ~np.isnan(n11) & ~np.isnan(Q11) & ~np.isnan(efficiency) & ~np.isinf(n11) & ~np.isinf(Q11) & ~np.isinf(efficiency)
-            n11 = n11[valid_mask]
-            Q11 = Q11[valid_mask]
-            efficiency = efficiency[valid_mask]
+            valid_mask = ~np.isnan(x) & ~np.isnan(y) & ~np.isnan(z) & ~np.isinf(x) & ~np.isinf(y) & ~np.isinf(z)
+            x = x[valid_mask]
+            y = y[valid_mask]
+            z = z[valid_mask]
 
-            # Create grid coordinates for the surface
-            n11_grid = np.linspace(n11.min(), n11.max(), num=101)
-            Q11_grid = np.linspace(Q11.min(), Q11.max(), num=101)
-            n11_grid, Q11_grid = np.meshgrid(n11_grid, Q11_grid)
+            # Create grid coordinates for the contour plot
+            x_grid = np.linspace(x.min(), x.max(), num=101)
+            y_grid = np.linspace(y.min(), y.max(), num=101)
+            x_grid, y_grid = np.meshgrid(x_grid, y_grid)
 
-            # Interpolate unstructured D-dimensional data
-            efficiency_grid = griddata((n11, Q11), efficiency, (n11_grid, Q11_grid), method='cubic')
-
-            fig, ax = plt.subplots()
+            # Interpolate unstructured data
+            z_grid = griddata((x, y), z, (x_grid, y_grid), method='cubic')
 
             # Create the contour plot
-            levels = np.round(np.linspace(np.nanmin(efficiency_grid), np.nanmax(efficiency_grid), num=30), 3)
-            contour = ax.contourf(n11_grid, Q11_grid, efficiency_grid, levels=levels, cmap='viridis')
-
-            # Add contour lines
-            contour_lines = ax.contour(n11_grid, Q11_grid, efficiency_grid, levels=levels, colors='k', linewidths=0.5)
-
-            # Add labels to the contour lines
+            levels = np.round(np.linspace(np.nanmin(z_grid), np.nanmax(z_grid), num=30), 3)
+            contour = ax.contourf(x_grid, y_grid, z_grid, levels=levels, cmap='viridis')
+            contour_lines = ax.contour(x_grid, y_grid, z_grid, levels=levels, colors='k', linewidths=0.5)
             ax.clabel(contour_lines, inline=False, fontsize=8, fmt='%.2f')
 
             # Add color bar
-            cbar = fig.colorbar(contour)
+            cbar = fig.colorbar(contour, ax=ax)
             cbar.set_label('Efficiency')
 
-            # Labels and title
-            ax.set_xlabel('n11 (unit speed)')
-            ax.set_ylabel('Q11 (unit flow)')
-            ax.set_title('Hill Chart')
+            # Set labels and title
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+            ax.set_title(title)
 
             plt.show(block=False)
+            print("Hill chart contour created successfully")
 
-            print("Hill Chart Created")
+            return fig, ax
+
         except Exception as e:
-            print(f"Error in plotting hill chart: {e}")
+            print(f"Error in plotting hill chart contour: {e}")
+          
     
-    def plot_hill_chart_contour_nD(self):
+
+
+    def plot_efficiency_vs_Q(self, ax=None):
         try:
-            # Ensure the data does not contain NaN or infinite values
-            n = np.array(self.data.n)
-            Q = np.array(self.data.Q)
-            efficiency = np.array(self.data.efficiency)
+            if ax is None:
+                raise ValueError("An Axes object must be provided for subplots.")
+            
+            ax.plot(self.data.Q, self.data.efficiency, 'bo-', label='Efficiency vs Q')
+            ax.set_xlabel('Q [$m^3$/s]')
+            ax.set_ylabel('Efficiency')
+            ax.set_title(f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
+            ax.grid(True)
+            ax.legend()
+            
+            print("Efficiency vs Q curve created successfully")
 
-            # Filter out invalid values
-            valid_mask = ~np.isnan(n) & ~np.isnan(Q) & ~np.isnan(efficiency) & ~np.isinf(n) & ~np.isinf(Q) & ~np.isinf(efficiency)
-            n = n[valid_mask]
-            Q = Q[valid_mask]
-            efficiency = efficiency[valid_mask]
-
-            # Create grid coordinates for the surface
-            n_grid = np.linspace(n.min(), n.max(), num=101)
-            Q_grid = np.linspace(Q.min(), Q.max(), num=101)
-            n_grid, Q_grid = np.meshgrid(n_grid, Q_grid)
-
-            # Interpolate unstructured D-dimensional data
-            efficiency_grid = griddata((n, Q), efficiency, (n_grid, Q_grid), method='cubic')
-
-            fig, ax = plt.subplots()
-
-            # Create the contour plot
-            levels = np.round(np.linspace(np.nanmin(efficiency_grid), np.nanmax(efficiency_grid), num=30), 3)
-            contour = ax.contourf(n_grid, Q_grid, efficiency_grid, levels=levels, cmap='viridis')
-
-            # Add contour lines
-            contour_lines = ax.contour(n_grid, Q_grid, efficiency_grid, levels=levels, colors='k', linewidths=0.5)
-
-            # Add labels to the contour lines
-            ax.clabel(contour_lines, inline=False, fontsize=8, fmt='%.2f')
-
-            # Add color bar
-            cbar = fig.colorbar(contour)
-            cbar.set_label('Efficiency')
-
-            # Labels and title
-            ax.set_xlabel('n [rpm]')
-            ax.set_ylabel('Q [$m^3$/s]')
-            ax.set_title(f'Hill Chart for constant H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
-
-            plt.show(block=False)
-
-            print("Hill Chart Created")
-        except Exception as e:
-            print(f"Error in plotting hill chart: {e}")
-
-    def plot_hill_chart_nD(self):       
-
-        try:
-            fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
-            surf = ax.plot_surface(self.data.n, self.data.Q, self.data.efficiency, cmap='viridis', edgecolor='none')
-            ax.set_xlabel('n [rpm]')
-            ax.set_ylabel('Q [$m^3$/s]')
-            ax.set_zlabel('Efficiency')
-            ax.set_title(f'Hill Chart for constant H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
-            fig.colorbar(surf, shrink=0.5, aspect=5)  # Add a color bar
-            plt.show(block=False)
-            print("Hill Chart Created")
-        except Exception as e:
-            print(f"Error in plotting hill chart: {e}")        
-
-
-    def plot_efficiency_vs_Q(self):
-        try:           
-
-            plt.figure(figsize=(10, 6))
-            plt.plot(self.data.Q, self.data.efficiency, 'bo-', label='Efficiency vs Q')
-            plt.xlabel('Q [$m^3$/s]')
-            plt.ylabel('Efficiency')
-            plt.title(f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
-            plt.grid(True)
-            plt.legend()
-            plt.show(block=False)
-            print("Efficiency Curve Created")
         except Exception as e:
             print(f"Error in plotting Efficiency vs Q: {e}")
 
-    def plot_efficiency_vs_n(self):
+    def plot_efficiency_vs_n(self, ax=None):
         try:           
+            if ax is None:
+                raise ValueError("An Axes object must be provided for subplots.")            
+            
+            ax.plot(self.data.n, self.data.efficiency, 'bo-', label='Efficiency vs n')
+            ax.set_xlabel('n [rpm]')
+            ax.set_ylabel('Efficiency')
+            ax.set_title(f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f}[m]')
+            ax.grid(True)
 
-            plt.figure(figsize=(10, 6))
-            plt.plot(self.data.n, self.data.efficiency, 'bo-', label='Efficiency vs n')
-            plt.xlabel('n (rpm)')
-            plt.ylabel('Efficiency')
-            plt.title(f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f}[m]')
-            plt.grid(True)
-            plt.legend()
-            plt.show(block=False)
-            print("Efficiency Curve Created")
+            ax.legend()
+            print("Efficiency vs n curve created successfully")
         except Exception as e:
             print(f"Error in plotting Efficiency vs n: {e}")
 
-    def plot_power_vs_Q(self):
+    def plot_power_vs_Q(self, ax=None):
         try:           
-
-            plt.figure(figsize=(10, 6))
-            plt.plot(self.data.Q, self.data.power, 'bo-', label='Power vs Q')
-            plt.xlabel('Q [$m^3$/s]')
-            plt.ylabel('Power [W]')
-            plt.title(f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
-            plt.grid(True)
-            plt.legend()
-            plt.show(block=False)
-            print("Power Curve Created")
+            if ax is None:
+                raise ValueError("An Axes object must be provided for subplots.")  
+            
+            ax.plot(self.data.Q, self.data.power, 'bo-', label='Power vs Q')
+            ax.set_xlabel('Q [$m^3$/s]')
+            ax.set_ylabel('Power [W]')
+            ax.set_title(f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
+            ax.grid(True)
+            ax.legend()
+            
+            print("Power vs Q curve created successfully")
         except Exception as e:
             print(f"Error in plotting Power vs Q: {e}")
 
-    def plot_power_vs_n(self):
+    def plot_power_vs_n(self, ax=None):
         try:           
-
-            plt.figure(figsize=(10, 6))
-            plt.plot(self.data.n, self.data.power, 'bo-', label='Power vs n')
-            plt.xlabel('n [rpm]')
-            plt.ylabel('Power [W]')
-            plt.title(f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
-            plt.grid(True)
-            plt.legend()
-            plt.show(block=False)
-            print("Power Curve Created")
+            if ax is None:
+                raise ValueError("An Axes object must be provided for subplots.")  
+            
+            ax.plot(self.data.n, self.data.power, 'bo-', label='Power vs n')
+            ax.set_xlabel('n [rpm]')
+            ax.set_ylabel('Power [W]')
+            ax.set_title(f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
+            ax.grid(True)
+            ax.legend()
+            
+            print("Power vs n curve created successfully")
         except Exception as e:
             print(f"Error in plotting Power vs n: {e}")
 
@@ -382,5 +348,22 @@ class SingleCurve:
 
     def return_values(self):
         return self.data
+    
+    #legacy code
+    def plot_hill_chart_nD(self):       
+
+        try:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            surf = ax.plot_surface(self.data.n, self.data.Q, self.data.efficiency, cmap='viridis', edgecolor='none')
+            ax.set_xlabel('n [rpm]')
+            ax.set_ylabel('Q [$m^3$/s]')
+            ax.set_zlabel('Efficiency')
+            ax.set_title(f'Hill Chart for constant H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
+            fig.colorbar(surf, shrink=0.5, aspect=5)  # Add a color bar
+            plt.show(block=False)
+            print("Hill Chart Created")
+        except Exception as e:
+            print(f"Error in plotting hill chart: {e}")  
 
 
