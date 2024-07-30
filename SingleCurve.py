@@ -55,11 +55,11 @@ class SingleCurve:
         z = np.array(self.data.efficiency)
 
         # Create grid coordinates for the surface
-        x_grid = np.linspace(x.min(), x.max(), num=51)
-        y_grid = np.linspace(y.min(), y.max(), num=51)
+        x_grid = np.linspace(x.min(), x.max(), num=101)
+        y_grid = np.linspace(y.min(), y.max(), num=101)
         self.data.n11, self.data.Q11 = np.meshgrid(x_grid, y_grid)
 
-        # Interpolate unstructured D-dimensional data
+        # Interpolate unstructured 3-dimensional data
         self.data.efficiency = griddata((x, y), z, (self.data.n11, self.data.Q11), method='cubic')
 
         return self.data.n11, self.data.Q11, self.data.efficiency
@@ -135,8 +135,8 @@ class SingleCurve:
             efficiency = efficiency[valid_mask]
 
             # Create grid coordinates for the surface
-            n11_grid = np.linspace(n11.min(), n11.max(), num=100)
-            Q11_grid = np.linspace(Q11.min(), Q11.max(), num=100)
+            n11_grid = np.linspace(n11.min(), n11.max(), num=101)
+            Q11_grid = np.linspace(Q11.min(), Q11.max(), num=101)
             n11_grid, Q11_grid = np.meshgrid(n11_grid, Q11_grid)
 
             # Interpolate unstructured D-dimensional data
@@ -145,7 +145,7 @@ class SingleCurve:
             fig, ax = plt.subplots()
 
             # Create the contour plot
-            levels = np.round(np.linspace(np.nanmin(efficiency_grid), np.nanmax(efficiency_grid), num=15), 3)
+            levels = np.round(np.linspace(np.nanmin(efficiency_grid), np.nanmax(efficiency_grid), num=30), 3)
             contour = ax.contourf(n11_grid, Q11_grid, efficiency_grid, levels=levels, cmap='viridis')
 
             # Add contour lines
@@ -183,8 +183,8 @@ class SingleCurve:
             efficiency = efficiency[valid_mask]
 
             # Create grid coordinates for the surface
-            n_grid = np.linspace(n.min(), n.max(), num=100)
-            Q_grid = np.linspace(Q.min(), Q.max(), num=100)
+            n_grid = np.linspace(n.min(), n.max(), num=101)
+            Q_grid = np.linspace(Q.min(), Q.max(), num=101)
             n_grid, Q_grid = np.meshgrid(n_grid, Q_grid)
 
             # Interpolate unstructured D-dimensional data
@@ -193,7 +193,7 @@ class SingleCurve:
             fig, ax = plt.subplots()
 
             # Create the contour plot
-            levels = np.round(np.linspace(np.nanmin(efficiency_grid), np.nanmax(efficiency_grid), num=15), 3)
+            levels = np.round(np.linspace(np.nanmin(efficiency_grid), np.nanmax(efficiency_grid), num=30), 3)
             contour = ax.contourf(n_grid, Q_grid, efficiency_grid, levels=levels, cmap='viridis')
 
             # Add contour lines

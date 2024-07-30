@@ -22,7 +22,7 @@ class HillChartCalculator(tk.Tk):
 
         self.datapath = None  # Initially, no turbine data is selected
         # Bypass selection process for debugging        
-        #self.bypass_selection()
+        self.bypass_selection()
         
     def create_widgets(self):
         tk.Label(self, text="First, select the turbine:").pack()
@@ -148,6 +148,7 @@ class HillChartCalculator(tk.Tk):
 
     def bypass_selection(self):
         # Directly set the selected options and input values
+        self.datapath = 'D_Liszka_et_al_turbine.csv'
         self.checkbox_vars[0].set(1)  # Select "Head H [m]"
         self.checkbox_vars[3].set(4)  # Select "Runner diameter D [m]"
         self.set_inputs()
