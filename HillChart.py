@@ -112,8 +112,7 @@ class HillChart:
             ax.set_ylabel('Q11 (unit flow)')
             ax.set_zlabel('Efficiency')
             ax.set_title('Hill Chart')
-            # Add a color bar to the existing plot
-            fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)  
+            # Add a color bar to the existing plot            
             print("3D hill chart created successfully")
         except Exception as e:
             print(f"Error in plotting 3D hill chart: {e}")
