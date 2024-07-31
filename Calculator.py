@@ -1,9 +1,9 @@
 #To create standalon exe use the line below:
-#pyinstaller --onefile --name Hill_Chart_Calculator_0.1.3 --icon=icon.ico Calculator.py
+#pyinstaller --onefile --name Hill_Chart_Calculator_0.2.0 --icon=icon.ico Calculator.py
 
 import tkinter as tk
 from tkinter import messagebox, filedialog
-from SingleCurve import SingleCurve
+from HillChart import HillChart
 import copy
 import matplotlib.pyplot as plt
 
@@ -23,7 +23,7 @@ class HillChartCalculator(tk.Tk):
 
         self.datapath = None  # Initially, no turbine data is selected
         # Bypass selection process for debugging        
-        self.bypass_selection()
+        # self.bypass_selection()
         
     def create_widgets(self):
         tk.Label(self, text="First, select the turbine:").pack()
@@ -91,7 +91,7 @@ class HillChartCalculator(tk.Tk):
             messagebox.showerror("Input error", "Please enter valid numbers.")
             return
         
-        hill_values = SingleCurve()
+        hill_values = HillChart()
         hill_values.read_hill_chart_values(self.datapath)
         raw_data = copy.deepcopy(hill_values)
         BEP_values = copy.deepcopy(hill_values)
