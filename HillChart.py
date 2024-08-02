@@ -24,8 +24,7 @@ class TurbineData:
 
 class HillChart:
     def __init__(self):        
-        self.data = TurbineData()
-
+        self.data = TurbineData()    
 
     def read_hill_chart_values(self, filename):
         try:
@@ -129,7 +128,7 @@ class HillChart:
             print(f"Error in plotting 3D scatter plot: {e}")
 
 
-    def plot_hill_chart_contour(self, ax=None, data_type='default'):
+    def plot_hill_chart_contour(self, ax=None, n_contours=35, data_type='default'):
         try:
             if ax is None:
                 fig, ax = plt.subplots()
@@ -151,6 +150,13 @@ class HillChart:
                 xlabel = 'n [rpm]'
                 ylabel = 'Q [$m^3$/s]'
                 title = f'Hill Chart for constant H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'
+            elif data_type == 'normalised':
+                x = np.array(self.data.n11)
+                y = np.array(self.data.Q11)
+                z = np.array(self.data.efficiency)
+                xlabel = 'n11 (unit speed) - normalised to BEP'
+                ylabel = 'Q11 (unit flow) - normalised to BEP'
+                title = 'Hill Chart - normalised to BEP'
             else:
                 raise ValueError("Invalid data_type. Use 'default' or 'nD'.")
 
@@ -169,7 +175,7 @@ class HillChart:
             z_grid = griddata((x, y), z, (x_grid, y_grid), method='cubic')
 
             # Create the contour plot
-            levels = np.round(np.linspace(np.nanmin(z_grid), np.nanmax(z_grid), num=30), 3)
+            levels = np.round(np.linspace(np.nanmin(z_grid), np.nanmax(z_grid), num=n_contours), 3)
             contour = ax.contourf(x_grid, y_grid, z_grid, levels=levels, cmap='viridis')
             contour_lines = ax.contour(x_grid, y_grid, z_grid, levels=levels, colors='k', linewidths=0.5)
             ax.clabel(contour_lines, inline=False, fontsize=8, fmt='%.2f')
@@ -344,6 +350,14 @@ class HillChart:
         except Exception as e:
             print(f"Error in case calculations: {e}")
             raise
+    def normalise_efficiency(self, efficiency_norm):
+        self.data.efficiency = self.data.efficiency/efficiency_norm
+
+    def normalise_Q11(self, Q11_norm):
+        self.data.Q11 = self.data.Q11/Q11_norm
+
+    def normalise_n11(self, n11_norm):
+        self.data.n11 = self.data.n11/n11_norm
 
     def return_values(self):
         return self.data
