@@ -15,7 +15,7 @@ class HillChartCalculator(tk.Tk):
         self.checkboxes = []
         self.options = ["Head H [m]", "Flow rate Q [m^3/s]", "Rotational speed n [rpm]", "Runner diameter D [m]"]
 
-        self.output_options = ["3D Hill Chart", "Hill Chart Contour", "2D Curve Slices", 'Normalised Hill Chart Contour']
+        self.output_options = ["3D Hill Chart", "Hill Chart Contour", "2D Curve Slices", 'normalized Hill Chart Contour', "normalized 2D Curve Slices"]
         self.output_vars = [tk.IntVar() for _ in self.output_options]
 
         self.n_contours = 25  # Default value
@@ -139,7 +139,10 @@ class HillChartCalculator(tk.Tk):
             self.plot_curve_slices(BEP_data)
 
         if self.output_vars[3].get():
-            self.plot_normalised_hill_chart_contour(hill_values, BEP_data)
+            self.plot_normalized_hill_chart_contour(hill_values, BEP_data)
+
+        if self.output_vars[4].get():
+            self.plot_normalized_curve_slices(BEP_data)
         
         self.display_results(BEP_data)
 
@@ -177,16 +180,16 @@ class HillChartCalculator(tk.Tk):
         plt.tight_layout()
         plt.show(block=False)
 
-    def plot_normalised_hill_chart_contour(self, hill_values, BEP_data):
+    def plot_normalized_hill_chart_contour(self, hill_values, BEP_data):
         hill_values_norm = HillChart()
         hill_values_norm.read_hill_chart_values(self.datapath)
         hill_values_norm.prepare_hill_chart_data()
-        hill_values_norm.normalise_efficiency(BEP_data.efficiency)
-        hill_values_norm.normalise_Q11(BEP_data.Q11)
-        hill_values_norm.normalise_n11(BEP_data.n11)
+        hill_values_norm.normalize_efficiency(BEP_data.efficiency)
+        hill_values_norm.normalize_Q11(BEP_data.Q11)
+        hill_values_norm.normalize_n11(BEP_data.n11)
         _, ax2 = plt.subplots(1, 2, figsize=(15, 7))        
         hill_values.plot_hill_chart_contour(ax=ax2[0],n_contours=self.n_contours, data_type='default')                         
-        hill_values_norm.plot_hill_chart_contour(ax=ax2[1],n_contours=self.n_contours, data_type='normalised') 
+        hill_values_norm.plot_hill_chart_contour(ax=ax2[1],n_contours=self.n_contours, data_type='normalized') 
         plt.tight_layout()
         plt.show(block=False)
 
@@ -194,9 +197,9 @@ class HillChartCalculator(tk.Tk):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  # Adjust size and layout as needed
         q_curve_values = HillChart()
         q_curve_values.read_hill_chart_values(self.datapath)
-        q_curve_values.prepare_hill_chart_data()         
+        q_curve_values.prepare_hill_chart_data()          
         q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)        
-        q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])            
+        q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])                    
         q_curve_values.plot_efficiency_vs_Q(ax=ax3[0,0])
         q_curve_values.plot_power_vs_Q(ax=ax3[1,0])
 
@@ -207,6 +210,32 @@ class HillChartCalculator(tk.Tk):
         n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
         n_curve_values.plot_efficiency_vs_n(ax=ax3[0,1])
         n_curve_values.plot_power_vs_n(ax=ax3[1,1])
+        
+        plt.show(block=False)
+
+    def plot_normalized_curve_slices(self, BEP_data):
+        _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  # Adjust size and layout as needed
+        q_curve_values = HillChart()
+        q_curve_values.read_hill_chart_values(self.datapath)
+        q_curve_values.prepare_hill_chart_data()          
+        q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)        
+        q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])            
+        q_curve_values.normalize_efficiency(BEP_data.efficiency)       
+        q_curve_values.normalize_Q(BEP_data.Q)               
+        q_curve_values.normalize_power(BEP_data.power)
+        q_curve_values.plot_efficiency_vs_Q(ax=ax3[0,0],labels='normalized')
+        q_curve_values.plot_power_vs_Q(ax=ax3[1,0],labels='normalized')
+
+        n_curve_values = HillChart()
+        n_curve_values.read_hill_chart_values(self.datapath)
+        n_curve_values.prepare_hill_chart_data()          
+        n_curve_values.slice_hill_chart_data(selected_n11=None, selected_Q11=BEP_data.Q11[0])        
+        n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
+        n_curve_values.normalize_efficiency(BEP_data.efficiency)               
+        n_curve_values.normalize_n(BEP_data.n)       
+        n_curve_values.normalize_power(BEP_data.power)
+        n_curve_values.plot_efficiency_vs_n(ax=ax3[0,1],labels='normalized')
+        n_curve_values.plot_power_vs_n(ax=ax3[1,1],labels='normalized')
         
         plt.show(block=False)
 

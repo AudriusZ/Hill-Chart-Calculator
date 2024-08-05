@@ -150,13 +150,13 @@ class HillChart:
                 xlabel = 'n [rpm]'
                 ylabel = 'Q [$m^3$/s]'
                 title = f'Hill Chart for constant H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'
-            elif data_type == 'normalised':
+            elif data_type == 'normalized':
                 x = np.array(self.data.n11)
                 y = np.array(self.data.Q11)
                 z = np.array(self.data.efficiency)
-                xlabel = 'n11 (unit speed) - normalised to BEP'
-                ylabel = 'Q11 (unit flow) - normalised to BEP'
-                title = 'Hill Chart - normalised to BEP'
+                xlabel = 'n11 (unit speed) - normalized to BEP'
+                ylabel = 'Q11 (unit flow) - normalized to BEP'
+                title = 'Hill Chart - normalized to BEP'
             else:
                 raise ValueError("Invalid data_type. Use 'default' or 'nD'.")
 
@@ -200,15 +200,28 @@ class HillChart:
     
 
 
-    def plot_efficiency_vs_Q(self, ax=None):
+    def plot_efficiency_vs_Q(self, ax=None, labels = 'default'):
         try:
             if ax is None:
                 raise ValueError("An Axes object must be provided for subplots.")
             
             ax.plot(self.data.Q, self.data.efficiency, 'bo-', label='Efficiency vs Q')
-            ax.set_xlabel('Q [$m^3$/s]')
-            ax.set_ylabel('Efficiency')
-            ax.set_title(f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
+
+            # Define labels and titles for different options            
+            if labels == 'default':                
+                x_label = 'Q [$m^3$/s]'
+                y_label = 'Efficiency'                
+            
+            elif labels == 'normalized':                
+                x_label = 'Normalized Q'
+                y_label = 'Normalized Efficiency'                            
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
+            title = f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'                        
+            
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+            ax.set_title(title)
             ax.grid(True)
             ax.legend()
             
@@ -217,15 +230,28 @@ class HillChart:
         except Exception as e:
             print(f"Error in plotting Efficiency vs Q: {e}")
 
-    def plot_efficiency_vs_n(self, ax=None):
+    def plot_efficiency_vs_n(self, ax=None, labels = 'default'):
         try:           
             if ax is None:
                 raise ValueError("An Axes object must be provided for subplots.")            
             
-            ax.plot(self.data.n, self.data.efficiency, 'bo-', label='Efficiency vs n')
-            ax.set_xlabel('n [rpm]')
-            ax.set_ylabel('Efficiency')
-            ax.set_title(f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f}[m]')
+            ax.plot(self.data.n, self.data.efficiency, 'bo-', label='Efficiency vs n')       
+
+            # Define labels and titles for different options            
+            if labels == 'default':                
+                x_label = 'n [rpm]'
+                y_label = 'Efficiency'                
+            
+            elif labels == 'normalized':                
+                x_label = 'Normalized n'
+                y_label = 'Normalized Efficiency'                            
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
+            title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f}[m]'                        
+            
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+            ax.set_title(title)
             ax.grid(True)
 
             ax.legend()
@@ -233,15 +259,28 @@ class HillChart:
         except Exception as e:
             print(f"Error in plotting Efficiency vs n: {e}")
 
-    def plot_power_vs_Q(self, ax=None):
+    def plot_power_vs_Q(self, ax=None, labels='default'):
         try:           
             if ax is None:
                 raise ValueError("An Axes object must be provided for subplots.")  
             
             ax.plot(self.data.Q, self.data.power, 'bo-', label='Power vs Q')
-            ax.set_xlabel('Q [$m^3$/s]')
-            ax.set_ylabel('Power [W]')
-            ax.set_title(f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
+            
+            # Define labels and titles for different options            
+            if labels == 'default':                
+                x_label = 'Q [$m^3$/s]'
+                y_label = 'Power [W]'                
+            
+            elif labels == 'normalized':                
+                x_label = 'Normalized Q'
+                y_label = 'Normalized Power'                            
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
+            title = f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'            
+            
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+            ax.set_title(title)
             ax.grid(True)
             ax.legend()
             
@@ -249,19 +288,34 @@ class HillChart:
         except Exception as e:
             print(f"Error in plotting Power vs Q: {e}")
 
-    def plot_power_vs_n(self, ax=None):
-        try:           
+    def plot_power_vs_n(self, ax=None, labels='default'):
+        try:
             if ax is None:
-                raise ValueError("An Axes object must be provided for subplots.")  
+                raise ValueError("An Axes object must be provided for subplots.")                     
             
-            ax.plot(self.data.n, self.data.power, 'bo-', label='Power vs n')
-            ax.set_xlabel('n [rpm]')
-            ax.set_ylabel('Power [W]')
-            ax.set_title(f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
+            n_data = self.data.n
+            power_data = self.data.power
+
+            # Define labels and titles for different options
+            if labels == 'default':                
+                x_label = 'n [rpm]'
+                y_label = 'Power [W]'                
+            
+            elif labels == 'normalized':                
+                x_label = 'Normalized n'
+                y_label = 'Normalized Power'                            
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
+            title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'
+
+            ax.plot(n_data, power_data, 'bo-', label='Power vs n')
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+            ax.set_title(title)
             ax.grid(True)
             ax.legend()
             
-            print("Power vs n curve created successfully")
+            print(f"Power vs n curve created successfully with labels '{labels}'")
         except Exception as e:
             print(f"Error in plotting Power vs n: {e}")
 
@@ -350,14 +404,29 @@ class HillChart:
         except Exception as e:
             print(f"Error in case calculations: {e}")
             raise
-    def normalise_efficiency(self, efficiency_norm):
+    def normalize_efficiency(self, efficiency_norm):
+        efficiency_norm = np.array(efficiency_norm)
         self.data.efficiency = self.data.efficiency/efficiency_norm
 
-    def normalise_Q11(self, Q11_norm):
+    def normalize_power(self, power_norm):
+        power_norm = np.array(power_norm)
+        self.data.power = self.data.power/power_norm
+
+    def normalize_Q11(self, Q11_norm):
+        Q11_norm = np.array(Q11_norm)
         self.data.Q11 = self.data.Q11/Q11_norm
 
-    def normalise_n11(self, n11_norm):
+    def normalize_n11(self, n11_norm):
+        n11_norm = np.array(n11_norm)
         self.data.n11 = self.data.n11/n11_norm
+
+    def normalize_Q(self, Q_norm):
+        Q_norm = np.array(Q_norm)
+        self.data.Q = self.data.Q/Q_norm
+
+    def normalize_n(self, n_norm):
+        n_norm = np.array(n_norm)
+        self.data.n = self.data.n/n_norm
 
     def return_values(self):
         return self.data
