@@ -248,7 +248,7 @@ class HillChartCalculator(tk.Tk):
         num_sets = len(BEP_data.H)  # Assuming all lists are of the same length
         for index in range(num_sets):
             self.result_text.insert(tk.END, f"BEP values:\n")
-            for attr in ['H', 'Q', 'n', 'D', 'efficiency', 'power']:
+            for attr in ['H', 'Q', 'n', 'D', 'efficiency', 'power','Ns']:
                 value = getattr(BEP_data, attr)[index] if getattr(BEP_data, attr) else 'N/A'
                 if isinstance(value, float):
                     value_format = f"{value:.2f}"

@@ -19,6 +19,7 @@ class TurbineData:
     n11: List[float] = field(default_factory=list)
     efficiency: List[float] = field(default_factory=list)
     power: List[float] = field(default_factory=list)
+    Ns: List[float] = field(default_factory=list)
 
 
 
@@ -400,6 +401,8 @@ class HillChart:
                 self.data.D.append(D)
                 power = Q * H * 1000 * 9.8 * self.data.efficiency[i]
                 self.data.power.append(power)
+                Ns = (n*Q**0.5)/H**0.75
+                self.data.Ns.append(Ns)
 
         except Exception as e:
             print(f"Error in case calculations: {e}")
