@@ -3,8 +3,9 @@
 
 import tkinter as tk
 from tkinter import messagebox, filedialog
-from HillChart import HillChart
+from HillChart import HillChart  # Ensure HillChart module is available in the environment
 import matplotlib.pyplot as plt
+
 
 print("Hello, this is a tool for hydro turbine scaling")
 
@@ -12,22 +13,25 @@ class HillChartCalculator(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('Hill Chart Calculator')
-        self.geometry("350x700")  
+        self.geometry("350x850")
         
         self.checkbox_vars = []
         self.checkboxes = []
         self.options = ["Head H [m]", "Flow rate Q [m^3/s]", "Rotational speed n [rpm]", "Runner diameter D [m]"]
+        
 
         self.output_options = ["3D Hill Chart", "Hill Chart Contour", "2D Curve Slices", 'normalized Hill Chart Contour', "normalized 2D Curve Slices"]
         self.output_vars = [tk.IntVar() for _ in self.output_options]
 
-        self.n_contours = 25  # Default value
+        self.extrapolation_options = ["Extrapolate unit speed n11 [rpm]","Extrapolate Blade Angles [degree]"]
+        self.extrapolation_options_vars = [tk.IntVar() for _ in self.extrapolation_options]
+        self.extrapolation_entry_vars = []
+        self.extrapolation_entries = []
+
+        self.n_contours = 25  # Default value for contour lines
 
         self.create_widgets()
-
         self.datapath = None  # Initially, no turbine data is selected
-        # Bypass selection process for debugging        
-        # self.bypass_selection()
         
     def create_widgets(self):
         tk.Label(self, text="First, select the turbine:").pack()
@@ -58,13 +62,19 @@ class HillChartCalculator(tk.Tk):
         for i, output_option in enumerate(self.output_options):
             self.create_output_checkbox(output_option, self.output_vars[i])
 
-        # Widgets for setting n_contours
         tk.Label(self, text="\nSet number of contours:").pack()
         self.n_contours_entry = tk.Entry(self)
         self.n_contours_entry.pack()
         self.n_contours_entry.insert(0, str(self.n_contours))  # Set default value
-        #self.set_contours_button = tk.Button(self, text="Set Contours", command=self.set_n_contours)
-        #self.set_contours_button.pack()
+        
+        # Define entry labels for extrapolation checkboxes
+        extrapolation_entry_labels = [
+            ["Min", "Max", "Number of data points"],
+            ["Min", "Max", "Number of data points"]
+        ]
+
+        for i, option in enumerate(self.extrapolation_options):
+            self.create_extrapolation_checkbox(option, self.extrapolation_options_vars[i], extrapolation_entry_labels[i])
 
         self.calculate_button = tk.Button(self, text="Calculate", command=self.generate_outputs, state='disabled')
         self.calculate_button.pack()
@@ -72,7 +82,6 @@ class HillChartCalculator(tk.Tk):
         self.result_text = tk.Text(self, height=10, width=40)
         self.result_text.pack()
 
-        
 
     def create_checkbox(self, text, value):
         var = tk.IntVar()
@@ -85,8 +94,32 @@ class HillChartCalculator(tk.Tk):
         chk = tk.Checkbutton(self, text=text, variable=var, onvalue=1, offvalue=0)
         chk.pack(anchor=tk.W)
 
+    def create_extrapolation_checkbox(self, text, var, entry_labels):
+        # Create the Checkbutton
+        chk = tk.Checkbutton(self, text=text, variable=var, onvalue=1, offvalue=0, command=lambda: self.toggle_entries(var, entry_labels))
+        chk.pack(anchor=tk.W)
+        
+        # Create entries for the checkbox
+        entries_frame = tk.Frame(self)
+        entries_frame.pack(anchor=tk.W)
+        
+        entry_vars = [tk.StringVar() for _ in entry_labels]
+        self.extrapolation_entry_vars.append(entry_vars)  # Store entry variables
+        self.extrapolation_entries.append(entries_frame)   # Store entry frames
+        
+        for label, entry_var in zip(entry_labels, entry_vars):
+            tk.Label(entries_frame, text=label).pack(anchor=tk.W)
+            entry = tk.Entry(entries_frame, textvariable=entry_var, state='disabled')
+            entry.pack(anchor=tk.W)    
+    
+    def toggle_entries(self, var, entry_labels):
+        state = 'normal' if var.get() == 1 else 'disabled'
+        index = self.extrapolation_options_vars.index(var)
+        for entry in self.extrapolation_entries[index].winfo_children():
+            entry.config(state=state)
+
     def update_count(self):
-        if self.datapath:  # Ensure that turbine data has been selected
+        if self.datapath:
             selected_values = [var.get() for var in self.checkbox_vars if var.get() != 0]
             selected_count = len(selected_values)
             if selected_count == 2:
@@ -111,7 +144,6 @@ class HillChartCalculator(tk.Tk):
         if file_path:
             self.datapath = file_path
             print(f"Loaded data from {file_path}")
-            # Enable the checkboxes now that a turbine file is selected
             for chk in self.checkboxes:
                 chk.config(state='normal')
 
@@ -157,9 +189,21 @@ class HillChartCalculator(tk.Tk):
         BEP_data = BEP_values.return_values()
         
         hill_values = HillChart()
-        hill_values.read_hill_chart_values(self.datapath)
-        hill_values.prepare_hill_chart_data()
+        hill_values.read_hill_chart_values(self.datapath)                
         
+        
+        if self.extrapolation_options_vars[0].get():  # Check if "Extrapolate unit speed n11 [rpm]" is selected                        
+            entry_values = [float(var.get()) for var in self.extrapolation_entry_vars[0]]            
+            entry_values[2] = int(entry_values[2])
+            hill_values.extrapolate_along_n11(min_n11=entry_values[0],max_n11=entry_values[1],n_n11=entry_values[2])
+
+        if self.extrapolation_options_vars[1].get():  # Check if "Extrapolate Blade Angles [degree]" is selected
+            entry_values = [float(var.get()) for var in self.extrapolation_entry_vars[1]]            
+            entry_values[2] = int(entry_values[2])
+            hill_values.extrapolate_along_blade_angles(min_angle=entry_values[0],max_angle=entry_values[1],n_angle=entry_values[2])
+        
+        
+        hill_values.prepare_hill_chart_data()
         
         return BEP_data, hill_values
 
@@ -168,7 +212,7 @@ class HillChartCalculator(tk.Tk):
         ax1 = fig.add_subplot(111, projection='3d')        
         hill_values.plot_hill_chart(ax=ax1)
         raw_data = HillChart()
-        raw_data.read_hill_chart_values(self.datapath)
+        raw_data.read_hill_chart_values(self.datapath)        
         raw_data.plot_3d_scatter(ax=ax1)
         plt.show(block=False)
 
@@ -197,7 +241,7 @@ class HillChartCalculator(tk.Tk):
         plt.show(block=False)
 
     def plot_curve_slices(self, BEP_data):
-        _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  # Adjust size and layout as needed
+        _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         q_curve_values = HillChart()
         q_curve_values.read_hill_chart_values(self.datapath)
         q_curve_values.prepare_hill_chart_data()          
@@ -217,7 +261,7 @@ class HillChartCalculator(tk.Tk):
         plt.show(block=False)
 
     def plot_normalized_curve_slices(self, BEP_data):
-        _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  # Adjust size and layout as needed
+        _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         q_curve_values = HillChart()
         q_curve_values.read_hill_chart_values(self.datapath)
         q_curve_values.prepare_hill_chart_data()          
@@ -226,8 +270,8 @@ class HillChartCalculator(tk.Tk):
         q_curve_values.normalize_efficiency(BEP_data.efficiency)       
         q_curve_values.normalize_Q(BEP_data.Q)               
         q_curve_values.normalize_power(BEP_data.power)
-        q_curve_values.plot_efficiency_vs_Q(ax=ax3[0,0],labels='normalized')
-        q_curve_values.plot_power_vs_Q(ax=ax3[1,0],labels='normalized')
+        q_curve_values.plot_efficiency_vs_Q(ax=ax3[0,0], labels='normalized')
+        q_curve_values.plot_power_vs_Q(ax=ax3[1,0], labels='normalized')
 
         n_curve_values = HillChart()
         n_curve_values.read_hill_chart_values(self.datapath)
@@ -237,18 +281,16 @@ class HillChartCalculator(tk.Tk):
         n_curve_values.normalize_efficiency(BEP_data.efficiency)               
         n_curve_values.normalize_n(BEP_data.n)       
         n_curve_values.normalize_power(BEP_data.power)
-        n_curve_values.plot_efficiency_vs_n(ax=ax3[0,1],labels='normalized')
-        n_curve_values.plot_power_vs_n(ax=ax3[1,1],labels='normalized')
+        n_curve_values.plot_efficiency_vs_n(ax=ax3[0,1], labels='normalized')
+        n_curve_values.plot_power_vs_n(ax=ax3[1,1], labels='normalized')
         
         plt.show(block=False)
 
     def display_results(self, BEP_data):
-        # Clear previous results
         self.result_text.delete(1.0, tk.END)
         print("Cleared previous BEP text data")
         
-        # Display new results for each index in the lists
-        num_sets = len(BEP_data.H)  # Assuming all lists are of the same length
+        num_sets = len(BEP_data.H)  
         for index in range(num_sets):
             self.result_text.insert(tk.END, f"BEP values:\n")
             for attr in ['H', 'Q', 'n', 'D', 'efficiency', 'power','Ns']:
@@ -258,18 +300,16 @@ class HillChartCalculator(tk.Tk):
                 else:
                     value_format = str(value)
                 self.result_text.insert(tk.END, f"{attr} = {value_format}\n")
-            self.result_text.insert(tk.END, "\n")  # Add a newline for spacing between sets 
+            self.result_text.insert(tk.END, "\n")
         print("Displayed new BEP text data")
 
-
     def bypass_selection(self):
-        # Directly set the selected options and input values - for debugging
-        self.datapath = 'D_Liszka_et_al_turbine.csv'
-        self.checkbox_vars[0].set(1)  # Select "Head H [m]"
-        self.checkbox_vars[3].set(4)  # Select "Runner diameter D [m]"
+        self.datapath = 'Mogu_D1.65m.csv'
+        self.checkbox_vars[0].set(1)  
+        self.checkbox_vars[3].set(4)  
         self.set_inputs()
-        self.var_entry_1.insert(0, '2.15')  # Set value for "Head H [m]"
-        self.var_entry_2.insert(0, '1.65')  # Set value for "Runner diameter D [m]"
+        self.var_entry_1.insert(0, '2.15')  
+        self.var_entry_2.insert(0, '1.65')  
         self.calculate_button.config(state='normal')
         self.generate_outputs()
 
