@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import griddata
 import copy
-from scipy.interpolate import CubicSpline
+from numpy.polynomial import Polynomial
+from scipy.interpolate import PchipInterpolator
+
 
 
 
@@ -90,8 +92,10 @@ class HillChart:
             new_n11_values = np.linspace(min_n11, max_n11, n_n11)            
 
             # Perform cubic interpolation for Q11 and efficiency
-            Q11_interpolator = CubicSpline(n11_subset, Q11_subset)
-            efficiency_interpolator = CubicSpline(n11_subset, efficiency_subset)
+            #Q11_interpolator = Polynomial.fit(n11_subset, Q11_subset, 2)
+            #efficiency_interpolator = Polynomial.fit(n11_subset, efficiency_subset, 2)
+            Q11_interpolator = PchipInterpolator(n11_subset, Q11_subset)
+            efficiency_interpolator = PchipInterpolator(n11_subset, efficiency_subset)
 
             new_Q11_values = Q11_interpolator(new_n11_values)
             new_efficiency_values = efficiency_interpolator(new_n11_values)
@@ -151,8 +155,10 @@ class HillChart:
             
 
             # Perform cubic interpolation for Q11 and efficiency
-            Q11_interpolator = CubicSpline(blade_angles_subset, Q11_subset)
-            efficiency_interpolator = CubicSpline(blade_angles_subset, efficiency_subset)
+            #Q11_interpolator = Polynomial.fit(blade_angles_subset, Q11_subset, 2)
+            #efficiency_interpolator = Polynomial.fit(blade_angles_subset, efficiency_subset, 2)
+            Q11_interpolator = PchipInterpolator(blade_angles_subset, Q11_subset)
+            efficiency_interpolator = PchipInterpolator(blade_angles_subset, efficiency_subset)
 
             new_Q11_values = Q11_interpolator(new_blade_angle_values)
             new_efficiency_values = efficiency_interpolator(new_blade_angle_values)
@@ -164,10 +170,10 @@ class HillChart:
             new_efficiency.extend(new_efficiency_values)
 
         # Combine original data with new interpolated data
-        self.data.blade_angle.extend(new_blade_angle)
-        self.data.n11.extend(new_n11)
-        self.data.Q11.extend(new_Q11)
-        self.data.efficiency.extend(new_efficiency)
+        self.data.blade_angle = new_blade_angle
+        self.data.n11 = new_n11
+        self.data.Q11 = new_Q11
+        self.data.efficiency = new_efficiency
         
     def prepare_hill_chart_data(self):        
         x = np.array(self.data.n11)
@@ -181,6 +187,10 @@ class HillChart:
 
         # Interpolate unstructured 3-dimensional data
         self.data.efficiency = griddata((x, y), z, (self.data.n11, self.data.Q11), method='cubic')
+
+        # Apply threshold filtering after interpolation
+        threshold = 0.5
+        self.data.efficiency[self.data.efficiency < threshold] = np.nan
 
         return self.data.n11, self.data.Q11, self.data.efficiency
     
