@@ -4,8 +4,10 @@
 import tkinter as tk
 from tkinter import messagebox, filedialog
 from HillChart import HillChart  # Ensure HillChart module is available in the environment
+from HillChartProcessor import HillChartProcessor
 import matplotlib.pyplot as plt
 import copy
+
 
 
 
@@ -16,21 +18,27 @@ class HillChartCalculator(tk.Tk):
         super().__init__()
         self.title('Hill Chart Calculator')
         self.geometry("350x850")
-        
+
         self.checkbox_vars = []
         self.checkboxes = []
         self.options = ["Head H [m]", "Flow rate Q [m^3/s]", "Rotational speed n [rpm]", "Runner diameter D [m]"]
-        
 
         self.output_options = ["3D Hill Chart", "Hill Chart Contour", "2D Curve Slices", 'normalized Hill Chart Contour', "normalized 2D Curve Slices"]
         self.output_vars = [tk.IntVar() for _ in self.output_options]
 
-        self.extrapolation_options = ["Extrapolate unit speed n11 [rpm]","Extrapolate Blade Angles [degree]"]
+        self.extrapolation_options = ["Extrapolate unit speed n11 [rpm]", "Extrapolate Blade Angles [degree]"]
         self.extrapolation_options_vars = [tk.IntVar() for _ in self.extrapolation_options]
         self.extrapolation_entry_vars = []
         self.extrapolation_entries = []
 
         self.n_contours = 25  # Default value for contour lines
+
+        # Instance variables for holding GUI inputs
+        self.selected_values = []
+        self.var1 = None
+        self.var2 = None
+        self.extrapolation_values_n11 = []
+        self.extrapolation_values_blade_angles = []
 
         self.create_widgets()
         self.datapath = None  # Initially, no turbine data is selected
@@ -134,11 +142,11 @@ class HillChartCalculator(tk.Tk):
                 self.next_button.config(state='disabled')
 
     def set_inputs(self):
-        selected_values = [var.get() for var in self.checkbox_vars if var.get() != 0]
+        self.selected_values = [var.get() for var in self.checkbox_vars if var.get() != 0]
         self.var_entry_1.config(state='normal')
         self.var_entry_2.config(state='normal')
-        self.var_label_1.config(text=self.options[selected_values[0]-1])
-        self.var_label_2.config(text=self.options[selected_values[1]-1])
+        self.var_label_1.config(text=self.options[self.selected_values[0] - 1])
+        self.var_label_2.config(text=self.options[self.selected_values[1] - 1])
         self.calculate_button.config(state='normal')
 
     def select_turbine_datafile(self):
@@ -151,27 +159,26 @@ class HillChartCalculator(tk.Tk):
 
     def set_n_contours(self):
         try:
-            self.n_contours = int(self.n_contours_entry.get())            
+            self.n_contours = int(self.n_contours_entry.get())
         except ValueError:
             messagebox.showerror("Input error", "Please enter a valid integer for the number of contours.")
 
     def generate_outputs(self):
-        try:
-            var1 = float(self.var_entry_1.get())
-            var2 = float(self.var_entry_2.get())
-        except ValueError:
-            messagebox.showerror("Input error", "Please enter valid numbers.")
-            return
-        self.set_n_contours()
+        # Gather all GUI inputs before processing
+        self.get_selected_values()
+        self.get_extrapolation_values()
 
-        BEP_data, hill_values = self.prepare_core_data(var1, var2)
-        
+        # Proceed with calculations using instance variables
+        self.set_n_contours()
+        BEP_data, hill_values = self.prepare_core_data()
+
+        # Generate the outputs based on user selection
         if self.output_vars[0].get():
             self.plot_3d_hill_chart(hill_values)
-        
+
         if self.output_vars[1].get():
             self.plot_hill_chart_contour(hill_values, BEP_data)
-        
+
         if self.output_vars[2].get():
             self.plot_curve_slices(hill_values, BEP_data)
 
@@ -180,33 +187,44 @@ class HillChartCalculator(tk.Tk):
 
         if self.output_vars[4].get():
             self.plot_normalized_curve_slices(hill_values, BEP_data)
-        
+
         self.display_results(BEP_data)
 
-    def prepare_core_data(self, var1, var2):
-        BEP_values = HillChart()
-        BEP_values.read_hill_chart_values(self.datapath)        
-        BEP_values.filter_for_maximum_efficiency()
-        BEP_values.calculate_cases([var.get() for var in self.checkbox_vars if var.get() != 0], var1, var2)
-        BEP_data = BEP_values.return_values()
-        
-        hill_values = HillChart()
-        hill_values.read_hill_chart_values(self.datapath)                
-        
-        
-        if self.extrapolation_options_vars[0].get():  # Check if "Extrapolate unit speed n11 [rpm]" is selected                        
-            entry_values = [float(var.get()) for var in self.extrapolation_entry_vars[0]]            
-            entry_values[2] = int(entry_values[2])
-            hill_values.extrapolate_along_n11(min_n11=entry_values[0],max_n11=entry_values[1],n_n11=entry_values[2])
+    def get_selected_values(self):
+        try:
+            self.var1 = float(self.var_entry_1.get())
+            self.var2 = float(self.var_entry_2.get())
+        except ValueError:
+            messagebox.showerror("Input error", "Please enter valid numbers.")
+            return
 
-        if self.extrapolation_options_vars[1].get():  # Check if "Extrapolate Blade Angles [degree]" is selected
-            entry_values = [float(var.get()) for var in self.extrapolation_entry_vars[1]]            
-            entry_values[2] = int(entry_values[2])
-            hill_values.extrapolate_along_blade_angles(min_angle=entry_values[0],max_angle=entry_values[1],n_angle=entry_values[2])
-        
-        
+    def get_extrapolation_values(self):
+        if self.extrapolation_options_vars[0].get():  # Extrapolate unit speed n11 [rpm]
+            self.extrapolation_values_n11 = [float(var.get()) for var in self.extrapolation_entry_vars[0]]
+            self.extrapolation_values_n11[2] = int(self.extrapolation_values_n11[2])
+
+        if self.extrapolation_options_vars[1].get():  # Extrapolate Blade Angles [degree]
+            self.extrapolation_values_blade_angles = [float(var.get()) for var in self.extrapolation_entry_vars[1]]
+            self.extrapolation_values_blade_angles[2] = int(self.extrapolation_values_blade_angles[2])    
+
+    def prepare_core_data(self):
+        BEP_values = HillChart()
+        BEP_values.read_hill_chart_values(self.datapath)
+        BEP_values.filter_for_maximum_efficiency()
+        BEP_values.calculate_cases(self.selected_values, self.var1, self.var2)
+        BEP_data = BEP_values.return_values()
+
+        hill_values = HillChart()
+        hill_values.read_hill_chart_values(self.datapath)
+
+        if self.extrapolation_options_vars[0].get():  # Extrapolate unit speed n11 [rpm]
+            hill_values.extrapolate_along_n11(min_n11=self.extrapolation_values_n11[0], max_n11=self.extrapolation_values_n11[1], n_n11=self.extrapolation_values_n11[2])
+
+        if self.extrapolation_options_vars[1].get():  # Extrapolate Blade Angles [degree]
+            hill_values.extrapolate_along_blade_angles(min_angle=self.extrapolation_values_blade_angles[0], max_angle=self.extrapolation_values_blade_angles[1], n_angle=self.extrapolation_values_blade_angles[2])
+
         hill_values.prepare_hill_chart_data()
-        
+
         return BEP_data, hill_values
 
     def plot_3d_hill_chart(self, hill_values):
