@@ -6,6 +6,7 @@ from tkinter import messagebox, filedialog
 from HillChart import HillChart  # Ensure HillChart module is available in the environment
 import matplotlib.pyplot as plt
 import copy
+from HillChartProcessor import HillChartProcessor
 
 
 
@@ -164,30 +165,19 @@ class HillChartCalculator(tk.Tk):
 
     def generate_outputs(self):
         # Gather all GUI inputs before processing
+        self.set_n_contours()
+        
+        
         self.get_selected_values()
         self.get_extrapolation_values()
-
-        # Proceed with calculations using instance variables
-        self.set_n_contours()
-        BEP_data, hill_values = self.prepare_core_data()
-
-        # Generate the outputs based on user selection
-        if self.output_vars[0].get():
-            self.plot_3d_hill_chart(hill_values)
-
-        if self.output_vars[1].get():
-            self.plot_hill_chart_contour(hill_values, BEP_data)
-
-        if self.output_vars[2].get():
-            self.plot_curve_slices(hill_values, BEP_data)
-
-        if self.output_vars[3].get():
-            self.plot_normalized_hill_chart_contour(hill_values, BEP_data)
-
-        if self.output_vars[4].get():
-            self.plot_normalized_curve_slices(hill_values, BEP_data)
-
-        self.display_results(BEP_data)
+        
+        plot_processor = HillChartProcessor()
+        plot_processor.get_file_path(self.datapath)
+        plot_processor.get_turbine_parameters(self.selected_values, self.var1, self.var2)
+        plot_processor.get_plot_parameters(self.n_contours,[self.extrapolation_options_vars[0].get(),self.extrapolation_options_vars[1].get()],self.extrapolation_values_n11,self.extrapolation_values_blade_angles)
+        plot_options = [var.get() for var in self.output_vars]
+        plot_processor.get_output_parameters(plot_options)        
+        plot_processor.generate_outputs()        
 
     def get_selected_values(self):
         try:
@@ -198,112 +188,15 @@ class HillChartCalculator(tk.Tk):
             return
 
     def get_extrapolation_values(self):
+        
+        
         if self.extrapolation_options_vars[0].get():  # Extrapolate unit speed n11 [rpm]
             self.extrapolation_values_n11 = [float(var.get()) for var in self.extrapolation_entry_vars[0]]
             self.extrapolation_values_n11[2] = int(self.extrapolation_values_n11[2])
 
         if self.extrapolation_options_vars[1].get():  # Extrapolate Blade Angles [degree]
             self.extrapolation_values_blade_angles = [float(var.get()) for var in self.extrapolation_entry_vars[1]]
-            self.extrapolation_values_blade_angles[2] = int(self.extrapolation_values_blade_angles[2])    
-
-    def prepare_core_data(self):
-        BEP_values = HillChart()
-        BEP_values.read_hill_chart_values(self.datapath)
-        BEP_values.filter_for_maximum_efficiency()
-        BEP_values.calculate_cases(self.selected_values, self.var1, self.var2)
-        BEP_data = BEP_values.return_values()
-
-        hill_values = HillChart()
-        hill_values.read_hill_chart_values(self.datapath)
-
-        if self.extrapolation_options_vars[0].get():  # Extrapolate unit speed n11 [rpm]
-            hill_values.extrapolate_along_n11(min_n11=self.extrapolation_values_n11[0], max_n11=self.extrapolation_values_n11[1], n_n11=self.extrapolation_values_n11[2])
-
-        if self.extrapolation_options_vars[1].get():  # Extrapolate Blade Angles [degree]
-            hill_values.extrapolate_along_blade_angles(min_angle=self.extrapolation_values_blade_angles[0], max_angle=self.extrapolation_values_blade_angles[1], n_angle=self.extrapolation_values_blade_angles[2])
-
-        hill_values.prepare_hill_chart_data()
-
-        return BEP_data, hill_values
-
-    def plot_3d_hill_chart(self, hill_values):
-        fig = plt.figure()
-        ax1 = fig.add_subplot(111, projection='3d')        
-        hill_values.plot_hill_chart(ax=ax1)
-        raw_data = HillChart()
-        raw_data.read_hill_chart_values(self.datapath)        
-
-        '''
-        if self.extrapolation_options_vars[0].get():  # Check if "Extrapolate unit speed n11 [rpm]" is selected                        
-            entry_values = [float(var.get()) for var in self.extrapolation_entry_vars[0]]            
-            entry_values[2] = int(entry_values[2])
-            raw_data.extrapolate_along_n11(min_n11=entry_values[0],max_n11=entry_values[1],n_n11=entry_values[2])
-
-        if self.extrapolation_options_vars[1].get():  # Check if "Extrapolate Blade Angles [degree]" is selected
-            entry_values = [float(var.get()) for var in self.extrapolation_entry_vars[1]]            
-            entry_values[2] = int(entry_values[2])
-            raw_data.extrapolate_along_blade_angles(min_angle=entry_values[0],max_angle=entry_values[1],n_angle=entry_values[2])
-        '''
-        raw_data.plot_3d_scatter(ax=ax1)
-        plt.show(block=False)
-
-    def plot_hill_chart_contour(self, hill_values, BEP_data):
-        hill_values_nD = copy.deepcopy(hill_values)        
-        _, ax2 = plt.subplots(1, 2, figsize=(15, 7))        
-        hill_values.plot_hill_chart_contour(ax=ax2[0], n_contours=self.n_contours, data_type='default')                 
-        hill_values_nD.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])
-        hill_values_nD.plot_hill_chart_contour(ax=ax2[1], n_contours=self.n_contours, data_type='nD') 
-        plt.tight_layout()
-        plt.show(block=False)
-
-    def plot_normalized_hill_chart_contour(self, hill_values, BEP_data):
-        hill_values_norm = copy.deepcopy(hill_values)        
-        hill_values_norm.normalize_efficiency(BEP_data.efficiency)
-        hill_values_norm.normalize_Q11(BEP_data.Q11)
-        hill_values_norm.normalize_n11(BEP_data.n11)
-        _, ax2 = plt.subplots(1, 2, figsize=(15, 7))        
-        hill_values.plot_hill_chart_contour(ax=ax2[0],n_contours=self.n_contours, data_type='default')                         
-        hill_values_norm.plot_hill_chart_contour(ax=ax2[1],n_contours=self.n_contours, data_type='normalized') 
-        plt.tight_layout()
-        plt.show(block=False)
-
-    def plot_curve_slices(self, hill_values, BEP_data):
-        _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
-        q_curve_values = copy.deepcopy(hill_values)        
-        q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)        
-        q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])                    
-        q_curve_values.plot_efficiency_vs_Q(ax=ax3[0,0])
-        q_curve_values.plot_power_vs_Q(ax=ax3[1,0])
-
-        n_curve_values = copy.deepcopy(hill_values)        
-        n_curve_values.slice_hill_chart_data(selected_n11=None, selected_Q11=BEP_data.Q11[0])        
-        n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
-        n_curve_values.plot_efficiency_vs_n(ax=ax3[0,1])
-        n_curve_values.plot_power_vs_n(ax=ax3[1,1])
-        
-        plt.show(block=False)
-
-    def plot_normalized_curve_slices(self, hill_values, BEP_data):
-        _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
-        q_curve_values = copy.deepcopy(hill_values)        
-        q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)        
-        q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])            
-        q_curve_values.normalize_efficiency(BEP_data.efficiency)       
-        q_curve_values.normalize_Q(BEP_data.Q)               
-        q_curve_values.normalize_power(BEP_data.power)
-        q_curve_values.plot_efficiency_vs_Q(ax=ax3[0,0], labels='normalized')
-        q_curve_values.plot_power_vs_Q(ax=ax3[1,0], labels='normalized')
-
-        n_curve_values = copy.deepcopy(hill_values)        
-        n_curve_values.slice_hill_chart_data(selected_n11=None, selected_Q11=BEP_data.Q11[0])        
-        n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
-        n_curve_values.normalize_efficiency(BEP_data.efficiency)               
-        n_curve_values.normalize_n(BEP_data.n)       
-        n_curve_values.normalize_power(BEP_data.power)
-        n_curve_values.plot_efficiency_vs_n(ax=ax3[0,1], labels='normalized')
-        n_curve_values.plot_power_vs_n(ax=ax3[1,1], labels='normalized')
-        
-        plt.show(block=False)
+            self.extrapolation_values_blade_angles[2] = int(self.extrapolation_values_blade_angles[2])        
 
     def display_results(self, BEP_data):
         self.result_text.delete(1.0, tk.END)
@@ -320,17 +213,7 @@ class HillChartCalculator(tk.Tk):
                     value_format = str(value)
                 self.result_text.insert(tk.END, f"{attr} = {value_format}\n")
             self.result_text.insert(tk.END, "\n")
-        print("Displayed new BEP text data")
-
-    def bypass_selection(self):
-        self.datapath = 'Mogu_D1.65m.csv'
-        self.checkbox_vars[0].set(1)  
-        self.checkbox_vars[3].set(4)  
-        self.set_inputs()
-        self.var_entry_1.insert(0, '2.15')  
-        self.var_entry_2.insert(0, '1.65')  
-        self.calculate_button.config(state='normal')
-        self.generate_outputs()
+        print("Displayed new BEP text data")    
 
 if __name__ == "__main__":
     app = HillChartCalculator()

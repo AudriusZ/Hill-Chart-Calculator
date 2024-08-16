@@ -37,15 +37,18 @@ class HillChartProcessor:
     def get_plot_parameters(self,n_contours,extrapolation_options_vars,extrapolation_values_n11,extrapolation_values_blade_angles):
         self.n_contours = n_contours        
         
+        
         self.extrapolate_n11 = extrapolation_options_vars[0]
-        self.n11_min = extrapolation_values_n11[0]
-        self.n11_max = extrapolation_values_n11[1]
-        self.n_n11 = extrapolation_values_n11[2]
+        if self.extrapolate_n11:
+            self.n11_min = extrapolation_values_n11[0]
+            self.n11_max = extrapolation_values_n11[1]
+            self.n_n11 = extrapolation_values_n11[2]
 
         self.extrapolate_blade = extrapolation_options_vars[1]
-        self.min_angle = extrapolation_values_blade_angles[0]
-        self.max_angle = extrapolation_values_blade_angles[1]
-        self.n_angle = extrapolation_values_blade_angles[2]
+        if self.extrapolate_blade:
+            self.min_angle = extrapolation_values_blade_angles[0]
+            self.max_angle = extrapolation_values_blade_angles[1]
+            self.n_angle = extrapolation_values_blade_angles[2]
 
     def get_output_parameters(self, output_vars):        
         self.output_vars = output_vars
@@ -196,8 +199,8 @@ class HillChartProcessor:
             self.result_text.insert(tk.END, "\n")
         print("Displayed new BEP text data")
     '''
-
-test_class = True
+'''
+test_class = False
 if test_class:
     test_instance = HillChartProcessor()
     test_instance.default_turbine_parameters()
@@ -205,3 +208,4 @@ if test_class:
     test_instance.default_output_parameters()
     test_instance.generate_outputs()
     print("done")
+'''
