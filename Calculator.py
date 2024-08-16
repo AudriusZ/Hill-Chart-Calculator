@@ -4,7 +4,6 @@
 import tkinter as tk
 from tkinter import messagebox, filedialog
 from HillChart import HillChart  # Ensure HillChart module is available in the environment
-from HillChartProcessor import HillChartProcessor
 import matplotlib.pyplot as plt
 import copy
 
