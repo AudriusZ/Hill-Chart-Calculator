@@ -91,20 +91,20 @@ class HillChartCalculator(tk.Tk):
         # Create a frame for surface fit options
         surface_fit_frame = tk.LabelFrame(parent, text="Surface Fit Options", padx=10, pady=10, relief=tk.GROOVE, bd=2)
         surface_fit_frame.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")  # Use grid layout
-        
+
         # Configure surface_fit_frame to expand
         surface_fit_frame.columnconfigure(0, weight=1)
         surface_fit_frame.rowconfigure(0, weight=1)
 
-        tk.Label(surface_fit_frame, text="\nSet number of contours:").pack()        
-        self.n_contours_entry = tk.Entry(surface_fit_frame)
-        self.n_contours_entry.pack()
+        tk.Label(surface_fit_frame, text="Set number of contours:").grid(row=0, column=0, padx=1, pady=0, sticky="w")
+        self.n_contours_entry = tk.Entry(surface_fit_frame, width=7)
+        self.n_contours_entry.grid(row=1, column=0, padx=1, pady=0, sticky="w")
         self.n_contours_entry.insert(0, str(self.n_contours))  # Set default value
-
+   
         # Define entry labels for extrapolation checkboxes
         extrapolation_entry_labels = [
-            ["Min", "Max", "Number of data points"],
-            ["Min", "Max", "Number of data points"]
+            ["Min", "Max", "No. of Pts"],
+            ["Min", "Max", "No. of Pts"]
         ]
 
         for i, option in enumerate(self.extrapolation_options):
@@ -139,23 +139,28 @@ class HillChartCalculator(tk.Tk):
         chk.pack(anchor=tk.W)
         
 
-    def create_extrapolation_checkbox(self, text, var, entry_labels, parent):
-        # Create the Checkbutton
-        chk = tk.Checkbutton(parent, text=text, variable=var, onvalue=1, offvalue=0, command=lambda: self.toggle_entries(var))
-        chk.pack(anchor=tk.W)
+    def create_extrapolation_checkbox(self, option, var, labels, parent):
+        # Create a frame for the checkbox and associated entries
+        frame = tk.Frame(parent)
+        frame.grid(sticky="w", padx=5, pady=5)  # Ensure proper padding and alignment
+
+        # Create the checkbox in its own row
+        checkbox = tk.Checkbutton(frame, text=option, variable=var)
+        checkbox.grid(row=0, column=0, sticky="w", padx=5, pady=(5, 0))  # Top padding, no bottom padding
+
+        # Create the entry labels and fields
+        entry_frame = tk.Frame(frame)
+        entry_frame.grid(row=1, column=0, sticky="w", padx=5, pady=(0, 5))  # Bottom padding, no top padding
+
+        # Create the entry labels and fields in a single row
+        for j, label in enumerate(labels):
+            tk.Label(entry_frame, text=label).grid(row=0, column=j, padx=5)
+            entry = tk.Entry(entry_frame, width=7)
+            entry.grid(row=1, column=j, padx=5)
+            #entry.insert(0, str(j))
         
-        # Create entries for the checkbox
-        entries_frame = tk.Frame(parent)
-        entries_frame.pack(anchor=tk.W)
-        
-        entry_vars = [tk.StringVar() for _ in entry_labels]
-        self.extrapolation_entry_vars.append(entry_vars)  # Store entry variables
-        self.extrapolation_entries.append(entries_frame)   # Store entry frames
-        
-        for label, entry_var in zip(entry_labels, entry_vars):
-            tk.Label(entries_frame, text=label).pack(anchor=tk.W)
-            entry = tk.Entry(entries_frame, textvariable=entry_var, state='disabled')
-            entry.pack(anchor=tk.W)
+            
+
 
 
     def toggle_entries(self, var):
@@ -176,6 +181,11 @@ class HillChartCalculator(tk.Tk):
                 for chk in self.checkboxes:
                     chk.config(state='normal')                
                 self.set_input_parameters('disabled')
+
+    def update_extrapolation_count(self):
+        if self.extrapolation_options_vars[0].get() ==0:
+            self.extrapolation_options_vars[1] = 0              
+            
 
     def set_input_parameters(self, state='normal'):
         if state == 'normal':
