@@ -2,9 +2,14 @@
 from HillChart import HillChart  # Ensure HillChart module is available in the environment
 import matplotlib.pyplot as plt
 import copy
+import tkinter as tk
 
 class HillChartProcessor:
-    
+    def __init__(self):
+        # Initialize the Tkinter root window (you can hide it if necessary)
+        self.root_window = tk.Tk()
+        self.root_window.withdraw()  # Hide the root window as it's not needed
+
     def default_turbine_parameters(self):
         datapath = 'Mogu_D1.65m.csv'        
         selected_values = [1,4] #1 - H, 2 - Q, 3 - n, 4 - D
@@ -23,7 +28,7 @@ class HillChartProcessor:
         self.get_plot_parameters(n_contours,extrapolation_options_vars,extrapolation_values_n11,extrapolation_values_blade_angles)
 
     def default_output_parameters(self):       
-        output_vars = [1,1,1,1,1]
+        output_vars = [1,1,1,1,1,1]
         self.get_output_parameters(output_vars)
 
     def get_file_path(self, file_path):
@@ -92,7 +97,8 @@ class HillChartProcessor:
         if self.output_vars[4]:
             self.plot_normalized_curve_slices(hill_values, BEP_data)
 
-        self.print_results(BEP_data)
+        if self.output_vars[5]:
+            self.display_results_in_textbox(BEP_data)
     
     def plot_3d_hill_chart(self, hill_values):
         fig = plt.figure()
@@ -179,27 +185,30 @@ class HillChartProcessor:
     def print_results(self, BEP_data):
         prepared_text = self.prepare_text_results(BEP_data)
         print(prepared_text)
-        
 
-    '''
-    def display_results(self, BEP_data):
-        self.result_text.delete(1.0, tk.END)
-        print("Cleared previous BEP text data")
-        
-        num_sets = len(BEP_data.H)  
-        for index in range(num_sets):
-            self.result_text.insert(tk.END, f"BEP values:\n")
-            for attr in ['H', 'Q', 'n', 'D', 'efficiency', 'power','Ns']:
-                value = getattr(BEP_data, attr)[index] if getattr(BEP_data, attr) else 'N/A'
-                if isinstance(value, float):
-                    value_format = f"{value:.2f}"
-                else:
-                    value_format = str(value)
-                self.result_text.insert(tk.END, f"{attr} = {value_format}\n")
-            self.result_text.insert(tk.END, "\n")
-        print("Displayed new BEP text data")
-    '''
-'''
+    def display_results_in_textbox(self, BEP_data):
+        prepared_text = self.prepare_text_results(BEP_data)
+
+        # Create a new top-level window using the hidden root window
+        result_window = tk.Toplevel(self.root_window)
+        result_window.title("BEP Results")
+        result_window.geometry("400x300")
+
+        # Create a Text widget in the new window
+        text_widget = tk.Text(result_window, wrap='word')
+        text_widget.pack(expand=True, fill='both')
+
+        # Insert the prepared text into the Text widget
+        text_widget.insert(tk.END, prepared_text)
+
+        # Make the Text widget read-only
+        text_widget.config(state=tk.DISABLED)
+
+        # Ensure the GUI is updated
+        self.root_window.mainloop()          
+
+    
+
 test_class = False
 if test_class:
     test_instance = HillChartProcessor()
@@ -208,4 +217,3 @@ if test_class:
     test_instance.default_output_parameters()
     test_instance.generate_outputs()
     print("done")
-'''
