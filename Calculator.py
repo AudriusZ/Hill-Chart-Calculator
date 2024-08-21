@@ -139,35 +139,62 @@ class HillChartCalculator(tk.Tk):
         chk.pack(anchor=tk.W)
         
 
-    def create_extrapolation_checkbox(self, option, var, labels, parent):
+    def create_extrapolation_checkbox(self, option, var, labels, parent, set_default = 'no'):
         # Create a frame for the checkbox and associated entries
         frame = tk.Frame(parent)
         frame.grid(sticky="w", padx=5, pady=5)  # Ensure proper padding and alignment
 
-        # Create the checkbox in its own row
-        checkbox = tk.Checkbutton(frame, text=option, variable=var)
+        # Create the checkbox in its own row        
+        checkbox = tk.Checkbutton(frame, text=option, variable=var, command=lambda: self.toggle_extrapolation_entries(var))        
+
         checkbox.grid(row=0, column=0, sticky="w", padx=5, pady=(5, 0))  # Top padding, no bottom padding
 
         # Create the entry labels and fields
         entry_frame = tk.Frame(frame)
         entry_frame.grid(row=1, column=0, sticky="w", padx=5, pady=(0, 5))  # Bottom padding, no top padding
 
+        # Initialize a list for this set of entries
+        entry_vars = []
+
         # Create the entry labels and fields in a single row
         for j, label in enumerate(labels):
             tk.Label(entry_frame, text=label).grid(row=0, column=j, padx=5)
             entry = tk.Entry(entry_frame, width=7)
+            if option == self.extrapolation_options[0]:
+                entry.insert(0, str(self.extrapolation_values_n11[j]))
+            if option == self.extrapolation_options[1]:
+                entry.insert(0, str(self.extrapolation_values_blade_angles[j]))
             entry.grid(row=1, column=j, padx=5)
-            #entry.insert(0, str(j))
-        
+            entry_vars.append(entry)
             
 
+        # Store the list of entries in the dictionary with the option index as key
+        self.extrapolation_entries.append(entry_vars)
+        self.toggle_extrapolation_entries(var, initialisation=True)
+        
 
-
-    def toggle_entries(self, var):
+    def toggle_extrapolation_entries(self, var, initialisation = False):
         state = 'normal' if var.get() == 1 else 'disabled'
         index = self.extrapolation_options_vars.index(var)
-        for entry in self.extrapolation_entries[index].winfo_children():
-            entry.config(state=state)
+
+        # Check if the index is valid
+        if index < len(self.extrapolation_entries):
+            for entry in self.extrapolation_entries[index]:
+                entry.config(state=state)
+        else:
+            print(f"Index {index} out of range for extrapolation_entries.")
+        if not initialisation:
+            try:
+                # Ensure to use set() method for IntVar
+                if self.extrapolation_options_vars[0].get() == 0:
+                    self.extrapolation_options_vars[1].set(0)  # Correct way to update IntVar value
+                    state = 'normal' if var.get() == 1 else 'disabled'                   
+
+            except IndexError:
+                print("IndexError: self.extrapolation_options_vars index out of range.")
+            except AttributeError:
+                print("AttributeError: self.extrapolation_options_vars[0] might not be an IntVar.")
+        
 
     def update_count(self):
         if self.datapath:
@@ -181,11 +208,11 @@ class HillChartCalculator(tk.Tk):
                 for chk in self.checkboxes:
                     chk.config(state='normal')                
                 self.set_input_parameters('disabled')
-
+    '''
     def update_extrapolation_count(self):
         if self.extrapolation_options_vars[0].get() ==0:
             self.extrapolation_options_vars[1] = 0              
-            
+    '''         
 
     def set_input_parameters(self, state='normal'):
         if state == 'normal':
@@ -207,7 +234,7 @@ class HillChartCalculator(tk.Tk):
             for chk in self.checkboxes:
                 chk.config(state='normal')
 
-    def set_n_contours(self):
+    def get_n_contours(self):
         try:
             self.n_contours = int(self.n_contours_entry.get())
         except ValueError:
@@ -215,9 +242,7 @@ class HillChartCalculator(tk.Tk):
 
     def generate_outputs(self):
         # Gather all GUI inputs before processing
-        self.set_n_contours()
-        
-        
+        self.get_n_contours()        
         self.get_selected_values()
         self.get_extrapolation_values()
         
@@ -238,15 +263,15 @@ class HillChartCalculator(tk.Tk):
             return
 
     def get_extrapolation_values(self):
-        
-        
+        # Retrieve values for the first extrapolation option
         if self.extrapolation_options_vars[0].get():  # Extrapolate unit speed n11 [rpm]
-            self.extrapolation_values_n11 = [float(var.get()) for var in self.extrapolation_entry_vars[0]]
+            self.extrapolation_values_n11 = [float(entry.get()) for entry in self.extrapolation_entries[0]]
             self.extrapolation_values_n11[2] = int(self.extrapolation_values_n11[2])
 
+        # Retrieve values for the second extrapolation option
         if self.extrapolation_options_vars[1].get():  # Extrapolate Blade Angles [degree]
-            self.extrapolation_values_blade_angles = [float(var.get()) for var in self.extrapolation_entry_vars[1]]
-            self.extrapolation_values_blade_angles[2] = int(self.extrapolation_values_blade_angles[2])              
+            self.extrapolation_values_blade_angles = [float(entry.get()) for entry in self.extrapolation_entries[1]]
+            self.extrapolation_values_blade_angles[2] = int(self.extrapolation_values_blade_angles[2])      
 
 if __name__ == "__main__":
     app = HillChartCalculator()
