@@ -1,5 +1,5 @@
 #To create standalon exe use the line below:
-#pyinstaller --onefile --name Hill_Chart_Calculator_0.3.0 --icon=icon.ico Calculator.py
+#pyinstaller --onefile --name Hill_Chart_Calculator_0.3.1 --icon=icon.ico Calculator.py
 
 import tkinter as tk
 from tkinter import messagebox, filedialog
