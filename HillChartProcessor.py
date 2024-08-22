@@ -3,6 +3,7 @@ from HillChart import HillChart  # Ensure HillChart module is available in the e
 import matplotlib.pyplot as plt
 import copy
 import tkinter as tk
+import numpy as np
 
 class HillChartProcessor:
     def __init__(self):
@@ -23,7 +24,7 @@ class HillChartProcessor:
         n_contours = 25
         extrapolation_options_vars = [1,1]
         extrapolation_values_n11 = [60,200,10]
-        extrapolation_values_blade_angles = [-5, 8.8, 10]
+        extrapolation_values_blade_angles = [-6, 9.8, 10]
         
         self.get_plot_parameters(n_contours,extrapolation_options_vars,extrapolation_values_n11,extrapolation_values_blade_angles)
 
@@ -86,7 +87,9 @@ class HillChartProcessor:
             self.plot_3d_hill_chart(hill_values)
 
         if self.output_vars[1]:
-            self.plot_hill_chart_contour(hill_values, BEP_data)
+            line_coords = hill_values.find_contours_at_angles(list(range(-4, 8.8, 2)))            
+            self.plot_hill_chart_contour(hill_values, BEP_data, line_coords=line_coords)
+            #self.plot_hill_chart_contour(hill_values, BEP_data)
 
         if self.output_vars[2]:
             self.plot_curve_slices(hill_values, BEP_data)
@@ -109,12 +112,52 @@ class HillChartProcessor:
         raw_data.plot_3d_scatter(ax=ax1)
         plt.show(block=False)
 
-    def plot_hill_chart_contour(self, hill_values, BEP_data):
-        hill_values_nD = copy.deepcopy(hill_values)        
-        _, ax2 = plt.subplots(1, 2, figsize=(15, 7))        
-        hill_values.plot_hill_chart_contour(ax=ax2[0], n_contours=self.n_contours, data_type='default')                 
+    def plot_hill_chart_contour(self, hill_values, BEP_data, line_coords=None):
+        # Create a deep copy of hill_values
+        hill_values_nD = copy.deepcopy(hill_values)
+
+        # Create subplots
+        _, ax2 = plt.subplots(1, 2, figsize=(15, 7))
+        
+        # Plot the first contour plot
+        hill_values.plot_hill_chart_contour(ax=ax2[0], n_contours=self.n_contours, data_type='default')
+
+        # Plot the custom lines if provided
+        if line_coords is not None:
+            if isinstance(line_coords, dict):  # Check if line_coords is a dictionary
+                for angle, (x_coords, y_coords) in line_coords.items():
+                    # Plot the line in black color
+                    ax2[0].plot(x_coords, y_coords, color='black', linestyle=':', linewidth=1)
+                    
+                    # Annotate the line with the angle value
+                    mid_index = len(x_coords) // 2  # Midpoint for annotation
+                    ax2[0].annotate(f'{angle}°', 
+                                    (x_coords[mid_index], y_coords[mid_index]),
+                                    textcoords="offset points",
+                                    xytext=(0,0), 
+                                    ha='center',
+                                    fontsize=8,
+                                    color='black')
+            else:
+                # If line_coords is not a dictionary, plot it as a single line
+                x_coords, y_coords = line_coords
+                ax2[0].plot(x_coords, y_coords, color='black', linestyle='--', linewidth=2)
+                
+                # Annotate the line with a default value
+                mid_index = len(x_coords) // 2  # Midpoint for annotation
+                ax2[0].annotate('Custom Line', 
+                                (x_coords[mid_index], y_coords[mid_index]),
+                                textcoords="offset points",
+                                xytext=(0,10), 
+                                ha='center',
+                                fontsize=10,
+                                color='black')
+
+        # Calculate and plot the second contour plot with new data
         hill_values_nD.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])
-        hill_values_nD.plot_hill_chart_contour(ax=ax2[1], n_contours=self.n_contours, data_type='nD') 
+        hill_values_nD.plot_hill_chart_contour(ax=ax2[1], n_contours=self.n_contours, data_type='nD')
+
+        # Adjust layout and show plot
         plt.tight_layout()
         plt.show(block=False)
 
@@ -130,6 +173,22 @@ class HillChartProcessor:
         plt.show(block=False)
 
     def plot_curve_slices(self, hill_values, BEP_data):
+        _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
+        q_curve_values = copy.deepcopy(hill_values)        
+        q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)        
+        q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])                    
+        q_curve_values.plot_efficiency_vs_Q(ax=ax3[0,0])
+        q_curve_values.plot_power_vs_Q(ax=ax3[1,0])
+
+        n_curve_values = copy.deepcopy(hill_values)        
+        n_curve_values.slice_hill_chart_data(selected_Q11=BEP_data.Q11[0])        
+        n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
+        n_curve_values.plot_efficiency_vs_n(ax=ax3[0,1])
+        n_curve_values.plot_power_vs_n(ax=ax3[1,1])
+        
+        plt.show(block=False)
+
+    def plot_curve_slices_backup(self, hill_values, BEP_data):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         q_curve_values = copy.deepcopy(hill_values)        
         q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)        

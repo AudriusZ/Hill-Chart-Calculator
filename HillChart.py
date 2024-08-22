@@ -8,6 +8,7 @@ from scipy.interpolate import griddata
 import copy
 from numpy.polynomial import Polynomial
 from scipy.interpolate import PchipInterpolator
+from matplotlib import path as mpath
 
 
 
@@ -175,10 +176,7 @@ class HillChart:
         self.data.Q11 = new_Q11
         self.data.efficiency = new_efficiency
         
-    def prepare_hill_chart_data(self):        
-        x = np.array(self.data.n11)
-        y = np.array(self.data.Q11)
-        z = np.array(self.data.efficiency)
+    def fit_efficiency(self,x,y,z):               
 
         # Create grid coordinates for the surface
         x_grid = np.linspace(x.min(), x.max(), num=101)
@@ -193,6 +191,27 @@ class HillChart:
         self.data.efficiency[self.data.efficiency < threshold] = np.nan
 
         return self.data.n11, self.data.Q11, self.data.efficiency
+    
+    def fit_blade_angle(self,x,y,z):        
+        x_grid = np.linspace(x.min(), x.max(), num=101)
+        y_grid = np.linspace(y.min(), y.max(), num=101)
+        self.data.n11, self.data.Q11 = np.meshgrid(x_grid, y_grid)
+
+        # Interpolate unstructured 3-dimensional data
+        self.data.blade_angle = griddata((x, y), z, (self.data.n11, self.data.Q11), method='cubic')        
+
+        return self.data.n11, self.data.Q11, self.data.blade_angle
+    
+    
+    
+    def prepare_hill_chart_data(self):
+        x = np.array(self.data.n11)
+        y = np.array(self.data.Q11)
+        z_efficiency = np.array(self.data.efficiency)
+        z_blade_angle = np.array(self.data.blade_angle)
+        
+        self.fit_efficiency(x,y,z_efficiency)
+        self.fit_blade_angle(x,y,z_blade_angle)    
     
     def slice_hill_chart_data(self, selected_n11=None, selected_Q11=None):
         if selected_n11 is not None:
@@ -230,7 +249,37 @@ class HillChart:
         else:
             raise ValueError("Either selected_n11 or selected_Q11 must be provided")
 
-        
+    def find_contours_at_angles(self, target_angles):
+        n11 = self.data.n11
+        Q11 = self.data.Q11
+        blade_angle = self.data.blade_angle
+
+        # Create a new figure and axis for 2D contour plotting
+        fig = plt.Figure()
+        ax = fig.add_subplot(111)
+
+        # Plot contours on the new 2D axis
+        contour = ax.contour(n11, Q11, blade_angle, levels=target_angles)
+
+        # Initialize dictionary to store contour coordinates for each target angle
+        contours_dict = {angle: ([], []) for angle in target_angles}
+
+        # Extract paths from each contour collection
+        for collection in contour.collections:
+            for path in collection.get_paths():
+                if isinstance(path, mpath.Path):
+                    vertices = path.vertices
+                    # Determine which level (angle) this path corresponds to
+                    for angle in target_angles:
+                        if np.isclose(contour.levels[contour.collections.index(collection)], angle):
+                            contours_dict[angle][0].extend(vertices[:, 0])
+                            contours_dict[angle][1].extend(vertices[:, 1])
+
+        # Close the figure to avoid displaying it
+        plt.close(fig)
+
+        # Return a dictionary with contour coordinates for each target angle
+        return {angle: (np.array(n11_contour), np.array(Q11_contour)) for angle, (n11_contour, Q11_contour) in contours_dict.items()}
     
     def overwrite_with_slice(self):
         self.data = copy.deepcopy(self.data)
@@ -340,7 +389,7 @@ class HillChart:
             if ax is None:
                 raise ValueError("An Axes object must be provided for subplots.")
             
-            ax.plot(self.data.Q, self.data.efficiency, 'bo-', label='Efficiency vs Q')
+            ax.plot(self.data.Q, self.data.efficiency, 'b-', label='Efficiency vs Q')
 
             # Define labels and titles for different options            
             if labels == 'default':                
@@ -370,7 +419,7 @@ class HillChart:
             if ax is None:
                 raise ValueError("An Axes object must be provided for subplots.")            
             
-            ax.plot(self.data.n, self.data.efficiency, 'bo-', label='Efficiency vs n')       
+            ax.plot(self.data.n, self.data.efficiency, 'b-', label='Efficiency vs n')       
 
             # Define labels and titles for different options            
             if labels == 'default':                
@@ -399,7 +448,7 @@ class HillChart:
             if ax is None:
                 raise ValueError("An Axes object must be provided for subplots.")  
             
-            ax.plot(self.data.Q, self.data.power, 'bo-', label='Power vs Q')
+            ax.plot(self.data.Q, self.data.power, 'b-', label='Power vs Q')
             
             # Define labels and titles for different options            
             if labels == 'default':                
@@ -443,7 +492,7 @@ class HillChart:
                 raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
             title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'
 
-            ax.plot(n_data, power_data, 'bo-', label='Power vs n')
+            ax.plot(n_data, power_data, 'b-', label='Power vs n')
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
             ax.set_title(title)
