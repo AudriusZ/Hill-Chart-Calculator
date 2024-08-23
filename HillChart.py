@@ -249,10 +249,18 @@ class HillChart:
         else:
             raise ValueError("Either selected_n11 or selected_Q11 must be provided")
 
-    def find_contours_at_angles(self, target_angles=[]):      
+    def find_contours_at_angles(self, target_angles=[], case = False):      
         # Extract relevant data
-        n11 = self.data.n11
-        Q11 = self.data.Q11
+        if not case:               
+            n = self.data.n11
+            Q = self.data.Q11
+        elif case == 'nD':
+            n = self.data.n
+            Q = self.data.Q
+        else:
+            raise ValueError("Undefined case: {}".format(case))
+            
+
         blade_angle = np.array(self.data.blade_angle)  # Ensure blade_angle is a numpy array
         
         # Determine target angles if not provided
@@ -268,7 +276,7 @@ class HillChart:
         fig, ax = plt.subplots()  # Use plt.subplots() to create figure and axis
 
         # Plot contours on the new 2D axis
-        contour = ax.contour(n11, Q11, blade_angle, levels=target_angles)
+        contour = ax.contour(n, Q, blade_angle, levels=target_angles)
 
         # Initialize dictionary to store contour coordinates for each target angle
         contours_dict = {angle: ([], []) for angle in target_angles}
@@ -293,6 +301,37 @@ class HillChart:
     
     def overwrite_with_slice(self):
         self.data = copy.deepcopy(self.data)
+
+    def plot_contour_lines(self, ax, line_coords):
+        """Plot contour lines and annotate them on the given axis."""
+        if isinstance(line_coords, dict):  # Check if line_coords is a dictionary
+            for angle, (x_coords, y_coords) in line_coords.items():
+                # Plot the line in black color
+                ax.plot(x_coords, y_coords, color='black', linestyle=':', linewidth=1)
+                
+                # Annotate the line with the angle value
+                mid_index = len(x_coords) // 2  # Midpoint for annotation
+                ax.annotate(f'{angle}°', 
+                            (x_coords[mid_index], y_coords[mid_index]),
+                            textcoords="offset points",
+                            xytext=(0,0), 
+                            ha='center',
+                            fontsize=8,
+                            color='black')
+        else:
+            # If line_coords is not a dictionary, plot it as a single line
+            x_coords, y_coords = line_coords
+            ax.plot(x_coords, y_coords, color='black', linestyle='--', linewidth=2)
+            
+            # Annotate the line with a default value
+            mid_index = len(x_coords) // 2  # Midpoint for annotation
+            ax.annotate('Custom Line', 
+                        (x_coords[mid_index], y_coords[mid_index]),
+                        textcoords="offset points",
+                        xytext=(0,10), 
+                        ha='center',
+                        fontsize=10,
+                        color='black')
 
     def plot_hill_chart(self, ax=None, alpha=0.8):       
         try:

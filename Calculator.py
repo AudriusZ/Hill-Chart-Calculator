@@ -36,7 +36,7 @@ class HillChartCalculator(tk.Tk):
         self.selected_values = [1, 4]
         self.var1 = None
         self.var2 = None
-        self.extrapolation_values_n11 = [60, 200, 5]
+        self.extrapolation_values_n11 = [60, 200, 10]
         self.extrapolation_values_blade_angles = [-5, 8.8, 10]
 
         self.create_main_frame()

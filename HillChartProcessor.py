@@ -29,7 +29,7 @@ class HillChartProcessor:
         self.get_plot_parameters(n_contours,extrapolation_options_vars,extrapolation_values_n11,extrapolation_values_blade_angles)
 
     def default_output_parameters(self):       
-        output_vars = [1,1,1,1,1,1]
+        output_vars = [1,1,0,1,0,0]
         self.get_output_parameters(output_vars)
 
     def get_file_path(self, file_path):
@@ -86,10 +86,8 @@ class HillChartProcessor:
         if self.output_vars[0]:
             self.plot_3d_hill_chart(hill_values)
 
-        if self.output_vars[1]:
-            line_coords = hill_values.find_contours_at_angles()            
-            self.plot_hill_chart_contour(hill_values, BEP_data, line_coords=line_coords)
-            #self.plot_hill_chart_contour(hill_values, BEP_data)
+        if self.output_vars[1]:            
+            self.plot_hill_chart_contour(hill_values, BEP_data)            
 
         if self.output_vars[2]:
             self.plot_curve_slices(hill_values, BEP_data)
@@ -111,8 +109,8 @@ class HillChartProcessor:
         raw_data.read_hill_chart_values(self.datapath)                
         raw_data.plot_3d_scatter(ax=ax1)
         plt.show(block=False)
-
-    def plot_hill_chart_contour(self, hill_values, BEP_data, line_coords=None):
+    
+    def plot_hill_chart_contour(self, hill_values, BEP_data):
         # Create a deep copy of hill_values
         hill_values_nD = copy.deepcopy(hill_values)
 
@@ -122,53 +120,56 @@ class HillChartProcessor:
         # Plot the first contour plot
         hill_values.plot_hill_chart_contour(ax=ax2[0], n_contours=self.n_contours, data_type='default')
 
-        # Plot the custom lines if provided
+        # Plot the contour lines
+        line_coords = hill_values.find_contours_at_angles()            
         if line_coords is not None:
-            if isinstance(line_coords, dict):  # Check if line_coords is a dictionary
-                for angle, (x_coords, y_coords) in line_coords.items():
-                    # Plot the line in black color
-                    ax2[0].plot(x_coords, y_coords, color='black', linestyle=':', linewidth=1)
-                    
-                    # Annotate the line with the angle value
-                    mid_index = len(x_coords) // 2  # Midpoint for annotation
-                    ax2[0].annotate(f'{angle}°', 
-                                    (x_coords[mid_index], y_coords[mid_index]),
-                                    textcoords="offset points",
-                                    xytext=(0,0), 
-                                    ha='center',
-                                    fontsize=8,
-                                    color='black')
-            else:
-                # If line_coords is not a dictionary, plot it as a single line
-                x_coords, y_coords = line_coords
-                ax2[0].plot(x_coords, y_coords, color='black', linestyle='--', linewidth=2)
-                
-                # Annotate the line with a default value
-                mid_index = len(x_coords) // 2  # Midpoint for annotation
-                ax2[0].annotate('Custom Line', 
-                                (x_coords[mid_index], y_coords[mid_index]),
-                                textcoords="offset points",
-                                xytext=(0,10), 
-                                ha='center',
-                                fontsize=10,
-                                color='black')
+            hill_values.plot_contour_lines(ax2[0], line_coords)
 
-        # Calculate and plot the second contour plot with new data
+        # Calculate the second contour plot
         hill_values_nD.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])
+
+        # Plot the contour lines
+        line_coords2 = hill_values_nD.find_contours_at_angles(case ='nD')            
+        if line_coords is not None:
+            hill_values_nD.plot_contour_lines(ax2[1], line_coords2)
+        
+        # Plot the second contour plot
         hill_values_nD.plot_hill_chart_contour(ax=ax2[1], n_contours=self.n_contours, data_type='nD')
 
         # Adjust layout and show plot
         plt.tight_layout()
         plt.show(block=False)
 
+    
+
     def plot_normalized_hill_chart_contour(self, hill_values, BEP_data):
         hill_values_norm = copy.deepcopy(hill_values)        
+        
+
+        # Create subplots
+        _, ax2 = plt.subplots(1, 2, figsize=(15, 7))        
+        
+        # Plot the first contour plot
+        hill_values.plot_hill_chart_contour(ax=ax2[0],n_contours=self.n_contours, data_type='default')                         
+
+        # Plot the contour lines
+        line_coords = hill_values.find_contours_at_angles()            
+        if line_coords is not None:
+            hill_values.plot_contour_lines(ax2[0], line_coords)
+
+        
+        # Calculate the second contour
         hill_values_norm.normalize_efficiency(BEP_data.efficiency)
         hill_values_norm.normalize_Q11(BEP_data.Q11)
         hill_values_norm.normalize_n11(BEP_data.n11)
-        _, ax2 = plt.subplots(1, 2, figsize=(15, 7))        
-        hill_values.plot_hill_chart_contour(ax=ax2[0],n_contours=self.n_contours, data_type='default')                         
+        
+        # Plot the contour lines
+        line_coords2 = hill_values_norm.find_contours_at_angles()            
+        if line_coords is not None:
+            hill_values_norm.plot_contour_lines(ax2[1], line_coords2)
         hill_values_norm.plot_hill_chart_contour(ax=ax2[1],n_contours=self.n_contours, data_type='normalized') 
+        
+        # Adjust layout and show plot
         plt.tight_layout()
         plt.show(block=False)
 
@@ -268,7 +269,7 @@ class HillChartProcessor:
 
     
 
-test_class = True
+test_class = False
 if test_class:
     test_instance = HillChartProcessor()
     test_instance.default_turbine_parameters()
