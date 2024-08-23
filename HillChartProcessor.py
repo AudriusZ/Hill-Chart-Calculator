@@ -24,7 +24,7 @@ class HillChartProcessor:
         n_contours = 25
         extrapolation_options_vars = [1,1]
         extrapolation_values_n11 = [60,200,10]
-        extrapolation_values_blade_angles = [-6, 9.8, 10]
+        extrapolation_values_blade_angles = [-6.5, 8.8, 10]
         
         self.get_plot_parameters(n_contours,extrapolation_options_vars,extrapolation_values_n11,extrapolation_values_blade_angles)
 
@@ -87,7 +87,7 @@ class HillChartProcessor:
             self.plot_3d_hill_chart(hill_values)
 
         if self.output_vars[1]:
-            line_coords = hill_values.find_contours_at_angles(list(range(-4, 8.8, 2)))            
+            line_coords = hill_values.find_contours_at_angles()            
             self.plot_hill_chart_contour(hill_values, BEP_data, line_coords=line_coords)
             #self.plot_hill_chart_contour(hill_values, BEP_data)
 
@@ -268,7 +268,7 @@ class HillChartProcessor:
 
     
 
-test_class = False
+test_class = True
 if test_class:
     test_instance = HillChartProcessor()
     test_instance.default_turbine_parameters()

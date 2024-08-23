@@ -249,14 +249,23 @@ class HillChart:
         else:
             raise ValueError("Either selected_n11 or selected_Q11 must be provided")
 
-    def find_contours_at_angles(self, target_angles):
+    def find_contours_at_angles(self, target_angles=[]):      
+        # Extract relevant data
         n11 = self.data.n11
         Q11 = self.data.Q11
-        blade_angle = self.data.blade_angle
+        blade_angle = np.array(self.data.blade_angle)  # Ensure blade_angle is a numpy array
+        
+        # Determine target angles if not provided
+        if not target_angles:
+            step = 2
+            min_angle = np.nanmin(blade_angle)
+            min_angle_int = int(min_angle - (min_angle % step)) + step
+            max_angle = np.nanmax(blade_angle)
+            max_angle_int = int(max_angle) + 1 if max_angle >= 0 else int(max_angle)
+            target_angles = list(range(min_angle_int, max_angle_int, step))
 
         # Create a new figure and axis for 2D contour plotting
-        fig = plt.Figure()
-        ax = fig.add_subplot(111)
+        fig, ax = plt.subplots()  # Use plt.subplots() to create figure and axis
 
         # Plot contours on the new 2D axis
         contour = ax.contour(n11, Q11, blade_angle, levels=target_angles)
@@ -265,13 +274,13 @@ class HillChart:
         contours_dict = {angle: ([], []) for angle in target_angles}
 
         # Extract paths from each contour collection
-        for collection in contour.collections:
+        for collection, level in zip(contour.collections, contour.levels):
             for path in collection.get_paths():
                 if isinstance(path, mpath.Path):
                     vertices = path.vertices
                     # Determine which level (angle) this path corresponds to
                     for angle in target_angles:
-                        if np.isclose(contour.levels[contour.collections.index(collection)], angle):
+                        if np.isclose(level, angle):
                             contours_dict[angle][0].extend(vertices[:, 0])
                             contours_dict[angle][1].extend(vertices[:, 1])
 
@@ -279,7 +288,8 @@ class HillChart:
         plt.close(fig)
 
         # Return a dictionary with contour coordinates for each target angle
-        return {angle: (np.array(n11_contour), np.array(Q11_contour)) for angle, (n11_contour, Q11_contour) in contours_dict.items()}
+        return {angle: (np.array(n11_contour), np.array(Q11_contour)) 
+                for angle, (n11_contour, Q11_contour) in contours_dict.items()}
     
     def overwrite_with_slice(self):
         self.data = copy.deepcopy(self.data)
@@ -528,6 +538,7 @@ class HillChart:
             print(f"Error filtering data for maximum efficiency: {e}")
             raise
 
+    
 
     def calculate_cases(self, selected_values, var1, var2):
         try:
