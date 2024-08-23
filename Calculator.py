@@ -1,11 +1,8 @@
 #To create standalon exe use the line below:
-#pyinstaller --onefile --name Hill_Chart_Calculator_0.3.1 --icon=icon.ico Calculator.py
+#pyinstaller --onefile --name Hill_Chart_Calculator_0.5.0 --icon=icon.ico Calculator.py
 
 import tkinter as tk
 from tkinter import messagebox, filedialog
-from HillChart import HillChart  # Ensure HillChart module is available in the environment
-import matplotlib.pyplot as plt
-import copy
 from HillChartProcessor import HillChartProcessor
 
 
@@ -25,6 +22,13 @@ class HillChartCalculator(tk.Tk):
         self.output_options = ["3D Hill Chart", "Hill Chart Contour", "2D Curve Slices", 'Normalized Hill Chart Contour', "Normalized 2D Curve Slices", "Best efficiency point summary"]
         self.output_vars = [tk.IntVar() for _ in self.output_options]
 
+        # Define sub-options for specific output options
+        self.sub_output_options = {
+            "Hill Chart Contour": ["Hide Blade Angle Lines"],
+            "Normalized Hill Chart Contour": ["Hide Blade Angle Lines"]
+        }
+        self.sub_output_vars = {key: [tk.IntVar() for _ in value] for key, value in self.sub_output_options.items()}
+
         self.extrapolation_options = ["Extrapolate unit speed n11 [rpm]", "Extrapolate Blade Angles [degree]"]
         self.extrapolation_options_vars = [tk.IntVar() for _ in self.extrapolation_options]
         self.extrapolation_entry_vars = []
@@ -41,6 +45,7 @@ class HillChartCalculator(tk.Tk):
 
         self.create_main_frame()
         self.datapath = None  # Initially, no turbine data is selected
+
 
     def create_main_frame(self):
         # Create a frame to contain the three side-by-side frames
@@ -135,8 +140,19 @@ class HillChartCalculator(tk.Tk):
         self.checkboxes.append(chk)
     
     def create_output_checkbox(self, text, var, parent):
-        chk = tk.Checkbutton(parent, text=text, variable=var, onvalue=1, offvalue=0)
+        # Create the main checkbox
+        chk = tk.Checkbutton(parent, text=text, variable=var, onvalue=1, offvalue=0, command=lambda: self.toggle_sub_options(text, var))
         chk.pack(anchor=tk.W)
+
+        # If there are sub-options, create checkboxes for them
+        if text in self.sub_output_options:
+            sub_frame = tk.Frame(parent)
+            sub_frame.pack(anchor=tk.W, padx=20)  # Indent the sub-options
+
+            for sub_option, sub_var in zip(self.sub_output_options[text], self.sub_output_vars[text]):
+                sub_chk = tk.Checkbutton(sub_frame, text=sub_option, variable=sub_var, onvalue=1, offvalue=0)
+                sub_chk.pack(anchor=tk.W)
+                sub_chk.configure(state='disabled')  # Initially disable sub-checkboxes
         
 
     def create_extrapolation_checkbox(self, option, var, labels, parent, set_default = 'no'):
@@ -207,12 +223,7 @@ class HillChartCalculator(tk.Tk):
             else:
                 for chk in self.checkboxes:
                     chk.config(state='normal')                
-                self.set_input_parameters('disabled')
-    '''
-    def update_extrapolation_count(self):
-        if self.extrapolation_options_vars[0].get() ==0:
-            self.extrapolation_options_vars[1] = 0              
-    '''         
+                self.set_input_parameters('disabled')    
 
     def set_input_parameters(self, state='normal'):
         if state == 'normal':
