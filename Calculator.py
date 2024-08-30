@@ -141,7 +141,8 @@ class HillChartCalculator(tk.Tk):
     
     def create_output_checkbox(self, text, var, parent):
         # Create the main checkbox
-        chk = tk.Checkbutton(parent, text=text, variable=var, onvalue=1, offvalue=0, command=lambda: self.toggle_sub_options(text, var))
+        #chk = tk.Checkbutton(parent, text=text, variable=var, onvalue=1, offvalue=0, command=lambda: self.toggle_sub_options(text, var))
+        chk = tk.Checkbutton(parent, text=text, variable=var, onvalue=1, offvalue=0)
         chk.pack(anchor=tk.W)
 
         # If there are sub-options, create checkboxes for them
