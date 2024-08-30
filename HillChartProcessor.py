@@ -13,6 +13,7 @@ class HillChartProcessor:
 
     def default_turbine_parameters(self):
         datapath = 'Mogu_D1.65m.csv'        
+        #datapath = 'D_Liszka_et_al_turbine.csv'
         selected_values = [1,4] #1 - H, 2 - Q, 3 - n, 4 - D
         var1 = 2.15
         var2 = 1.65        
@@ -23,13 +24,13 @@ class HillChartProcessor:
     def default_plot_parameters(self):
         n_contours = 25
         extrapolation_options_vars = [1,1]
-        extrapolation_values_n11 = [60,200,10]
-        extrapolation_values_blade_angles = [-6.5, 8.8, 10]
+        extrapolation_values_n11 = [80,160,10]
+        extrapolation_values_blade_angles = [-6, 9, 10]
         
         self.get_plot_parameters(n_contours,extrapolation_options_vars,extrapolation_values_n11,extrapolation_values_blade_angles)
 
     def default_output_parameters(self):       
-        output_vars = [1,1,0,1,0,0]
+        output_vars = [0,0,1,1,0,0,0]
         self.get_output_parameters(output_vars)
 
     def get_file_path(self, file_path):
@@ -91,14 +92,17 @@ class HillChartProcessor:
 
         if self.output_vars[2]:
             self.plot_curve_slices(hill_values, BEP_data)
-
+        
         if self.output_vars[3]:
-            self.plot_normalized_hill_chart_contour(hill_values, BEP_data)
+            self.plot_blade_slices_(hill_values, BEP_data)
 
         if self.output_vars[4]:
-            self.plot_normalized_curve_slices(hill_values, BEP_data)
+            self.plot_normalized_hill_chart_contour(hill_values, BEP_data)
 
         if self.output_vars[5]:
+            self.plot_normalized_curve_slices(hill_values, BEP_data)
+
+        if self.output_vars[6]:
             self.display_results_in_textbox(BEP_data)
     
     def plot_3d_hill_chart(self, hill_values):
@@ -185,25 +189,22 @@ class HillChartProcessor:
         n_curve_values.slice_hill_chart_data(selected_Q11=BEP_data.Q11[0])        
         n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
         n_curve_values.plot_efficiency_vs_n(ax=ax3[0,1])
-        n_curve_values.plot_power_vs_n(ax=ax3[1,1])
+        n_curve_values.plot_power_vs_n(ax=ax3[1,1])        
         
         plt.show(block=False)
 
-    def plot_curve_slices_backup(self, hill_values, BEP_data):
+    def plot_blade_slices_(self, hill_values, BEP_data):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
-        q_curve_values = copy.deepcopy(hill_values)        
-        q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)        
-        q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])                    
-        q_curve_values.plot_efficiency_vs_Q(ax=ax3[0,0])
-        q_curve_values.plot_power_vs_Q(ax=ax3[1,0])
-
-        n_curve_values = copy.deepcopy(hill_values)        
-        n_curve_values.slice_hill_chart_data(selected_n11=None, selected_Q11=BEP_data.Q11[0])        
-        n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
-        n_curve_values.plot_efficiency_vs_n(ax=ax3[0,1])
-        n_curve_values.plot_power_vs_n(ax=ax3[1,1])
+        blade_slice_values = copy.deepcopy(hill_values)                
+        blade_slice_values.slice_hill_chart_data(selected_blade_angle = BEP_data.blade_angle[0])        
+        blade_slice_values.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])                    
+        blade_slice_values.plot_efficiency_vs_Q(ax=ax3[0,0],labels = 'const_blade')
+        blade_slice_values.plot_power_vs_Q(ax=ax3[1,0],labels = 'const_blade')               
         
-        plt.show(block=False)
+        blade_slice_values.plot_efficiency_vs_n(ax=ax3[0,1],labels = 'const_blade')
+        blade_slice_values.plot_power_vs_n(ax=ax3[1,1],labels = 'const_blade')        
+        
+        plt.show(block=False)    
 
     def plot_normalized_curve_slices(self, hill_values, BEP_data):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  

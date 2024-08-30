@@ -1,5 +1,5 @@
 #To create standalon exe use the line below:
-#pyinstaller --onefile --name Hill_Chart_Calculator_0.5.0 --icon=icon.ico Calculator.py
+#pyinstaller --onefile --name Hill_Chart_Calculator_0.6.0 --icon=icon.ico Calculator.py
 
 import tkinter as tk
 from tkinter import messagebox, filedialog
@@ -19,13 +19,14 @@ class HillChartCalculator(tk.Tk):
         self.checkboxes = []
         self.options = ["Head H [m]", "Flow rate Q [m^3/s]", "Rotational speed n [rpm]", "Runner diameter D [m]"]
 
-        self.output_options = ["3D Hill Chart", "Hill Chart Contour", "2D Curve Slices", 'Normalized Hill Chart Contour', "Normalized 2D Curve Slices", "Best efficiency point summary"]
+        self.output_options = ["3D Hill Chart", "Hill Chart Contour", "2D Curve Slices","2D Curve Slices - const.blade", 'Normalized Hill Chart Contour', "Normalized 2D Curve Slices", "Best efficiency point summary"]
         self.output_vars = [tk.IntVar() for _ in self.output_options]
 
         # Define sub-options for specific output options
         self.sub_output_options = {
             "Hill Chart Contour": ["Hide Blade Angle Lines"],
-            "Normalized Hill Chart Contour": ["Hide Blade Angle Lines"]
+            "Normalized Hill Chart Contour": ["Hide Blade Angle Lines"],
+            "2D Curve Slices - const.blade": ["Const. Head", "Const. n", "Const. efficiency"]
         }
         self.sub_output_vars = {key: [tk.IntVar() for _ in value] for key, value in self.sub_output_options.items()}
 

@@ -26,6 +26,19 @@ class TurbineData:
     power: List[float] = field(default_factory=list)
     Ns: List[float] = field(default_factory=list)
 
+    def clear_data(self):
+        "Clears all data by resetting each attribute to an empty list."
+        self.H = []
+        self.Q = []
+        self.n = []
+        self.D = []
+        self.blade_angle = []
+        self.Q11 = []
+        self.n11 = []
+        self.efficiency = []
+        self.power = []
+        self.Ns = []
+
 
 
 class HillChart:
@@ -113,7 +126,7 @@ class HillChart:
         self.data.Q11 = new_Q11
         self.data.efficiency = new_efficiency
 
-    def extrapolate_along_blade_angles(self, min_angle = None, max_angle = None, n_angle = 10):
+    def extrapolate_along_blade_angles(self, min_angle = None, max_angle = None, n_angle = 2):
         # Convert lists to numpy arrays for easier manipulation
         blade_angles = np.array(self.data.blade_angle)
         n11 = np.array(self.data.n11)
@@ -151,7 +164,7 @@ class HillChart:
             if max_angle is None:
                 max_angle = blade_angles_subset.max()
             
-            # Generate 10 evenly spac   ed new blade_angle values within the range of the original data
+            # Generate evenly spaced new blade_angle values within the range of the original data
             new_blade_angle_values = np.linspace(min_angle, max_angle, n_angle)
             
 
@@ -175,6 +188,8 @@ class HillChart:
         self.data.n11 = new_n11
         self.data.Q11 = new_Q11
         self.data.efficiency = new_efficiency
+
+        return new_blade_angle, new_n11, new_Q11, new_efficiency
         
     def fit_efficiency(self,x,y,z):               
 
@@ -213,7 +228,7 @@ class HillChart:
         self.fit_efficiency(x,y,z_efficiency)
         self.fit_blade_angle(x,y,z_blade_angle)    
     
-    def slice_hill_chart_data(self, selected_n11=None, selected_Q11=None):
+    def slice_hill_chart_data(self, selected_n11=None, selected_Q11=None, selected_blade_angle = None):
         if selected_n11 is not None:
             # Find the index of the closest value in n11 grid
             idx = (np.abs(self.data.n11[0, :] - selected_n11)).argmin()
@@ -224,6 +239,7 @@ class HillChart:
             efficiency_slice = self.data.efficiency[:, idx]
 
             # Update self.data to only contain the sliced values
+            self.data.clear_data()
             self.data.n11 = n11_slice
             self.data.Q11 = Q11_slice
             self.data.efficiency = efficiency_slice
@@ -240,16 +256,89 @@ class HillChart:
             efficiency_slice = self.data.efficiency[idx, :]
 
             # Update self.data to only contain the sliced values
+            self.data.clear_data()
             self.data.n11 = n11_slice
             self.data.Q11 = Q11_slice
             self.data.efficiency = efficiency_slice
 
             return n11_slice, Q11_slice, efficiency_slice
         
+        elif selected_blade_angle is not None:
+            line_coords = self.find_contours_at_angles(target_angles=selected_blade_angle)       
+            n11_coords = line_coords[selected_blade_angle][0]     
+            Q11_coords = line_coords[selected_blade_angle][1]
+            n11_slice, Q11_slice, efficiency_slice = self.custom_slice_hill_chart_data(n11_coords, Q11_coords)
+            blade_angle_slice = [selected_blade_angle] * len(n11_slice)
+            
+            self.data.clear_data()
+            self.data.n11 = n11_slice
+            self.data.Q11 = Q11_slice
+            self.data.efficiency = efficiency_slice
+            self.data.blade_angle = blade_angle_slice
+
+            return n11_slice, Q11_slice, efficiency_slice, blade_angle_slice
+        
         else:
             raise ValueError("Either selected_n11 or selected_Q11 must be provided")
 
-    def find_contours_at_angles(self, target_angles=[], case = False):      
+    
+        
+
+    def custom_slice_hill_chart_data(self, n11_array, Q11_array):
+        if n11_array is not None and Q11_array is not None:
+            # Ensure n11_array and Q11_array are the same length
+            if len(n11_array) != len(Q11_array):
+                raise ValueError("n11_array and Q11_array must have the same length")
+
+            # Prepare arrays to store interpolated values
+            interpolated_efficiency = []
+
+            # Iterate over the custom path
+            for n11_val, Q11_val in zip(n11_array, Q11_array):
+                # Find indices around the target n11 value for interpolation
+                n11_indices = np.searchsorted(self.data.n11[0, :], n11_val) - 1
+                Q11_indices = np.searchsorted(self.data.Q11[:, 0], Q11_val) - 1
+
+                # Ensure indices are within bounds
+                n11_indices = np.clip(n11_indices, 0, self.data.n11.shape[1] - 2)
+                Q11_indices = np.clip(Q11_indices, 0, self.data.Q11.shape[0] - 2)
+
+                # Get the four surrounding points for bilinear interpolation
+                x1, x2 = self.data.n11[0, n11_indices], self.data.n11[0, n11_indices + 1]
+                y1, y2 = self.data.Q11[Q11_indices, 0], self.data.Q11[Q11_indices + 1, 0]
+                Q11_values = self.data.Q11[Q11_indices:Q11_indices+2, n11_indices:n11_indices+2]
+                efficiency_values = self.data.efficiency[Q11_indices:Q11_indices+2, n11_indices:n11_indices+2]
+
+                # Perform bilinear interpolation for efficiency
+                if (x2 - x1) == 0 or (y2 - y1) == 0:
+                    interp_efficiency = efficiency_values.mean()  # Handle edge cases where division by zero could occur
+                else:
+                    # Linear interpolation in n11 direction
+                    f1 = (x2 - n11_val) / (x2 - x1) * efficiency_values[0, 0] + (n11_val - x1) / (x2 - x1) * efficiency_values[0, 1]
+                    f2 = (x2 - n11_val) / (x2 - x1) * efficiency_values[1, 0] + (n11_val - x1) / (x2 - x1) * efficiency_values[1, 1]
+
+                    # Linear interpolation in Q11 direction
+                    interp_efficiency = (y2 - Q11_val) / (y2 - y1) * f1 + (Q11_val - y1) / (y2 - y1) * f2
+
+                interpolated_efficiency.append(interp_efficiency)
+
+            n11_slice = np.array(n11_array)
+            Q11_slice = np.array(Q11_array)
+            efficiency_slice = np.array(interpolated_efficiency)
+
+            # Update self.data to only contain the sliced values
+            self.data.clear_data()
+            self.data.n11 = n11_slice
+            self.data.Q11 = Q11_slice
+            self.data.efficiency = efficiency_slice
+            
+            return n11_slice, Q11_slice, efficiency_slice
+
+        else:
+            raise ValueError("Both n11_array and Q11_array must be provided")
+
+
+    def find_contours_at_angles(self, target_angles=None, case = None):      
         # Extract relevant data
         if not case:               
             n = self.data.n11
@@ -264,14 +353,15 @@ class HillChart:
         blade_angle = np.array(self.data.blade_angle)  # Ensure blade_angle is a numpy array
         
         # Determine target angles if not provided
-        if not target_angles:
+        if target_angles is None:
             step = 2
             min_angle = np.nanmin(blade_angle)
             min_angle_int = int(min_angle - (min_angle % step)) + step
             max_angle = np.nanmax(blade_angle)
             max_angle_int = int(max_angle) + 1 if max_angle >= 0 else int(max_angle)
-            target_angles = list(range(min_angle_int, max_angle_int, step))
-
+            target_angles = list(range(min_angle_int, max_angle_int, step))        
+        else:
+            target_angles = [target_angles]
         # Create a new figure and axis for 2D contour plotting
         fig, ax = plt.subplots()  # Use plt.subplots() to create figure and axis
 
@@ -440,7 +530,9 @@ class HillChart:
             
             ax.plot(self.data.Q, self.data.efficiency, 'b-', label='Efficiency vs Q')
 
-            # Define labels and titles for different options            
+            
+            title = f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'               
+                                  
             if labels == 'default':                
                 x_label = 'Q [$m^3$/s]'
                 y_label = 'Efficiency'                
@@ -448,9 +540,13 @@ class HillChart:
             elif labels == 'normalized':                
                 x_label = 'Normalized Q'
                 y_label = 'Normalized Efficiency'                            
+            elif labels == 'const_blade':
+                x_label = 'Q [$m^3$/s]'
+                y_label = 'Efficiency' 
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'   
             else:
                 raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            title = f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'                        
+            
             
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
@@ -471,6 +567,8 @@ class HillChart:
             ax.plot(self.data.n, self.data.efficiency, 'b-', label='Efficiency vs n')       
 
             # Define labels and titles for different options            
+            title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f}[m]'                        
+            
             if labels == 'default':                
                 x_label = 'n [rpm]'
                 y_label = 'Efficiency'                
@@ -478,9 +576,13 @@ class HillChart:
             elif labels == 'normalized':                
                 x_label = 'Normalized n'
                 y_label = 'Normalized Efficiency'                            
+            elif labels == 'const_blade':
+                x_label = 'n [rpm]'
+                y_label = 'Efficiency' 
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'  
             else:
                 raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f}[m]'                        
+            
             
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
@@ -500,16 +602,24 @@ class HillChart:
             ax.plot(self.data.Q, self.data.power, 'b-', label='Power vs Q')
             
             # Define labels and titles for different options            
+            title = f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'            
+            
             if labels == 'default':                
                 x_label = 'Q [$m^3$/s]'
                 y_label = 'Power [W]'                
             
             elif labels == 'normalized':                
                 x_label = 'Normalized Q'
-                y_label = 'Normalized Power'                            
+                y_label = 'Normalized Power'             
+
+            elif labels == 'const_blade':
+                x_label = 'Q [$m^3$/s]'
+                y_label = 'Power [W]'  
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'                 
+
             else:
                 raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            title = f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'            
+            
             
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
@@ -530,6 +640,8 @@ class HillChart:
             power_data = self.data.power
 
             # Define labels and titles for different options
+            title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'
+            
             if labels == 'default':                
                 x_label = 'n [rpm]'
                 y_label = 'Power [W]'                
@@ -537,9 +649,15 @@ class HillChart:
             elif labels == 'normalized':                
                 x_label = 'Normalized n'
                 y_label = 'Normalized Power'                            
+
+            elif labels == 'const_blade':
+                x_label = 'n [rpm]'
+                y_label = 'Power [W]' 
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]' 
+
             else:
                 raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'
+            
 
             ax.plot(n_data, power_data, 'b-', label='Power vs n')
             ax.set_xlabel(x_label)
@@ -566,11 +684,15 @@ class HillChart:
             max_Q11 = self.data.Q11[max_eff_index]
             max_n11 = self.data.n11[max_eff_index]
             max_efficiency = self.data.efficiency[max_eff_index]
+            max_blade_angle = self.data.blade_angle[max_eff_index] 
 
             # Clear existing lists and append only the max values
+            self.data.clear_data()
+
             self.data.Q11 = [max_Q11]
             self.data.n11 = [max_n11]
             self.data.efficiency = [max_efficiency]
+            self.data.blade_angle = [max_blade_angle]
 
             #print("Filtered to maximum efficiency data.")
         except Exception as e:
