@@ -594,6 +594,102 @@ class HillChart:
         except Exception as e:
             print(f"Error in plotting Efficiency vs n: {e}")
 
+    def plot_Q_vs_H(self, ax=None, labels = 'default'):
+        try:           
+            if ax is None:
+                raise ValueError("An Axes object must be provided for subplots.")            
+            
+            ax.plot(self.data.H, self.data.Q, 'b-', label='Q vs H')       
+
+            # Define labels and titles for different options                        
+            title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [rpm], D = {self.data.D[0]:.2f} [m]'  
+            
+            if labels == 'default':                
+                x_label = 'H [m]'
+                y_label = 'Q [$m^3$/s]'                
+            
+            elif labels == 'normalized':                
+                x_label = 'Normalized H'
+                y_label = 'Normalized Q'                                        
+                
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
+            
+            
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+            ax.set_title(title)
+            ax.grid(True)
+
+            ax.legend()
+            print("Q vs H curve created successfully")
+        except Exception as e:
+            print(f"Error in plotting Q vs H: {e}")
+
+    def plot_power_vs_H(self, ax=None, labels = 'default'):
+        try:           
+            if ax is None:
+                raise ValueError("An Axes object must be provided for subplots.")            
+            
+            ax.plot(self.data.H, self.data.power, 'b-', label='Power vs H')       
+
+            # Define labels and titles for different options                        
+            title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [rpm], D = {self.data.D[0]:.2f} [m]'  
+            
+            if labels == 'default':                
+                x_label = 'H [m]'
+                y_label = 'Power [W]'                
+            
+            elif labels == 'normalized':                
+                x_label = 'Normalized H'
+                y_label = 'Normalized Power'                                        
+                
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
+            
+            
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+            ax.set_title(title)
+            ax.grid(True)
+
+            ax.legend()
+            print("Power vs H curve created successfully")
+        except Exception as e:
+            print(f"Error in plotting Power vs H: {e}")
+
+    def plot_efficiency_vs_H(self, ax=None, labels = 'default'):
+        try:           
+            if ax is None:
+                raise ValueError("An Axes object must be provided for subplots.")            
+            
+            ax.plot(self.data.H, self.data.efficiency, 'b-', label='efficiency vs H')       
+
+            # Define labels and titles for different options                        
+            title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [rpm], D = {self.data.D[0]:.2f} [m]'  
+            
+            if labels == 'default':                
+                x_label = 'H [m]'
+                y_label = 'Efficiency'                
+            
+            elif labels == 'normalized':                
+                x_label = 'Normalized H'
+                y_label = 'Normalized Efficiency'                                        
+                
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
+            
+            
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+            ax.set_title(title)
+            ax.grid(True)
+
+            ax.legend()
+            print("Efficiency vs H curve created successfully")
+        except Exception as e:
+            print(f"Error in plotting Efficiency vs H: {e}")
+
     def plot_power_vs_Q(self, ax=None, labels='default'):
         try:           
             if ax is None:
@@ -761,7 +857,8 @@ class HillChart:
 
         except Exception as e:
             print(f"Error in case calculations: {e}")
-            raise
+            raise    
+    
     def normalize_efficiency(self, efficiency_norm):
         efficiency_norm = np.array(efficiency_norm)
         self.data.efficiency = self.data.efficiency/efficiency_norm

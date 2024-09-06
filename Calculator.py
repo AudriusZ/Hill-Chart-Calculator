@@ -18,9 +18,10 @@ class HillChartCalculator(tk.Tk):
         self.checkbox_vars = []
         self.checkboxes = []
         self.options = ["Head H [m]", "Flow rate Q [m^3/s]", "Rotational speed n [rpm]", "Runner diameter D [m]"]
+        self.sub_option_widgets = {}
 
         self.output_options = ["3D Hill Chart", "Hill Chart Contour", "2D Curve Slices","2D Curve Slices - const.blade", 'Normalized Hill Chart Contour', "Normalized 2D Curve Slices", "Best efficiency point summary"]
-        self.output_vars = [tk.IntVar() for _ in self.output_options]
+        self.output_vars = {option: tk.IntVar() for option in self.output_options}
 
         # Define sub-options for specific output options
         self.sub_output_options = {
@@ -125,8 +126,8 @@ class HillChartCalculator(tk.Tk):
         output_frame.columnconfigure(0, weight=1)
         output_frame.rowconfigure(0, weight=1)
 
-        for i, output_option in enumerate(self.output_options):
-            self.create_output_checkbox(output_option, self.output_vars[i], parent=output_frame)
+        for output_option in self.output_options:
+            self.create_output_checkbox(output_option, self.output_vars[output_option], parent=output_frame)
 
         self.calculate_button = tk.Button(output_frame, text="Calculate", command=self.generate_outputs, state='disabled')
         self.calculate_button.pack()
@@ -141,9 +142,8 @@ class HillChartCalculator(tk.Tk):
         self.checkboxes.append(chk)
     
     def create_output_checkbox(self, text, var, parent):
-        # Create the main checkbox
-        #chk = tk.Checkbutton(parent, text=text, variable=var, onvalue=1, offvalue=0, command=lambda: self.toggle_sub_options(text, var))
-        chk = tk.Checkbutton(parent, text=text, variable=var, onvalue=1, offvalue=0)
+        # Create the main checkbox with a command to toggle sub-options
+        chk = tk.Checkbutton(parent, text=text, variable=self.output_vars[text], onvalue=1, offvalue=0, command=lambda: self.toggle_suboptions(text))
         chk.pack(anchor=tk.W)
 
         # If there are sub-options, create checkboxes for them
@@ -151,10 +151,28 @@ class HillChartCalculator(tk.Tk):
             sub_frame = tk.Frame(parent)
             sub_frame.pack(anchor=tk.W, padx=20)  # Indent the sub-options
 
+            # If this is the first time adding sub-options for this text, initialize the list
+            if text not in self.sub_option_widgets:
+                self.sub_option_widgets[text] = []
+
+            # Add each sub-option checkbox
             for sub_option, sub_var in zip(self.sub_output_options[text], self.sub_output_vars[text]):
                 sub_chk = tk.Checkbutton(sub_frame, text=sub_option, variable=sub_var, onvalue=1, offvalue=0)
                 sub_chk.pack(anchor=tk.W)
                 sub_chk.configure(state='disabled')  # Initially disable sub-checkboxes
+
+                # Store the sub-checkbox in the dictionary for future state toggling
+                self.sub_option_widgets[text].append(sub_chk)
+
+    # Function to enable/disable sub-options based on the main checkbox state
+    def toggle_suboptions(self, text):
+        # Check the state of the main checkbox
+        state = 'normal' if self.output_vars[text].get() == 1 else 'disabled'
+
+        # Enable or disable the sub-option checkboxes based on the main checkbox state
+        if text in self.sub_option_widgets:
+            for sub_chk in self.sub_option_widgets[text]:
+                sub_chk.configure(state=state)
         
 
     def create_extrapolation_checkbox(self, option, var, labels, parent, set_default = 'no'):
@@ -262,9 +280,11 @@ class HillChartCalculator(tk.Tk):
         plot_processor = HillChartProcessor()
         plot_processor.get_file_path(self.datapath)
         plot_processor.get_turbine_parameters(self.selected_values, self.var1, self.var2)
-        plot_processor.get_plot_parameters(self.n_contours,[self.extrapolation_options_vars[0].get(),self.extrapolation_options_vars[1].get()],self.extrapolation_values_n11,self.extrapolation_values_blade_angles)
-        plot_options = [var.get() for var in self.output_vars]
-        plot_processor.get_output_parameters(plot_options)        
+        plot_processor.get_plot_parameters(self.n_contours,[self.extrapolation_options_vars[0].get(),self.extrapolation_options_vars[1].get()],self.extrapolation_values_n11,self.extrapolation_values_blade_angles)        
+        plot_options = {option: var.get() for option, var in self.output_vars.items()}
+        plot_suboptions = {option: {sub_option: sub_var.get() for sub_option, sub_var in zip(self.sub_output_options[option], sub_vars)}
+            for option, sub_vars in self.sub_output_vars.items()}
+        plot_processor.get_output_parameters(plot_options, plot_suboptions)        
         plot_processor.generate_outputs()        
 
     def get_selected_values(self):
