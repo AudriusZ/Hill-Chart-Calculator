@@ -34,9 +34,10 @@ class HillChartProcessor:
             '3D Hill Chart': 0
             ,'Hill Chart Contour': 0
             , '2D Curve Slices': 0
-            , '2D Curve Slices - const.blade': 1
+            , '2D Curve Slices - const.blade': 0
             , 'Normalized Hill Chart Contour': 0
-            , 'Normalized 2D Curve Slices': 0
+            , 'Normalized 2D Curve Slices': 1
+            , 'Normalized 2D Curve Slices - const.blade': 1
             , 'Best efficiency point summary': 0
             }
                
@@ -46,6 +47,10 @@ class HillChartProcessor:
             'Normalized Hill Chart Contour': {'Hide Blade Angle Lines': 0
                                               },
             '2D Curve Slices - const.blade': {'Const. Head': 1
+                                              , 'Const. n': 1
+                                              , 'Const. efficiency': 1
+                                              },
+            'Normalized 2D Curve Slices - const.blade': {'Const. Head': 1
                                               , 'Const. n': 1
                                               , 'Const. efficiency': 1
                                               }}
@@ -90,8 +95,7 @@ class HillChartProcessor:
         BEP_values.calculate_cases(self.selected_values, self.var1, self.var2)
         BEP_data = BEP_values.return_values()
 
-        Raw_data = HillChart()
-        #hill_values = HillChart()
+        Raw_data = HillChart()        
         Raw_data.read_hill_chart_values(self.datapath)
 
         hill_values = copy.deepcopy(Raw_data)
@@ -116,8 +120,7 @@ class HillChartProcessor:
         if self.output_options.get("Hill Chart Contour"):            
             suboptions = self.output_suboptions.get("Hill Chart Contour", {})
             plot_blade_angles = not suboptions.get("Hide Blade Angle Lines")                
-            self.plot_hill_chart_contour(hill_values, BEP_data, plot_blade_angles=plot_blade_angles)
-            
+            self.plot_hill_chart_contour(hill_values, BEP_data, plot_blade_angles=plot_blade_angles)            
 
         if self.output_options.get("2D Curve Slices"):
             self.plot_curve_slices(hill_values, BEP_data)
@@ -134,8 +137,7 @@ class HillChartProcessor:
                 self.plot_blade_slices_const_n(hill_values, BEP_data)
 
             if suboptions.get("Const. efficiency"): 
-                self.plot_blade_slices_const_efficiency(raw_data,BEP_data)
-                
+                self.plot_blade_slices_const_efficiency(raw_data,BEP_data)                
 
         if self.output_options.get("Normalized Hill Chart Contour"):
             suboptions = self.output_suboptions.get("Normalized Hill Chart Contour", {})
@@ -144,6 +146,20 @@ class HillChartProcessor:
 
         if self.output_options.get("Normalized 2D Curve Slices"):
             self.plot_normalized_curve_slices(hill_values, BEP_data)
+
+        if self.output_options.get("Normalized 2D Curve Slices - const.blade"):           
+
+            suboptions = self.output_suboptions.get("Normalized 2D Curve Slices - const.blade", {})
+
+            # Now check the sub-options within "2D Curve Slices - const.blade"
+            if suboptions.get("Const. Head"):
+                self.plot_blade_slices(hill_values, BEP_data, normalize = True)
+
+            if suboptions.get("Const. n"):
+                self.plot_blade_slices_const_n(hill_values, BEP_data, normalize = True)
+
+            if suboptions.get("Const. efficiency"): 
+                self.plot_blade_slices_const_efficiency(raw_data, BEP_data, normalize = True)     
 
         if self.output_options.get("Best efficiency point summary"):
             self.display_results_in_textbox(BEP_data)
@@ -243,53 +259,73 @@ class HillChartProcessor:
         
         plt.show(block=False)
 
-    def plot_blade_slices(self, hill_values, BEP_data):
+    def plot_blade_slices(self, hill_values, BEP_data, normalize = False):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         blade_slice_values = copy.deepcopy(hill_values)                
-        blade_slice_values.slice_hill_chart_data(selected_blade_angle = BEP_data.blade_angle[0])        
-        blade_slice_values.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])                    
-        blade_slice_values.plot_efficiency_vs_Q(ax=ax3[0,0],labels = 'const_blade')
-        blade_slice_values.plot_power_vs_Q(ax=ax3[1,0],labels = 'const_blade')               
-        
-        blade_slice_values.plot_efficiency_vs_n(ax=ax3[0,1],labels = 'const_blade')
-        blade_slice_values.plot_power_vs_n(ax=ax3[1,1],labels = 'const_blade')        
+        blade_slice_values.slice_hill_chart_data(selected_blade_angle = BEP_data.blade_angle[0])                
+        blade_slice_values.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])  
+        if normalize:
+            blade_slice_values.normalize_efficiency(BEP_data.efficiency)       
+            blade_slice_values.normalize_Q(BEP_data.Q)               
+            blade_slice_values.normalize_power(BEP_data.power)                              
+            blade_slice_values.normalize_n(BEP_data.n)                              
+            labels = 'normalized'
+        else:
+            labels = 'default'
+        blade_slice_values.plot_efficiency_vs_Q(ax=ax3[0,0],titles = 'const_blade', labels = labels)
+        blade_slice_values.plot_power_vs_Q(ax=ax3[1,0],titles = 'const_blade',labels = labels)             
+        blade_slice_values.plot_efficiency_vs_n(ax=ax3[0,1],titles = 'const_blade',labels = labels)
+        blade_slice_values.plot_power_vs_n(ax=ax3[1,1],titles = 'const_blade',labels = labels)        
         
         plt.show(block=False)    
 
-    def plot_blade_slices_const_n(self, hill_values, BEP_data):
+    def plot_blade_slices_const_n(self, hill_values, BEP_data, normalize = False):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         blade_slice_values = copy.deepcopy(hill_values)                
         blade_slice_values.slice_hill_chart_data(selected_blade_angle = BEP_data.blade_angle[0])        
-        blade_slice_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])                    
-        blade_slice_values.plot_Q_vs_H(ax=ax3[0,0])
-        blade_slice_values.plot_efficiency_vs_H(ax=ax3[0,1])              
-        blade_slice_values.plot_power_vs_H(ax=ax3[1,0])                
-        blade_slice_values.plot_efficiency_vs_Q(ax=ax3[1,1],labels = 'const_n')
+        blade_slice_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])                
+        if normalize:
+            blade_slice_values.normalize_efficiency(BEP_data.efficiency)       
+            blade_slice_values.normalize_power(BEP_data.power)       
+            blade_slice_values.normalize_Q(BEP_data.Q)               
+            blade_slice_values.normalize_H(BEP_data.H)    
+            labels = 'normalized'
+        else:
+            labels = 'default'
+        blade_slice_values.plot_Q_vs_H(ax=ax3[0,0],labels=labels)
+        blade_slice_values.plot_efficiency_vs_H(ax=ax3[0,1],labels=labels)              
+        blade_slice_values.plot_power_vs_H(ax=ax3[1,0],labels=labels)                
+        blade_slice_values.plot_efficiency_vs_Q(ax=ax3[1,1],titles = 'const_n',labels=labels)
         
         plt.show(block=False)    
 
-    def plot_blade_slices_const_efficiency(self, raw_data, BEP_data):
+    def plot_blade_slices_const_efficiency(self, raw_data, BEP_data, normalize = False):
                 
         _, ax4 = plt.subplots(1, 2, figsize=(15, 5))                  
         
         fixed_hillchart_point = copy.deepcopy(raw_data) 
-        fixed_hillchart_point.filter_for_maximum_efficiency()                
-                
-        #data = fixed_hillchart_point.return_values()
-        #data.H = 2.15
-        #H_min = data.H * 0.2
-        #H_max = data.H * 3
-        #H_step = data.H * 0.1                
-        #H_var = list(np.arange(H_min, H_max, H_step))
-                        
-        H_var = [1, 2, 3, 4, 5]
+        fixed_hillchart_point.filter_for_maximum_efficiency()                                
+        H_nom = BEP_data.H[0]        
+        H_min = H_nom * 0.2
+        H_max = H_nom * 3
+        H_step = H_nom * 0.2
+        H_var = list(np.arange(H_min, H_max, H_step))                        
+        
         for i in H_var:
             fixed_hillchart_point.calculate_cases([1, 4], i, BEP_data.D[0])              
-        fixed_hillchart_point.plot_Q_vs_H(titles='efficiency', ax=ax4[0])                
-        fixed_hillchart_point.plot_power_vs_H(titles='efficiency',ax=ax4[1])            
+        if normalize:            
+            fixed_hillchart_point.normalize_Q(BEP_data.Q)
+            fixed_hillchart_point.normalize_H(BEP_data.H)
+            fixed_hillchart_point.normalize_power(BEP_data.power)  
+            labels = 'normalized'
+        else:
+            labels = 'default'
+        fixed_hillchart_point.plot_Q_vs_H(ax=ax4[0], titles='efficiency', labels = labels)                
+        fixed_hillchart_point.plot_power_vs_H(ax=ax4[1], titles='efficiency', labels = labels)            
         
         plt.show(block=False) 
 
+    
     def plot_normalized_curve_slices(self, hill_values, BEP_data):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         q_curve_values = copy.deepcopy(hill_values)        
@@ -311,6 +347,8 @@ class HillChartProcessor:
         n_curve_values.plot_power_vs_n(ax=ax3[1,1], labels='normalized')
         
         plt.show(block=False)
+    
+        
 
     def prepare_text_results(self, BEP_data):
         num_sets = len(BEP_data.H)

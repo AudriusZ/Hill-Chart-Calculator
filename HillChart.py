@@ -523,35 +523,31 @@ class HillChart:
     
 
 
-    def plot_efficiency_vs_Q(self, ax=None, labels = 'default'):
+    def plot_efficiency_vs_Q(self, ax=None, titles = 'default', labels = 'default'):
         try:
             if ax is None:
                 raise ValueError("An Axes object must be provided for subplots.")
             
             ax.plot(self.data.Q, self.data.efficiency, 'b-', label='Efficiency vs Q')
-
-            
-            title = f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'               
                                   
+            if titles == 'default':                
+                title = f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'                                                          
+            elif titles == 'const_blade':            
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'   
+            elif titles == 'const_n':
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [m], D = {self.data.D[0]:.2f} [m]'                   
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'const_blade', 'const_n'.")
+            
             if labels == 'default':                
                 x_label = 'Q [$m^3$/s]'
-                y_label = 'Efficiency'                
-            
+                y_label = 'Efficiency'                            
             elif labels == 'normalized':                
                 x_label = 'Normalized Q'
-                y_label = 'Normalized Efficiency'                            
-            elif labels == 'const_blade':
-                x_label = 'Q [$m^3$/s]'
-                y_label = 'Efficiency' 
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'   
-            elif labels == 'const_n':
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [m], D = {self.data.D[0]:.2f} [m]'   
-                x_label = 'Q [$m^3$/s]'
-                y_label = 'Efficiency' 
+                y_label = 'Normalized Efficiency'                                         
             else:
                 raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            
-            
+                        
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
             ax.set_title(title)
@@ -563,108 +559,8 @@ class HillChart:
         except Exception as e:
             print(f"Error in plotting Efficiency vs Q: {e}")
 
-    def plot_efficiency_vs_n(self, ax=None, labels = 'default'):
-        try:           
-            if ax is None:
-                raise ValueError("An Axes object must be provided for subplots.")            
-            
-            ax.plot(self.data.n, self.data.efficiency, 'b-', label='Efficiency vs n')       
 
-            # Define labels and titles for different options            
-            title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f}[m]'                        
-            
-            if labels == 'default':                
-                x_label = 'n [rpm]'
-                y_label = 'Efficiency'                
-            
-            elif labels == 'normalized':                
-                x_label = 'Normalized n'
-                y_label = 'Normalized Efficiency'                            
-            elif labels == 'const_blade':
-                x_label = 'n [rpm]'
-                y_label = 'Efficiency' 
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'  
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            
-            
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(y_label)
-            ax.set_title(title)
-            ax.grid(True)
-
-            ax.legend()
-            print("Efficiency vs n curve created successfully")
-        except Exception as e:
-            print(f"Error in plotting Efficiency vs n: {e}")
-
-    def plot_Q_vs_H(self, ax=None, titles = 'default'):
-        try:           
-            if ax is None:
-                raise ValueError("An Axes object must be provided for subplots.")            
-            
-            ax.plot(self.data.H, self.data.Q, 'b-', label='Q vs H')       
-
-            # Define labels and titles for different options                        
-            if titles == 'default':                
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [rpm], D = {self.data.D[0]:.2f} [m]'  
-                x_label = 'H [m]'
-                y_label = 'Q [$m^3$/s]'     
-            elif titles == 'efficiency':
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], Efficiency = {self.data.efficiency[0]:.2f} [-], D = {self.data.D[0]:.2f} [m]'  
-                x_label = 'H [m]'
-                y_label = 'Q [$m^3$/s]'     
-            elif titles == 'normalized':                
-                x_label = 'Normalized H'
-                y_label = 'Normalized Q'   
-            else:
-                raise ValueError(f"titles '{titles}' is not recognized. Available labels: 'default', 'efficiency' 'normalized'.")
-            
-            
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(y_label)
-            ax.set_title(title)
-            ax.grid(True)
-
-            ax.legend()
-            print("Q vs H curve created successfully")
-        except Exception as e:
-            print(f"Error in plotting Q vs H: {e}")
-
-    def plot_power_vs_H(self, ax=None, titles = 'default'):
-        try:           
-            if ax is None:
-                raise ValueError("An Axes object must be provided for subplots.")            
-            
-            ax.plot(self.data.H, self.data.power, 'b-', label='Power vs H')       
-
-            # Define labels and titles for different options                        
-            if titles == 'default':                
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [rpm], D = {self.data.D[0]:.2f} [m]'  
-                x_label = 'H [m]'
-                y_label = 'Power [W]'     
-            elif titles == 'efficiency':
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], Efficiency = {self.data.efficiency[0]:.2f} [-], D = {self.data.D[0]:.2f} [m]'  
-                x_label = 'H [m]'
-                y_label = 'Power [W]'     
-            elif titles == 'normalized':                
-                x_label = 'Normalized H'
-                y_label = 'Normalized Q'   
-            else:
-                raise ValueError(f"titles '{titles}' is not recognized. Available labels: 'default', 'efficiency' 'normalized'.")
-            
-            
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(y_label)
-            ax.set_title(title)
-            ax.grid(True)
-
-            ax.legend()
-            print("Power vs H curve created successfully")
-        except Exception as e:
-            print(f"Error in plotting Power vs H: {e}")
-
-    def plot_efficiency_vs_H(self, ax=None, labels = 'default'):
+    def plot_efficiency_vs_H(self, ax=None, titles = 'default', labels = 'default'):
         try:           
             if ax is None:
                 raise ValueError("An Axes object must be provided for subplots.")            
@@ -672,19 +568,19 @@ class HillChart:
             ax.plot(self.data.H, self.data.efficiency, 'b-', label='efficiency vs H')       
 
             # Define labels and titles for different options                        
-            title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [rpm], D = {self.data.D[0]:.2f} [m]'  
+            if titles == 'default':                
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [rpm], D = {self.data.D[0]:.2f} [m]'                                                                                       
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default'.")
             
             if labels == 'default':                
                 x_label = 'H [m]'
-                y_label = 'Efficiency'                
-            
+                y_label = 'Efficiency'                              
             elif labels == 'normalized':                
                 x_label = 'Normalized H'
-                y_label = 'Normalized Efficiency'                                        
-                
+                y_label = 'Normalized Efficiency'     
             else:
                 raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            
             
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
@@ -696,7 +592,76 @@ class HillChart:
         except Exception as e:
             print(f"Error in plotting Efficiency vs H: {e}")
 
-    def plot_power_vs_Q(self, ax=None, labels='default'):
+    def plot_efficiency_vs_n(self, ax=None, titles = 'default', labels = 'default'):
+        try:           
+            if ax is None:
+                raise ValueError("An Axes object must be provided for subplots.")            
+            
+            ax.plot(self.data.n, self.data.efficiency, 'b-', label='Efficiency vs n')       
+
+            # Define labels and titles for different options        
+            if titles == 'default':                
+                title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f}[m]'                        
+            elif titles == 'const_blade':            
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]' 
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'const_blade'.")
+
+            if labels == 'default':                
+                x_label = 'n [rpm]'
+                y_label = 'Efficiency'                         
+            elif labels == 'normalized':                
+                x_label = 'Normalized n'
+                y_label = 'Normalized Efficiency'                                         
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
+            
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+            ax.set_title(title)
+            ax.grid(True)
+
+            ax.legend()
+            print("Efficiency vs n curve created successfully")
+        except Exception as e:
+            print(f"Error in plotting Efficiency vs n: {e}")
+
+
+    def plot_Q_vs_H(self, ax=None, titles = 'default', labels = 'default'):
+        try:           
+            if ax is None:
+                raise ValueError("An Axes object must be provided for subplots.")            
+            
+            ax.plot(self.data.H, self.data.Q, 'b-', label='Q vs H')       
+
+            # Define labels and titles for different options        
+            if titles == 'default':                
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [rpm], D = {self.data.D[0]:.2f} [m]'  
+            elif titles == 'efficiency':
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], Efficiency = {self.data.efficiency[0]:.2f} [-], D = {self.data.D[0]:.2f} [m]'              
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'efficiency'.")
+
+            if labels == 'default':                
+                x_label = 'H [m]'
+                y_label = 'Q [$m^3$/s]'                     
+            elif labels == 'normalized':                
+                x_label = 'Normalized H'
+                y_label = 'Normalized Q'                                   
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
+            
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+            ax.set_title(title)
+            ax.grid(True)
+
+            ax.legend()
+            print("Q vs H curve created successfully")
+        except Exception as e:
+            print(f"Error in plotting Q vs H: {e}")
+
+    def plot_power_vs_Q(self, ax=None, titles = 'default', labels = 'default'):
         try:           
             if ax is None:
                 raise ValueError("An Axes object must be provided for subplots.")  
@@ -704,24 +669,21 @@ class HillChart:
             ax.plot(self.data.Q, self.data.power, 'b-', label='Power vs Q')
             
             # Define labels and titles for different options            
-            title = f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'            
-            
+            if titles == 'default':                
+                title = f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'            
+            elif titles == 'const_blade':            
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'  
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'const_blade'.")
+
             if labels == 'default':                
                 x_label = 'Q [$m^3$/s]'
-                y_label = 'Power [W]'                
-            
+                y_label = 'Power [W]'                      
             elif labels == 'normalized':                
                 x_label = 'Normalized Q'
-                y_label = 'Normalized Power'             
-
-            elif labels == 'const_blade':
-                x_label = 'Q [$m^3$/s]'
-                y_label = 'Power [W]'  
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'                 
-
+                y_label = 'Normalized Power'                                    
             else:
                 raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            
             
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
@@ -733,7 +695,41 @@ class HillChart:
         except Exception as e:
             print(f"Error in plotting Power vs Q: {e}")
 
-    def plot_power_vs_n(self, ax=None, labels='default'):
+    def plot_power_vs_H(self, ax=None, titles = 'default', labels = 'default'):
+        try:           
+            if ax is None:
+                raise ValueError("An Axes object must be provided for subplots.")            
+            
+            ax.plot(self.data.H, self.data.power, 'b-', label='Power vs H')     
+
+            # Define labels and titles for different options            
+            if titles == 'default':                
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [rpm], D = {self.data.D[0]:.2f} [m]'  
+            elif titles == 'efficiency':
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], Efficiency = {self.data.efficiency[0]:.2f} [-], D = {self.data.D[0]:.2f} [m]'  
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'efficiency'.")
+
+            if labels == 'default':                
+                x_label = 'H [m]'
+                y_label = 'Power [W]'                   
+            elif labels == 'normalized':                
+                x_label = 'Normalized H'
+                y_label = 'Normalized Power'                                    
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
+            
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+            ax.set_title(title)
+            ax.grid(True)
+
+            ax.legend()
+            print("Power vs H curve created successfully")
+        except Exception as e:
+            print(f"Error in plotting Power vs H: {e}")
+
+    def plot_power_vs_n(self, ax=None, titles = 'default', labels = 'default'):
         try:
             if ax is None:
                 raise ValueError("An Axes object must be provided for subplots.")                     
@@ -741,26 +737,23 @@ class HillChart:
             n_data = self.data.n
             power_data = self.data.power
 
-            # Define labels and titles for different options
-            title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'
-            
+            # Define labels and titles for different options            
+            if titles == 'default':                
+                title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'
+            elif titles == 'const_blade':            
+                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]' 
+            else:
+                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'const_blade'.")
+
             if labels == 'default':                
                 x_label = 'n [rpm]'
-                y_label = 'Power [W]'                
-            
+                y_label = 'Power [W]'        
             elif labels == 'normalized':                
                 x_label = 'Normalized n'
-                y_label = 'Normalized Power'                            
-
-            elif labels == 'const_blade':
-                x_label = 'n [rpm]'
-                y_label = 'Power [W]' 
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]' 
-
+                y_label = 'Normalized Power'                                    
             else:
                 raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
             
-
             ax.plot(n_data, power_data, 'b-', label='Power vs n')
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
@@ -885,6 +878,10 @@ class HillChart:
     def normalize_Q(self, Q_norm):
         Q_norm = np.array(Q_norm)
         self.data.Q = self.data.Q/Q_norm
+
+    def normalize_H(self, H_norm):
+        H_norm = np.array(H_norm)
+        self.data.H = self.data.H/H_norm
 
     def normalize_n(self, n_norm):
         n_norm = np.array(n_norm)
