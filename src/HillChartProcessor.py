@@ -97,7 +97,7 @@ class HillChartProcessor:
             self.plot_normalized_hill_chart_contour(hill_values, BEP_data, plot_blade_angles = plot_blade_angles)
 
         if self.output_options.get("Normalized 2D Curve Slices"):
-            self.plot_normalized_curve_slices(hill_values, BEP_data)
+            self.plot_curve_slices(hill_values, BEP_data, normalize = True)
 
         if self.output_options.get("Normalized 2D Curve Slices - const.blade"):           
 
@@ -158,8 +158,6 @@ class HillChartProcessor:
         plt.tight_layout()
         plt.show(block=False)
 
-    
-
     def plot_normalized_hill_chart_contour(self, hill_values, BEP_data, plot_blade_angles = True):
         hill_values_norm = copy.deepcopy(hill_values)        
         
@@ -197,22 +195,37 @@ class HillChartProcessor:
         plt.tight_layout()
         plt.show(block=False)
 
-    def plot_curve_slices(self, hill_values, BEP_data):
+    def plot_curve_slices(self, hill_values, BEP_data, normalize = False):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
+        
         q_curve_values = copy.deepcopy(hill_values)        
         q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)        
-        q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])                    
-        q_curve_values.plot_efficiency_vs_Q(ax=ax3[0,0])
-        q_curve_values.plot_power_vs_Q(ax=ax3[1,0])
+        q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])    
+        if normalize:
+            q_curve_values.normalize('efficiency', BEP_data.efficiency)       
+            q_curve_values.normalize('Q', BEP_data.Q)               
+            q_curve_values.normalize('power', BEP_data.power)                           
+            labels = 'normalized'
+        else:
+            labels = 'default'
+        q_curve_values.plot('Q', 'efficiency',ax=ax3[0,0], label_type = labels)      
+        q_curve_values.plot('Q', 'power',ax=ax3[1,0], label_type = labels)      
 
         n_curve_values = copy.deepcopy(hill_values)        
         n_curve_values.slice_hill_chart_data(selected_Q11=BEP_data.Q11[0])        
-        n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
-        n_curve_values.plot_efficiency_vs_n(ax=ax3[0,1])
-        n_curve_values.plot_power_vs_n(ax=ax3[1,1])        
+        n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])   
+        if normalize:
+            n_curve_values.normalize('efficiency', BEP_data.efficiency)       
+            n_curve_values.normalize('Q', BEP_data.Q)               
+            n_curve_values.normalize('power', BEP_data.power)                           
+            labels = 'normalized'
+        else:
+            labels = 'default'        
+        n_curve_values.plot('n', 'efficiency',ax=ax3[0,1], label_type = labels)      
+        n_curve_values.plot('n', 'power',ax=ax3[1,1], label_type = labels)      
         
         plt.show(block=False)
-
+        
     def plot_blade_slices(self, hill_values, BEP_data, normalize = False):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         blade_slice_values = copy.deepcopy(hill_values)                
@@ -226,10 +239,11 @@ class HillChartProcessor:
             labels = 'normalized'
         else:
             labels = 'default'
-        blade_slice_values.plot_efficiency_vs_Q(ax=ax3[0,0],titles = 'const_blade', labels = labels)
-        blade_slice_values.plot_power_vs_Q(ax=ax3[1,0],titles = 'const_blade',labels = labels)             
-        blade_slice_values.plot_efficiency_vs_n(ax=ax3[0,1],titles = 'const_blade',labels = labels)
-        blade_slice_values.plot_power_vs_n(ax=ax3[1,1],titles = 'const_blade',labels = labels)        
+       
+        blade_slice_values.plot('Q','efficiency', ax=ax3[0,0],title_type = 'const_blade', label_type = labels)
+        blade_slice_values.plot('Q','power', ax=ax3[1,0],title_type = 'const_blade', label_type = labels)
+        blade_slice_values.plot('n','efficiency', ax=ax3[0,1],title_type = 'const_blade', label_type = labels)
+        blade_slice_values.plot('n','power', ax=ax3[1,1],title_type = 'const_blade', label_type = labels)
         
         plt.show(block=False)    
 
@@ -245,11 +259,12 @@ class HillChartProcessor:
             blade_slice_values.normalize('H', BEP_data.H)    
             labels = 'normalized'
         else:
-            labels = 'default'
-        blade_slice_values.plot_Q_vs_H(ax=ax3[0,0],labels=labels)
-        blade_slice_values.plot_efficiency_vs_H(ax=ax3[0,1],labels=labels)              
-        blade_slice_values.plot_power_vs_H(ax=ax3[1,0],labels=labels)                
-        blade_slice_values.plot_efficiency_vs_Q(ax=ax3[1,1],titles = 'const_n',labels=labels)
+            labels = 'default'        
+
+        blade_slice_values.plot('H','Q',ax=ax3[0,0],title_type = 'const_n',label_type = labels)
+        blade_slice_values.plot('H','efficiency', ax=ax3[0,1],title_type = 'const_n',label_type = labels)
+        blade_slice_values.plot('H','power', ax=ax3[1,0],title_type = 'const_n',label_type = labels)
+        blade_slice_values.plot('Q','efficiency', ax=ax3[1,1],title_type = 'const_n',label_type = labels)
         
         plt.show(block=False)    
 
@@ -274,35 +289,11 @@ class HillChartProcessor:
             labels = 'normalized'
         else:
             labels = 'default'
-        fixed_hillchart_point.plot_Q_vs_H(ax=ax4[0], titles='efficiency', labels = labels)                
-        fixed_hillchart_point.plot_power_vs_H(ax=ax4[1], titles='efficiency', labels = labels)            
+         
+        fixed_hillchart_point.plot('H','Q',ax=ax4[0],title_type = 'const_efficiency',label_type = labels)
+        fixed_hillchart_point.plot('H','power',ax=ax4[1],title_type = 'const_efficiency',label_type = labels)
         
         plt.show(block=False) 
-
-    
-    def plot_normalized_curve_slices(self, hill_values, BEP_data):
-        _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
-        q_curve_values = copy.deepcopy(hill_values)        
-        q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)        
-        q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])            
-        q_curve_values.normalize('efficiency', BEP_data.efficiency)       
-        q_curve_values.normalize('Q', BEP_data.Q)               
-        q_curve_values.normalize('power', BEP_data.power)
-        q_curve_values.plot_efficiency_vs_Q(ax=ax3[0,0], labels='normalized')
-        q_curve_values.plot_power_vs_Q(ax=ax3[1,0], labels='normalized')
-
-        n_curve_values = copy.deepcopy(hill_values)        
-        n_curve_values.slice_hill_chart_data(selected_n11=None, selected_Q11=BEP_data.Q11[0])        
-        n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
-        n_curve_values.normalize('efficiency', BEP_data.efficiency)               
-        n_curve_values.normalize('n', BEP_data.n)       
-        n_curve_values.normalize('power', BEP_data.power)
-        n_curve_values.plot_efficiency_vs_n(ax=ax3[0,1], labels='normalized')
-        n_curve_values.plot_power_vs_n(ax=ax3[1,1], labels='normalized')
-        
-        plt.show(block=False)
-    
-        
 
     def prepare_text_results(self, BEP_data):
         num_sets = len(BEP_data.H)

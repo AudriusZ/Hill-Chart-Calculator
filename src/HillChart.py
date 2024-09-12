@@ -1,34 +1,12 @@
-from typing import List
-from dataclasses import dataclass, field
-
+from TurbineData import TurbineData
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import griddata
-import copy
-from numpy.polynomial import Polynomial
 from scipy.interpolate import PchipInterpolator
 from matplotlib import path as mpath
 
-
-@dataclass
-class TurbineData:
-    H: List[float] = field(default_factory=list)
-    Q: List[float] = field(default_factory=list)
-    n: List[float] = field(default_factory=list)
-    D: List[float] = field(default_factory=list)
-    blade_angle: List[float] = field(default_factory=list)
-    Q11: List[float] = field(default_factory=list)
-    n11: List[float] = field(default_factory=list)
-    efficiency: List[float] = field(default_factory=list)
-    power: List[float] = field(default_factory=list)
-    Ns: List[float] = field(default_factory=list)
-
-    def clear_data(self):
-        #Clears all data by resetting each attribute to an empty list.
-        for attr in vars(self):
-            setattr(self, attr, [])
 
 class HillChart:
     def __init__(self):        
@@ -206,6 +184,104 @@ class HillChart:
 
         return self.data.n11, self.data.Q11, self.data.blade_angle
     
+    def filter_for_maximum_efficiency(self):
+        try:
+            # Check if efficiency list is not empty
+            if not self.data.efficiency:
+                print("No efficiency data available.")
+                return
+
+            # Find the index of the maximum efficiency
+            max_eff_index = self.data.efficiency.index(max(self.data.efficiency))
+            
+            # Retrieve the values from each list at the index of the maximum efficiency
+            max_Q11 = self.data.Q11[max_eff_index]
+            max_n11 = self.data.n11[max_eff_index]
+            max_efficiency = self.data.efficiency[max_eff_index]
+            max_blade_angle = self.data.blade_angle[max_eff_index] 
+
+            # Clear existing lists and append only the max values
+            self.data.clear_data()
+
+            self.data.Q11 = [max_Q11]
+            self.data.n11 = [max_n11]
+            self.data.efficiency = [max_efficiency]
+            self.data.blade_angle = [max_blade_angle]
+
+            #print("Filtered to maximum efficiency data.")
+        except Exception as e:
+            print(f"Error filtering data for maximum efficiency: {e}")
+            raise
+
+    def calculate_cases(self, selected_values, var1, var2):
+        try:
+            #self.read_hill_chart_values()
+            if not self.data:
+                print("No data available.")
+                return
+
+            
+            for i in range(len(self.data.Q11)):
+                if selected_values == [1, 2]:  # H, Q provided
+                    H = var1
+                    Q = var2
+                    D = (Q / (self.data.Q11[i] * (H)**0.5))**0.5
+                    n = (H**0.5) * self.data.n11[i] / D
+                
+                elif selected_values == [1, 3]:  # H, n provided
+                    H = var1
+                    n = var2
+                    D = (H**0.5) * self.data.n11[i] / n
+                    Q = D**2 * self.data.Q11[i] * (H**0.5)
+                    
+                elif selected_values == [1, 4]:  # H, D provided
+                    H = var1
+                    D = var2
+                    n = (H**0.5) * self.data.n11[i] / D
+                    Q = D**2 * self.data.Q11[i] * (H**0.5)
+
+                elif selected_values == [2, 3]:  # Q, n provided
+                    Q = var1
+                    n = var2
+                    D = (Q * self.data.n11[i] / (self.data.Q11[i] * n))**(1/3)
+                    H = (n * D / self.data.n11[i])**2
+
+                elif selected_values == [2, 4]:  # Q, D provided
+                    Q = var1
+                    D = var2
+                    H = (Q / (self.data.Q11[i] * (D**2)))**2
+                    n = (H**0.5) * self.data.n11[i] / D
+
+                elif selected_values == [3, 4]:  # n, D provided
+                    n = var1
+                    D = var2
+                    H = (n * D / self.data.n11[i])**2
+                    Q = D**2 * self.data.Q11[i] * (H**0.5)
+
+                else:
+                    print("Invalid selected values, no calculation performed.")
+                    continue
+                
+                self.data.H.append(H)
+                self.data.Q.append(Q)
+                self.data.n.append(n)
+                self.data.D.append(D)
+                power = Q * H * 1000 * 9.8 * self.data.efficiency[i]
+                self.data.power.append(power)
+                Ns = (n*Q**0.5)/H**0.75
+                self.data.Ns.append(Ns)
+
+        except Exception as e:
+            print(f"Error in case calculations: {e}")
+            raise    
+    
+    def normalize(self, attribute_name, norm_value):
+        norm_value = np.array(norm_value)
+        setattr(self.data, attribute_name, getattr(self.data, attribute_name) / norm_value)
+
+    def return_values(self):
+        return self.data 
+    
     def prepare_hill_chart_data(self):
         x = np.array(self.data.n11)
         y = np.array(self.data.Q11)
@@ -372,11 +448,7 @@ class HillChart:
         return {angle: (np.array(n11_contour), np.array(Q11_contour)) 
                 for angle, (n11_contour, Q11_contour) in contours_dict.items()}
     
-    '''
-    def overwrite_with_slice(self):
-        self.data = copy.deepcopy(self.data)
-    '''
-
+    
     def plot_contour_lines(self, ax, line_coords):
         """Plot contour lines and annotate them on the given axis."""
         if isinstance(line_coords, dict):  # Check if line_coords is a dictionary
@@ -503,345 +575,80 @@ class HillChart:
 
         except Exception as e:
             print(f"Error in plotting hill chart contour: {e}")
-
-    def plot_efficiency_vs_Q(self, ax=None, titles = 'default', labels = 'default'):
+   
+    def plot(self, x_var, y_var, ax=None, title_type = 'default', label_type = 'default'):
+               
         try:
             if ax is None:
                 raise ValueError("An Axes object must be provided for subplots.")
             
-            ax.plot(self.data.Q, self.data.efficiency, 'b-', label='Efficiency vs Q')
-                                  
-            if titles == 'default':                
-                title = f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'                                                          
-            elif titles == 'const_blade':            
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'   
-            elif titles == 'const_n':
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [m], D = {self.data.D[0]:.2f} [m]'                   
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'const_blade', 'const_n'.")
+            # Ensure x_var and y_var exist in self.data
+            if not hasattr(self.data, x_var) or not hasattr(self.data, y_var):
+                raise ValueError(f"Invalid variables '{x_var}' or '{y_var}' in data.")
             
-            if labels == 'default':                
-                x_label = 'Q [$m^3$/s]'
-                y_label = 'Efficiency'                            
-            elif labels == 'normalized':                
-                x_label = 'Normalized Q'
-                y_label = 'Normalized Efficiency'                                         
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
+            # Map variables to data    
+            x_data = getattr(self.data, x_var)
+            y_data = getattr(self.data, y_var)                   
                         
+            ax.plot(x_data, y_data, 'b-', label=f"{y_var} vs {x_var}")   
+
+            # Define the formatting for each variable
+            format_dict = {
+                'blade_angle': '.1f',
+                'n': '.1f',
+                'Q': '.1f',
+                'H': '.2f',
+                'D': '.2f',
+                'efficiency': '.2f'
+            }
+
+            # Construct the title_dict using the specified format for each variable
+            title_dict = {
+                key: f'{self.data.nomenclature_dict()[key]} = {getattr(self.data, key)[0]:{format_dict[key]}} {self.data.units_dict()[key]}'
+                if getattr(self.data, key) is not None and len(getattr(self.data, key)) > 0 else ''
+                for key in ['blade_angle', 'n', 'Q', 'H', 'D', 'efficiency']
+            }
+                        
+            # Define a mapping from title_type to sets of excluded variables
+            excluded_vars_map = {
+                'default': {x_var, y_var, 'blade_angle', 'efficiency'},
+                'const_blade': {'n', 'Q', 'efficiency'},
+                'const_n': {'efficiency', 'Q', 'H'},
+                'const_efficiency': {'n', 'Q', 'H'}
+            }
+
+            # Get the excluded variables based on the title_type
+            excluded_vars = excluded_vars_map.get(title_type)
+            if excluded_vars is None:
+                raise ValueError(f"title_type '{title_type}' is not recognized. Available labels: 'default', 'const_blade', 'const_n', 'const_efficiency'.")
+
+            # Construct the title by excluding the specified variables
+            included_titles = [title for key, title in title_dict.items() if key not in excluded_vars]
+            title = ', '.join(included_titles)
+
+            
+            if label_type == 'default':
+                x_label = f'{self.data.nomenclature_dict()[x_var]} {self.data.units_dict()[x_var]}'
+                y_label = f'{self.data.nomenclature_dict()[y_var]} {self.data.units_dict()[y_var]}'
+            elif label_type == 'normalized':
+                x_label = f'Normalized {self.data.nomenclature_dict()[x_var]}'
+                y_label = f'Normalized {self.data.nomenclature_dict()[y_var]}'
+            else:
+                raise ValueError(f"Label type '{label_type}' is not recognized.")
+
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
             ax.set_title(title)
             ax.grid(True)
             ax.legend()
-            
-            print("Efficiency vs Q curve created successfully")
+
+            print(f"{f'{y_var} vs {x_var}'} curve created successfully")
 
         except Exception as e:
-            print(f"Error in plotting Efficiency vs Q: {e}")
-
-    def plot_efficiency_vs_H(self, ax=None, titles = 'default', labels = 'default'):
-        try:           
-            if ax is None:
-                raise ValueError("An Axes object must be provided for subplots.")            
-            
-            ax.plot(self.data.H, self.data.efficiency, 'b-', label='efficiency vs H')       
-
-            # Define labels and titles for different options                        
-            if titles == 'default':                
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [rpm], D = {self.data.D[0]:.2f} [m]'                                                                                       
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default'.")
-            
-            if labels == 'default':                
-                x_label = 'H [m]'
-                y_label = 'Efficiency'                              
-            elif labels == 'normalized':                
-                x_label = 'Normalized H'
-                y_label = 'Normalized Efficiency'     
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(y_label)
-            ax.set_title(title)
-            ax.grid(True)
-
-            ax.legend()
-            print("Efficiency vs H curve created successfully")
-        except Exception as e:
-            print(f"Error in plotting Efficiency vs H: {e}")
-
-    def plot_efficiency_vs_n(self, ax=None, titles = 'default', labels = 'default'):
-        try:           
-            if ax is None:
-                raise ValueError("An Axes object must be provided for subplots.")            
-            
-            ax.plot(self.data.n, self.data.efficiency, 'b-', label='Efficiency vs n')       
-
-            # Define labels and titles for different options        
-            if titles == 'default':                
-                title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f}[m]'                        
-            elif titles == 'const_blade':            
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]' 
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'const_blade'.")
-
-            if labels == 'default':                
-                x_label = 'n [rpm]'
-                y_label = 'Efficiency'                         
-            elif labels == 'normalized':                
-                x_label = 'Normalized n'
-                y_label = 'Normalized Efficiency'                                         
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(y_label)
-            ax.set_title(title)
-            ax.grid(True)
-
-            ax.legend()
-            print("Efficiency vs n curve created successfully")
-        except Exception as e:
-            print(f"Error in plotting Efficiency vs n: {e}")
-
-
-    def plot_Q_vs_H(self, ax=None, titles = 'default', labels = 'default'):
-        try:           
-            if ax is None:
-                raise ValueError("An Axes object must be provided for subplots.")            
-            
-            ax.plot(self.data.H, self.data.Q, 'b-', label='Q vs H')       
-
-            # Define labels and titles for different options        
-            if titles == 'default':                
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [rpm], D = {self.data.D[0]:.2f} [m]'  
-            elif titles == 'efficiency':
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], Efficiency = {self.data.efficiency[0]:.2f} [-], D = {self.data.D[0]:.2f} [m]'              
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'efficiency'.")
-
-            if labels == 'default':                
-                x_label = 'H [m]'
-                y_label = 'Q [$m^3$/s]'                     
-            elif labels == 'normalized':                
-                x_label = 'Normalized H'
-                y_label = 'Normalized Q'                                   
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(y_label)
-            ax.set_title(title)
-            ax.grid(True)
-
-            ax.legend()
-            print("Q vs H curve created successfully")
-        except Exception as e:
-            print(f"Error in plotting Q vs H: {e}")
-
-    def plot_power_vs_Q(self, ax=None, titles = 'default', labels = 'default'):
-        try:           
-            if ax is None:
-                raise ValueError("An Axes object must be provided for subplots.")  
-            
-            ax.plot(self.data.Q, self.data.power, 'b-', label='Power vs Q')
-            
-            # Define labels and titles for different options            
-            if titles == 'default':                
-                title = f'n = {self.data.n[0]:.1f} [rpm], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'            
-            elif titles == 'const_blade':            
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'  
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'const_blade'.")
-
-            if labels == 'default':                
-                x_label = 'Q [$m^3$/s]'
-                y_label = 'Power [W]'                      
-            elif labels == 'normalized':                
-                x_label = 'Normalized Q'
-                y_label = 'Normalized Power'                                    
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(y_label)
-            ax.set_title(title)
-            ax.grid(True)
-            ax.legend()
-            
-            print("Power vs Q curve created successfully")
-        except Exception as e:
-            print(f"Error in plotting Power vs Q: {e}")
-
-    def plot_power_vs_H(self, ax=None, titles = 'default', labels = 'default'):
-        try:           
-            if ax is None:
-                raise ValueError("An Axes object must be provided for subplots.")            
-            
-            ax.plot(self.data.H, self.data.power, 'b-', label='Power vs H')     
-
-            # Define labels and titles for different options            
-            if titles == 'default':                
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], n = {self.data.n[0]:.1f} [rpm], D = {self.data.D[0]:.2f} [m]'  
-            elif titles == 'efficiency':
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], Efficiency = {self.data.efficiency[0]:.2f} [-], D = {self.data.D[0]:.2f} [m]'  
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'efficiency'.")
-
-            if labels == 'default':                
-                x_label = 'H [m]'
-                y_label = 'Power [W]'                   
-            elif labels == 'normalized':                
-                x_label = 'Normalized H'
-                y_label = 'Normalized Power'                                    
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(y_label)
-            ax.set_title(title)
-            ax.grid(True)
-
-            ax.legend()
-            print("Power vs H curve created successfully")
-        except Exception as e:
-            print(f"Error in plotting Power vs H: {e}")
-
-    def plot_power_vs_n(self, ax=None, titles = 'default', labels = 'default'):
-        try:
-            if ax is None:
-                raise ValueError("An Axes object must be provided for subplots.")                     
-            
-            n_data = self.data.n
-            power_data = self.data.power
-
-            # Define labels and titles for different options            
-            if titles == 'default':                
-                title = f'Q = {self.data.Q[0]:.1f} [$m^3$/s], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]'
-            elif titles == 'const_blade':            
-                title = f'Blade angle = {self.data.blade_angle[0]:.1f} [°], H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]' 
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'const_blade'.")
-
-            if labels == 'default':                
-                x_label = 'n [rpm]'
-                y_label = 'Power [W]'        
-            elif labels == 'normalized':                
-                x_label = 'Normalized n'
-                y_label = 'Normalized Power'                                    
-            else:
-                raise ValueError(f"labels '{labels}' is not recognized. Available labels: 'default', 'normalized'.")
-            
-            ax.plot(n_data, power_data, 'b-', label='Power vs n')
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(y_label)
-            ax.set_title(title)
-            ax.grid(True)
-            ax.legend()
-            
-            print(f"Power vs n curve created successfully with labels '{labels}'")
-        except Exception as e:
-            print(f"Error in plotting Power vs n: {e}")
-
-    def filter_for_maximum_efficiency(self):
-        try:
-            # Check if efficiency list is not empty
-            if not self.data.efficiency:
-                print("No efficiency data available.")
-                return
-
-            # Find the index of the maximum efficiency
-            max_eff_index = self.data.efficiency.index(max(self.data.efficiency))
-            
-            # Retrieve the values from each list at the index of the maximum efficiency
-            max_Q11 = self.data.Q11[max_eff_index]
-            max_n11 = self.data.n11[max_eff_index]
-            max_efficiency = self.data.efficiency[max_eff_index]
-            max_blade_angle = self.data.blade_angle[max_eff_index] 
-
-            # Clear existing lists and append only the max values
-            self.data.clear_data()
-
-            self.data.Q11 = [max_Q11]
-            self.data.n11 = [max_n11]
-            self.data.efficiency = [max_efficiency]
-            self.data.blade_angle = [max_blade_angle]
-
-            #print("Filtered to maximum efficiency data.")
-        except Exception as e:
-            print(f"Error filtering data for maximum efficiency: {e}")
-            raise
-
-    def calculate_cases(self, selected_values, var1, var2):
-        try:
-            #self.read_hill_chart_values()
-            if not self.data:
-                print("No data available.")
-                return
-
-            
-            for i in range(len(self.data.Q11)):
-                if selected_values == [1, 2]:  # H, Q provided
-                    H = var1
-                    Q = var2
-                    D = (Q / (self.data.Q11[i] * (H)**0.5))**0.5
-                    n = (H**0.5) * self.data.n11[i] / D
-                
-                elif selected_values == [1, 3]:  # H, n provided
-                    H = var1
-                    n = var2
-                    D = (H**0.5) * self.data.n11[i] / n
-                    Q = D**2 * self.data.Q11[i] * (H**0.5)
-                    
-                elif selected_values == [1, 4]:  # H, D provided
-                    H = var1
-                    D = var2
-                    n = (H**0.5) * self.data.n11[i] / D
-                    Q = D**2 * self.data.Q11[i] * (H**0.5)
-
-                elif selected_values == [2, 3]:  # Q, n provided
-                    Q = var1
-                    n = var2
-                    D = (Q * self.data.n11[i] / (self.data.Q11[i] * n))**(1/3)
-                    H = (n * D / self.data.n11[i])**2
-
-                elif selected_values == [2, 4]:  # Q, D provided
-                    Q = var1
-                    D = var2
-                    H = (Q / (self.data.Q11[i] * (D**2)))**2
-                    n = (H**0.5) * self.data.n11[i] / D
-
-                elif selected_values == [3, 4]:  # n, D provided
-                    n = var1
-                    D = var2
-                    H = (n * D / self.data.n11[i])**2
-                    Q = D**2 * self.data.Q11[i] * (H**0.5)
-
-                else:
-                    print("Invalid selected values, no calculation performed.")
-                    continue
-                
-                self.data.H.append(H)
-                self.data.Q.append(Q)
-                self.data.n.append(n)
-                self.data.D.append(D)
-                power = Q * H * 1000 * 9.8 * self.data.efficiency[i]
-                self.data.power.append(power)
-                Ns = (n*Q**0.5)/H**0.75
-                self.data.Ns.append(Ns)
-
-        except Exception as e:
-            print(f"Error in case calculations: {e}")
-            raise    
+            print(f"Error in plotting {y_var} vs {x_var}: {e}")
     
-    def normalize(self, attribute_name, norm_value):
-        norm_value = np.array(norm_value)
-        setattr(self.data, attribute_name, getattr(self.data, attribute_name) / norm_value)
-
-    def return_values(self):
-        return self.data    
+    
+       
    
 
 
