@@ -1,5 +1,5 @@
-
-from HillChart import HillChart  # Ensure HillChart module is available in the environment
+import os
+from HillChart import HillChart 
 import matplotlib.pyplot as plt
 import copy
 import tkinter as tk
@@ -10,54 +10,6 @@ class HillChartProcessor:
         # Initialize the Tkinter root window (you can hide it if necessary)
         self.root_window = tk.Tk()
         self.root_window.withdraw()  # Hide the root window as it's not needed
-
-    def default_turbine_parameters(self):
-        datapath = 'Mogu_D1.65m.csv'        
-        #datapath = 'D_Liszka_et_al_turbine.csv'
-        selected_values = [1,4] #1 - H, 2 - Q, 3 - n, 4 - D
-        var1 = 2.15
-        var2 = 1.65        
-
-        self.get_file_path(datapath)
-        self.get_turbine_parameters(selected_values,var1,var2)
-
-    def default_plot_parameters(self):
-        n_contours = 25
-        extrapolation_options_vars = [1,1]
-        extrapolation_values_n11 = [80,160,10]
-        extrapolation_values_blade_angles = [-6, 9, 10]
-        
-        self.get_plot_parameters(n_contours,extrapolation_options_vars,extrapolation_values_n11,extrapolation_values_blade_angles)
-
-    def default_output_parameters(self):       
-        output_options = {
-            '3D Hill Chart': 0
-            ,'Hill Chart Contour': 0
-            , '2D Curve Slices': 0
-            , '2D Curve Slices - const.blade': 0
-            , 'Normalized Hill Chart Contour': 0
-            , 'Normalized 2D Curve Slices': 1
-            , 'Normalized 2D Curve Slices - const.blade': 1
-            , 'Best efficiency point summary': 0
-            }
-               
-        output_suboptions = {
-            'Hill Chart Contour': {'Hide Blade Angle Lines': 0
-                                   },
-            'Normalized Hill Chart Contour': {'Hide Blade Angle Lines': 0
-                                              },
-            '2D Curve Slices - const.blade': {'Const. Head': 1
-                                              , 'Const. n': 1
-                                              , 'Const. efficiency': 1
-                                              },
-            'Normalized 2D Curve Slices - const.blade': {'Const. Head': 1
-                                              , 'Const. n': 1
-                                              , 'Const. efficiency': 1
-                                              }}
-
-
-        
-        self.get_output_parameters(output_options, output_suboptions)
 
     def get_file_path(self, file_path):
         self.datapath = file_path
@@ -226,9 +178,11 @@ class HillChartProcessor:
 
         
         # Calculate the second contour
-        hill_values_norm.normalize_efficiency(BEP_data.efficiency)
-        hill_values_norm.normalize_Q11(BEP_data.Q11)
-        hill_values_norm.normalize_n11(BEP_data.n11)
+        
+        hill_values_norm.normalize('efficiency', BEP_data.efficiency)
+        hill_values_norm.normalize('Q11', BEP_data.Q11)
+        hill_values_norm.normalize('n11', BEP_data.n11)
+        
         
         hill_values_norm.plot_hill_chart_contour(ax=ax2[1],n_contours=self.n_contours, data_type='normalized') 
 
@@ -265,10 +219,10 @@ class HillChartProcessor:
         blade_slice_values.slice_hill_chart_data(selected_blade_angle = BEP_data.blade_angle[0])                
         blade_slice_values.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])  
         if normalize:
-            blade_slice_values.normalize_efficiency(BEP_data.efficiency)       
-            blade_slice_values.normalize_Q(BEP_data.Q)               
-            blade_slice_values.normalize_power(BEP_data.power)                              
-            blade_slice_values.normalize_n(BEP_data.n)                              
+            blade_slice_values.normalize('efficiency', BEP_data.efficiency)       
+            blade_slice_values.normalize('Q', BEP_data.Q)               
+            blade_slice_values.normalize('power', BEP_data.power)                              
+            blade_slice_values.normalize('n', BEP_data.n)                              
             labels = 'normalized'
         else:
             labels = 'default'
@@ -285,10 +239,10 @@ class HillChartProcessor:
         blade_slice_values.slice_hill_chart_data(selected_blade_angle = BEP_data.blade_angle[0])        
         blade_slice_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])                
         if normalize:
-            blade_slice_values.normalize_efficiency(BEP_data.efficiency)       
-            blade_slice_values.normalize_power(BEP_data.power)       
-            blade_slice_values.normalize_Q(BEP_data.Q)               
-            blade_slice_values.normalize_H(BEP_data.H)    
+            blade_slice_values.normalize('efficiency', BEP_data.efficiency)       
+            blade_slice_values.normalize('power', BEP_data.power)       
+            blade_slice_values.normalize('Q', BEP_data.Q)               
+            blade_slice_values.normalize('H', BEP_data.H)    
             labels = 'normalized'
         else:
             labels = 'default'
@@ -314,9 +268,9 @@ class HillChartProcessor:
         for i in H_var:
             fixed_hillchart_point.calculate_cases([1, 4], i, BEP_data.D[0])              
         if normalize:            
-            fixed_hillchart_point.normalize_Q(BEP_data.Q)
-            fixed_hillchart_point.normalize_H(BEP_data.H)
-            fixed_hillchart_point.normalize_power(BEP_data.power)  
+            fixed_hillchart_point.normalize('Q', BEP_data.Q)
+            fixed_hillchart_point.normalize('H', BEP_data.H)
+            fixed_hillchart_point.normalize('power', BEP_data.power)  
             labels = 'normalized'
         else:
             labels = 'default'
@@ -331,18 +285,18 @@ class HillChartProcessor:
         q_curve_values = copy.deepcopy(hill_values)        
         q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)        
         q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])            
-        q_curve_values.normalize_efficiency(BEP_data.efficiency)       
-        q_curve_values.normalize_Q(BEP_data.Q)               
-        q_curve_values.normalize_power(BEP_data.power)
+        q_curve_values.normalize('efficiency', BEP_data.efficiency)       
+        q_curve_values.normalize('Q', BEP_data.Q)               
+        q_curve_values.normalize('power', BEP_data.power)
         q_curve_values.plot_efficiency_vs_Q(ax=ax3[0,0], labels='normalized')
         q_curve_values.plot_power_vs_Q(ax=ax3[1,0], labels='normalized')
 
         n_curve_values = copy.deepcopy(hill_values)        
         n_curve_values.slice_hill_chart_data(selected_n11=None, selected_Q11=BEP_data.Q11[0])        
         n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
-        n_curve_values.normalize_efficiency(BEP_data.efficiency)               
-        n_curve_values.normalize_n(BEP_data.n)       
-        n_curve_values.normalize_power(BEP_data.power)
+        n_curve_values.normalize('efficiency', BEP_data.efficiency)               
+        n_curve_values.normalize('n', BEP_data.n)       
+        n_curve_values.normalize('power', BEP_data.power)
         n_curve_values.plot_efficiency_vs_n(ax=ax3[0,1], labels='normalized')
         n_curve_values.plot_power_vs_n(ax=ax3[1,1], labels='normalized')
         
@@ -389,15 +343,3 @@ class HillChartProcessor:
 
         # Ensure the GUI is updated
         self.root_window.mainloop()          
-
-    
-
-test_class = False
-if test_class:
-    test_instance = HillChartProcessor()
-    test_instance.default_turbine_parameters()
-    test_instance.default_plot_parameters()
-    test_instance.default_output_parameters()
-    test_instance.generate_outputs()
-    print("done")
-

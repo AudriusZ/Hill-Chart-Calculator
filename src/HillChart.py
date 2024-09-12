@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
 from typing import List
+from dataclasses import dataclass, field
+
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,8 +10,6 @@ import copy
 from numpy.polynomial import Polynomial
 from scipy.interpolate import PchipInterpolator
 from matplotlib import path as mpath
-
-
 
 
 @dataclass
@@ -27,19 +26,9 @@ class TurbineData:
     Ns: List[float] = field(default_factory=list)
 
     def clear_data(self):
-        "Clears all data by resetting each attribute to an empty list."
-        self.H = []
-        self.Q = []
-        self.n = []
-        self.D = []
-        self.blade_angle = []
-        self.Q11 = []
-        self.n11 = []
-        self.efficiency = []
-        self.power = []
-        self.Ns = []
-
-
+        #Clears all data by resetting each attribute to an empty list.
+        for attr in vars(self):
+            setattr(self, attr, [])
 
 class HillChart:
     def __init__(self):        
@@ -217,8 +206,6 @@ class HillChart:
 
         return self.data.n11, self.data.Q11, self.data.blade_angle
     
-    
-    
     def prepare_hill_chart_data(self):
         x = np.array(self.data.n11)
         y = np.array(self.data.Q11)
@@ -281,9 +268,6 @@ class HillChart:
         else:
             raise ValueError("Either selected_n11 or selected_Q11 must be provided")
 
-    
-        
-
     def custom_slice_hill_chart_data(self, n11_array, Q11_array):
         if n11_array is not None and Q11_array is not None:
             # Ensure n11_array and Q11_array are the same length
@@ -337,7 +321,6 @@ class HillChart:
         else:
             raise ValueError("Both n11_array and Q11_array must be provided")
 
-
     def find_contours_at_angles(self, target_angles=None, case = None):      
         # Extract relevant data
         if not case:               
@@ -389,8 +372,10 @@ class HillChart:
         return {angle: (np.array(n11_contour), np.array(Q11_contour)) 
                 for angle, (n11_contour, Q11_contour) in contours_dict.items()}
     
+    '''
     def overwrite_with_slice(self):
         self.data = copy.deepcopy(self.data)
+    '''
 
     def plot_contour_lines(self, ax, line_coords):
         """Plot contour lines and annotate them on the given axis."""
@@ -449,7 +434,6 @@ class HillChart:
             print("3D scatter plot created successfully")
         except Exception as e:
             print(f"Error in plotting 3D scatter plot: {e}")
-
 
     def plot_hill_chart_contour(self, ax=None, n_contours=35, data_type='default'):
         try:
@@ -519,9 +503,6 @@ class HillChart:
 
         except Exception as e:
             print(f"Error in plotting hill chart contour: {e}")
-          
-    
-
 
     def plot_efficiency_vs_Q(self, ax=None, titles = 'default', labels = 'default'):
         try:
@@ -558,7 +539,6 @@ class HillChart:
 
         except Exception as e:
             print(f"Error in plotting Efficiency vs Q: {e}")
-
 
     def plot_efficiency_vs_H(self, ax=None, titles = 'default', labels = 'default'):
         try:           
@@ -794,8 +774,6 @@ class HillChart:
             print(f"Error filtering data for maximum efficiency: {e}")
             raise
 
-    
-
     def calculate_cases(self, selected_values, var1, var2):
         try:
             #self.read_hill_chart_values()
@@ -844,7 +822,6 @@ class HillChart:
                 else:
                     print("Invalid selected values, no calculation performed.")
                     continue
-
                 
                 self.data.H.append(H)
                 self.data.Q.append(Q)
@@ -859,52 +836,12 @@ class HillChart:
             print(f"Error in case calculations: {e}")
             raise    
     
-    def normalize_efficiency(self, efficiency_norm):
-        efficiency_norm = np.array(efficiency_norm)
-        self.data.efficiency = self.data.efficiency/efficiency_norm
-
-    def normalize_power(self, power_norm):
-        power_norm = np.array(power_norm)
-        self.data.power = self.data.power/power_norm
-
-    def normalize_Q11(self, Q11_norm):
-        Q11_norm = np.array(Q11_norm)
-        self.data.Q11 = self.data.Q11/Q11_norm
-
-    def normalize_n11(self, n11_norm):
-        n11_norm = np.array(n11_norm)
-        self.data.n11 = self.data.n11/n11_norm
-
-    def normalize_Q(self, Q_norm):
-        Q_norm = np.array(Q_norm)
-        self.data.Q = self.data.Q/Q_norm
-
-    def normalize_H(self, H_norm):
-        H_norm = np.array(H_norm)
-        self.data.H = self.data.H/H_norm
-
-    def normalize_n(self, n_norm):
-        n_norm = np.array(n_norm)
-        self.data.n = self.data.n/n_norm
+    def normalize(self, attribute_name, norm_value):
+        norm_value = np.array(norm_value)
+        setattr(self.data, attribute_name, getattr(self.data, attribute_name) / norm_value)
 
     def return_values(self):
-        return self.data
-    
-    #legacy code
-    def plot_hill_chart_nD(self):       
-
-        try:
-            fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
-            surf = ax.plot_surface(self.data.n, self.data.Q, self.data.efficiency, cmap='viridis', edgecolor='none')
-            ax.set_xlabel('n [rpm]')
-            ax.set_ylabel('Q [$m^3$/s]')
-            ax.set_zlabel('Efficiency')
-            ax.set_title(f'Hill Chart for constant H = {self.data.H[0]:.2f} [m], D = {self.data.D[0]:.2f} [m]')
-            fig.colorbar(surf, shrink=0.5, aspect=5)  # Add a color bar
-            plt.show(block=False)
-            print("Hill Chart Created")
-        except Exception as e:
-            print(f"Error in plotting hill chart: {e}")  
+        return self.data    
+   
 
 

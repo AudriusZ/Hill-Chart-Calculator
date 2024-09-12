@@ -1,3 +1,0 @@
-import HillChart
-
-test=HillChart()

@@ -5,9 +5,6 @@ import tkinter as tk
 from tkinter import messagebox, filedialog
 from HillChartProcessor import HillChartProcessor
 
-
-
-
 print("Hello, this is a tool for hydro turbine scaling")
 
 class HillChartCalculator(tk.Tk):
@@ -132,8 +129,6 @@ class HillChartCalculator(tk.Tk):
 
         self.calculate_button = tk.Button(output_frame, text="Calculate", command=self.generate_outputs, state='disabled')
         self.calculate_button.pack()
- 
-
 
     def create_input_param_checkbox(self, text, value, parent):
         var = tk.IntVar()
