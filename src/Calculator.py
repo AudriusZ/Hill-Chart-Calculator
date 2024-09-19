@@ -41,7 +41,7 @@ class HillChartCalculator(tk.Tk):
         self.var1 = None
         self.var2 = None
         self.extrapolation_values_n11 = [60, 200, 10]
-        self.extrapolation_values_blade_angles = [-5, 8.8, 10]
+        self.extrapolation_values_blade_angles = [7, 22, 10]
 
         self.create_main_frame()
         self.datapath = None  # Initially, no turbine data is selected

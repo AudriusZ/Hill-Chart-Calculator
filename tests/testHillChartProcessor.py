@@ -18,21 +18,23 @@ class TestHillChartProcessor(unittest.TestCase):
         self.default_plot_parameters()
         self.default_output_parameters()
 
-    def default_turbine_parameters(self):        
-        datapath = '../src/Mogu_D1.65m.csv'
-        #datapath = 'D_Liszka_et_al_turbine.csv'
-        selected_values = [1,4]  # 1 - H, 2 - Q, 3 - n, 4 - D
+    def default_turbine_parameters(self):
+        # Resolve the absolute path to the CSV file
+        datapath = os.path.join(os.path.dirname(__file__), '../src/Mogu_D1.65m.csv')
+
+        selected_values = [1, 4]  # 1 - H, 2 - Q, 3 - n, 4 - D
         var1 = 2.15
         var2 = 1.65        
 
+        # Pass the absolute path to the method
         self.test_instance.get_file_path(datapath)
         self.test_instance.get_turbine_parameters(selected_values, var1, var2)
 
     def default_plot_parameters(self):
         n_contours = 25
         extrapolation_options_vars = [1, 1]
-        extrapolation_values_n11 = [80, 160, 10]
-        extrapolation_values_blade_angles = [-6, 9, 10]
+        extrapolation_values_n11 = [60, 200, 10]
+        extrapolation_values_blade_angles = [7.38, 21.18, 10]
         
         self.test_instance.get_plot_parameters(n_contours, extrapolation_options_vars, extrapolation_values_n11, extrapolation_values_blade_angles)
 
@@ -49,7 +51,7 @@ class TestHillChartProcessor(unittest.TestCase):
         }
                
         output_suboptions = {
-            'Hill Chart Contour': {'Hide Blade Angle Lines': 1},
+            'Hill Chart Contour': {'Hide Blade Angle Lines': 0},
             'Normalized Hill Chart Contour': {'Hide Blade Angle Lines': 1},
             '2D Curve Slices - const.blade': {'Const. Head': 1, 'Const. n': 1, 'Const. efficiency': 1},
             'Normalized 2D Curve Slices - const.blade': {'Const. Head': 1, 'Const. n': 1, 'Const. efficiency': 1}
