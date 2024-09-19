@@ -208,8 +208,10 @@ class HillChartProcessor:
             labels = 'normalized'
         else:
             labels = 'default'
-        q_curve_values.plot('Q', 'efficiency',ax=ax3[0,0], label_type = labels)      
-        q_curve_values.plot('Q', 'power',ax=ax3[1,0], label_type = labels)      
+        q_curve_values.plot_2D_chart('Q', 'efficiency',ax=ax3[0,0], label_type = labels)      
+        q_curve_values.plot_2D_chart('Q', 'power',ax=ax3[1,0], label_type = labels) 
+        #q_curve_values.save_2D_chart_to_csv('Q', 'efficiency',file_name='output1.csv', label_type = labels)     
+        
 
         n_curve_values = copy.deepcopy(hill_values)        
         n_curve_values.slice_hill_chart_data(selected_Q11=BEP_data.Q11[0])        
@@ -221,8 +223,8 @@ class HillChartProcessor:
             labels = 'normalized'
         else:
             labels = 'default'        
-        n_curve_values.plot('n', 'efficiency',ax=ax3[0,1], label_type = labels)      
-        n_curve_values.plot('n', 'power',ax=ax3[1,1], label_type = labels)      
+        n_curve_values.plot_2D_chart('n', 'efficiency',ax=ax3[0,1], label_type = labels)      
+        n_curve_values.plot_2D_chart('n', 'power',ax=ax3[1,1], label_type = labels)      
         
         plt.show(block=False)
         
@@ -240,10 +242,11 @@ class HillChartProcessor:
         else:
             labels = 'default'
        
-        blade_slice_values.plot('Q','efficiency', ax=ax3[0,0],title_type = 'const_blade', label_type = labels)
-        blade_slice_values.plot('Q','power', ax=ax3[1,0],title_type = 'const_blade', label_type = labels)
-        blade_slice_values.plot('n','efficiency', ax=ax3[0,1],title_type = 'const_blade', label_type = labels)
-        blade_slice_values.plot('n','power', ax=ax3[1,1],title_type = 'const_blade', label_type = labels)
+        blade_slice_values.plot_2D_chart('Q','efficiency', ax=ax3[0,0],title_type = 'const_blade', label_type = labels)
+        blade_slice_values.plot_2D_chart('Q','power', ax=ax3[1,0],title_type = 'const_blade', label_type = labels)
+        blade_slice_values.plot_2D_chart('n','efficiency', ax=ax3[0,1],title_type = 'const_blade', label_type = labels)
+        blade_slice_values.plot_2D_chart('n','power', ax=ax3[1,1],title_type = 'const_blade', label_type = labels)
+        #blade_slice_values.save_2D_chart_to_csv('Q', 'efficiency',file_name='output_blade_const.csv', title_type = 'const_blade', label_type = labels)     
         
         plt.show(block=False)    
 
@@ -261,10 +264,11 @@ class HillChartProcessor:
         else:
             labels = 'default'        
 
-        blade_slice_values.plot('H','Q',ax=ax3[0,0],title_type = 'const_n',label_type = labels)
-        blade_slice_values.plot('H','efficiency', ax=ax3[0,1],title_type = 'const_n',label_type = labels)
-        blade_slice_values.plot('H','power', ax=ax3[1,0],title_type = 'const_n',label_type = labels)
-        blade_slice_values.plot('Q','efficiency', ax=ax3[1,1],title_type = 'const_n',label_type = labels)
+        blade_slice_values.plot_2D_chart('H','Q',ax=ax3[0,0],title_type = 'const_n',label_type = labels)
+        blade_slice_values.plot_2D_chart('H','efficiency', ax=ax3[0,1],title_type = 'const_n',label_type = labels)
+        blade_slice_values.plot_2D_chart('H','power', ax=ax3[1,0],title_type = 'const_n',label_type = labels)
+        blade_slice_values.plot_2D_chart('Q','efficiency', ax=ax3[1,1],title_type = 'const_n',label_type = labels)
+        #blade_slice_values.save_2D_chart_to_csv('Q', 'efficiency',file_name='output_n_const.csv', title_type = 'const_n', label_type = labels)     
         
         plt.show(block=False)    
 
@@ -290,8 +294,9 @@ class HillChartProcessor:
         else:
             labels = 'default'
          
-        fixed_hillchart_point.plot('H','Q',ax=ax4[0],title_type = 'const_efficiency',label_type = labels)
-        fixed_hillchart_point.plot('H','power',ax=ax4[1],title_type = 'const_efficiency',label_type = labels)
+        fixed_hillchart_point.plot_2D_chart('H','Q',ax=ax4[0],title_type = 'const_efficiency',label_type = labels)
+        fixed_hillchart_point.plot_2D_chart('H','power',ax=ax4[1],title_type = 'const_efficiency',label_type = labels)
+        
         
         plt.show(block=False) 
 

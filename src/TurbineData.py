@@ -31,11 +31,11 @@ class TurbineData:
     def units_dict(self):
         return {
             'n': '[rpm]',
-            'Q': '[$m^3$/s]',
+            'Q': '[m^3/s]',
             'H': '[m]',
             'D': '[m]',
-            'blade_angle': '[°]',
-            'Q11': '[$m^3$/s]',
+            'blade_angle': '[degree]',
+            'Q11': '[m^3/s]',
             'n11': '[rpm]',
             'efficiency': '[-]',
             'power': '[W]',

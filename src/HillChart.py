@@ -576,7 +576,7 @@ class HillChart:
         except Exception as e:
             print(f"Error in plotting hill chart contour: {e}")
    
-    def plot(self, x_var, y_var, ax=None, title_type = 'default', label_type = 'default'):
+    def plot_2D_chart(self, x_var, y_var, ax=None, title_type = 'default', label_type = 'default'):
                
         try:
             if ax is None:
@@ -646,6 +646,80 @@ class HillChart:
 
         except Exception as e:
             print(f"Error in plotting {y_var} vs {x_var}: {e}")
+
+    def save_2D_chart_to_csv(self, x_var, y_var, file_name='output.csv', title_type='default', label_type='default'):
+        try:
+            # Ensure x_var and y_var exist in self.data
+            if not hasattr(self.data, x_var) or not hasattr(self.data, y_var):
+                raise ValueError(f"Invalid variables '{x_var}' or '{y_var}' in data.")
+            
+            # Map variables to data    
+            x_data = getattr(self.data, x_var)
+            y_data = getattr(self.data, y_var)
+
+            # Define the formatting for each variable
+            format_dict = {
+                'blade_angle': '.1f',
+                'n': '.1f',
+                'Q': '.1f',
+                'H': '.2f',
+                'D': '.2f',
+                'efficiency': '.2f'
+            }
+
+            # Construct the title_dict using the specified format for each variable
+            title_dict = {
+                key: f'{self.data.nomenclature_dict()[key]} = {getattr(self.data, key)[0]:{format_dict[key]}} {self.data.units_dict()[key]}'
+                if getattr(self.data, key) is not None and len(getattr(self.data, key)) > 0 else ''
+                for key in ['blade_angle', 'n', 'Q', 'H', 'D', 'efficiency']
+            }
+
+            # Define a mapping from title_type to sets of excluded variables
+            excluded_vars_map = {
+                'default': {x_var, y_var, 'blade_angle', 'efficiency'},
+                'const_blade': {'n', 'Q', 'efficiency'},
+                'const_n': {'efficiency', 'Q', 'H'},
+                'const_efficiency': {'n', 'Q', 'H'}
+            }
+
+            # Get the excluded variables based on the title_type
+            excluded_vars = excluded_vars_map.get(title_type)
+            if excluded_vars is None:
+                raise ValueError(f"title_type '{title_type}' is not recognized. Available labels: 'default', 'const_blade', 'const_n', 'const_efficiency'.")
+
+            # Construct the title by excluding the specified variables
+            included_titles = [title for key, title in title_dict.items() if key not in excluded_vars]
+
+            # Split the title lines for separate output
+            title_lines = "\n".join(included_titles)
+
+            # Generate x and y labels based on label_type
+            if label_type == 'default':
+                x_label = f'{self.data.nomenclature_dict()[x_var]} {self.data.units_dict()[x_var]}'
+                y_label = f'{self.data.nomenclature_dict()[y_var]} {self.data.units_dict()[y_var]}'
+            elif label_type == 'normalized':
+                x_label = f'Normalized {self.data.nomenclature_dict()[x_var]}'
+                y_label = f'Normalized {self.data.nomenclature_dict()[y_var]}'
+            else:
+                raise ValueError(f"Label type '{label_type}' is not recognized.")
+
+            # Open the CSV file and manually write the title, labels, and data
+            with open(file_name, mode='w', newline='') as file:
+                # Manually write the title lines with one variable per line
+                file.write(f"{title_lines}\n\n")  # Add an extra new line between the title and data
+                file.write(f"{x_label},{y_label}\n")
+                
+                # Use the CSV writer for the data rows
+                writer = csv.writer(file)
+                # Write the data rows                
+                for x, y in zip(x_data, y_data):
+                    writer.writerow([x, y])
+
+            print(f"Data saved successfully to {file_name}")
+
+        except Exception as e:
+            print(f"Error saving {y_var} vs {x_var} data to CSV: {e}")
+
     
     
        
