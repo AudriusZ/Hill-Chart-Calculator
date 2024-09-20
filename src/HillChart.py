@@ -158,7 +158,7 @@ class HillChart:
 
         return new_blade_angle, new_n11, new_Q11, new_efficiency
         
-    def fit_efficiency(self,x,y,z):               
+    def fit_efficiency(self,x,y,z, min_efficiency_limit = 0.5):               
 
         # Create grid coordinates for the surface
         x_grid = np.linspace(x.min(), x.max(), num=101)
@@ -168,9 +168,8 @@ class HillChart:
         # Interpolate unstructured 3-dimensional data
         self.data.efficiency = griddata((x, y), z, (self.data.n11, self.data.Q11), method='cubic')
 
-        # Apply threshold filtering after interpolation
-        threshold = 0.5
-        self.data.efficiency[self.data.efficiency < threshold] = np.nan
+        # Apply threshold filtering after interpolation        
+        self.data.efficiency[self.data.efficiency < min_efficiency_limit] = np.nan
 
         return self.data.n11, self.data.Q11, self.data.efficiency
     
@@ -282,13 +281,13 @@ class HillChart:
     def return_values(self):
         return self.data 
     
-    def prepare_hill_chart_data(self):
+    def prepare_hill_chart_data(self, min_efficiency_limit = 0.5): 
         x = np.array(self.data.n11)
         y = np.array(self.data.Q11)
         z_efficiency = np.array(self.data.efficiency)
         z_blade_angle = np.array(self.data.blade_angle)
         
-        self.fit_efficiency(x,y,z_efficiency)
+        self.fit_efficiency(x,y,z_efficiency, min_efficiency_limit=min_efficiency_limit)
         self.fit_blade_angle(x,y,z_blade_angle)    
     
     def find_contours_at_angles(self, target_angles=None, case = None):      

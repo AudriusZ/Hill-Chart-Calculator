@@ -1,6 +1,7 @@
 from HillChart import HillChart
 import numpy as np
-import matplotlib.pyplot as plt
+import csv
+from datetime import datetime
 
 class PerformanceCurve(HillChart):
     def __init__(self, hill_values):
@@ -185,7 +186,9 @@ class PerformanceCurve(HillChart):
         except Exception as e:
             print(f"Error in plotting {y_var} vs {x_var}: {e}")
 
-    def save_2D_chart_to_csv(self, x_var, y_var, file_name='output.csv', title_type='default', label_type='default'):
+
+
+    def save_2D_chart_to_csv(self, x_var, y_var, file_name=None, title_type='default', label_type='default'):
         try:
             # Ensure x_var and y_var exist in self.data
             if not hasattr(self.data, x_var) or not hasattr(self.data, y_var):
@@ -241,6 +244,13 @@ class PerformanceCurve(HillChart):
             else:
                 raise ValueError(f"Label type '{label_type}' is not recognized.")
 
+            # If no file name is provided, create a dynamic one
+            if not file_name:
+                # Get the current date and time
+                current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
+                # Construct the file name dynamically
+                file_name = f"{current_time}-{x_var}-{y_var}-{title_type}_{label_type}.csv"
+
             # Open the CSV file and manually write the title, labels, and data
             with open(file_name, mode='w', newline='') as file:
                 # Manually write the title lines with one variable per line
@@ -257,3 +267,23 @@ class PerformanceCurve(HillChart):
 
         except Exception as e:
             print(f"Error saving {y_var} vs {x_var} data to CSV: {e}")
+
+    def plot_and_save_chart(self, x_var, y_var, ax, title_type='default', label_type='default', save_data = True):
+        
+        #Helper function to plot and save the 2D chart data to CSV.
+        try:
+            # Plot the 2D chart
+            self.plot_2D_chart(x_var, y_var, ax=ax, title_type=title_type, label_type=label_type)
+
+            if save_data:
+                # Construct the file name using the prefix and x_var, y_var
+                current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
+                file_name = f"{current_time}-{x_var}-{y_var}-{title_type}_{label_type}.csv"
+
+                # Save the chart data to CSV
+                self.save_2D_chart_to_csv(x_var, y_var, file_name=file_name, title_type=title_type, label_type=label_type)
+
+                print(f"Plot and save operation for {x_var} vs {y_var} completed successfully.")
+            
+        except Exception as e:
+            print(f"Error during plot and save operation for {x_var} vs {y_var}: {e}")

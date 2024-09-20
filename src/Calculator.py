@@ -1,5 +1,5 @@
 #To create standalon exe use the line below:
-#pyinstaller --onefile --name Hill_Chart_Calculator_0.7.0 --icon=icon.ico Calculator.py
+#pyinstaller --onefile --name Hill_Chart_Calculator_0.8.0 --icon=src/icon.ico src/Calculator.py
 
 import tkinter as tk
 from tkinter import messagebox, filedialog
@@ -17,31 +17,31 @@ class HillChartCalculator(tk.Tk):
         self.options = ["Head H [m]", "Flow rate Q [m^3/s]", "Rotational speed n [rpm]", "Runner diameter D [m]"]
         self.sub_option_widgets = {}
 
-        self.output_options = ["3D Hill Chart", "Hill Chart Contour", "2D Curve Slices","2D Curve Slices - const.blade", 'Normalized Hill Chart Contour', "Normalized 2D Curve Slices", "Normalized 2D Curve Slices - const.blade", "Best efficiency point summary"]
+        self.output_options = ["Best efficiency point summary","3D Hill Chart", "Hill Chart Contour", "2D Curve Slices","2D Curve Slices - const.blade"]
         self.output_vars = {option: tk.IntVar() for option in self.output_options}
 
         # Define sub-options for specific output options
         self.sub_output_options = {
-            "Hill Chart Contour": ["Hide Blade Angle Lines"],
-            "Normalized Hill Chart Contour": ["Hide Blade Angle Lines"],
-            "2D Curve Slices - const.blade": ["Const. Head", "Const. n", "Const. efficiency"],
-            "Normalized 2D Curve Slices - const.blade": ["Const. Head", "Const. n", "Const. efficiency"]
+            "Hill Chart Contour": ["Hide Blade Angle Lines"],            
+            "2D Curve Slices - const.blade": ["Const. Head", "Const. n", "Const. efficiency"]            
         }
         self.sub_output_vars = {key: [tk.IntVar() for _ in value] for key, value in self.sub_output_options.items()}
-
+        self.settings_options = ["Normalize", "Save Chart Data"]
+        self.settings_vars = {option: tk.IntVar() for option in self.settings_options}
         self.extrapolation_options = ["Extrapolate unit speed n11 [rpm]", "Extrapolate Blade Angles [degree]"]
         self.extrapolation_options_vars = [tk.IntVar() for _ in self.extrapolation_options]
         self.extrapolation_entry_vars = []
         self.extrapolation_entries = []
 
         self.n_contours = 25  # Default value for contour lines
+        self.min_efficiency_limit= 0.2 # Default value for minimum efficiency cap
 
         # Instance variables for holding GUI inputs
         self.selected_values = [1, 4]
         self.var1 = None
         self.var2 = None
         self.extrapolation_values_n11 = [60, 200, 10]
-        self.extrapolation_values_blade_angles = [7, 22, 10]
+        self.extrapolation_values_blade_angles = [7, 22.5, 10]
 
         self.create_main_frame()
         self.datapath = None  # Initially, no turbine data is selected
@@ -101,9 +101,14 @@ class HillChartCalculator(tk.Tk):
         surface_fit_frame.columnconfigure(0, weight=1)
         surface_fit_frame.rowconfigure(0, weight=1)
 
-        tk.Label(surface_fit_frame, text="Set number of contours:").grid(row=0, column=0, padx=1, pady=0, sticky="w")
+        tk.Label(surface_fit_frame, text="Set minimum efficiency limit:").grid(row=0, column=0, padx=1, pady=0, sticky="n")
+        self.min_efficiency_entry = tk.Entry(surface_fit_frame, width=7)
+        self.min_efficiency_entry.grid(row=1, column=0, padx=1, pady=0, sticky="n")
+        self.min_efficiency_entry.insert(0, str(self.min_efficiency_limit))  # Set default value
+        
+        tk.Label(surface_fit_frame, text="Set number of contours:").grid(row=2, column=0, padx=1, pady=0, sticky="w")
         self.n_contours_entry = tk.Entry(surface_fit_frame, width=7)
-        self.n_contours_entry.grid(row=1, column=0, padx=1, pady=0, sticky="w")
+        self.n_contours_entry.grid(row=3, column=0, padx=1, pady=0, sticky="w")
         self.n_contours_entry.insert(0, str(self.n_contours))  # Set default value
    
         # Define entry labels for extrapolation checkboxes
@@ -125,11 +130,33 @@ class HillChartCalculator(tk.Tk):
         output_frame.rowconfigure(0, weight=1)
 
         for output_option in self.output_options:
-            self.create_output_checkbox(output_option, self.output_vars[output_option], parent=output_frame)
+            self.create_output_checkbox(output_option, parent=output_frame)
 
+        # Add a "Settings" subframe under the output options frame
+        settings_frame = tk.LabelFrame(output_frame, text="Settings", padx=5, pady=5)
+        settings_frame.pack(fill="both", expand=True, padx=5, pady=5)
+
+        for settings_option in self.settings_options:
+            self.create_settings_checkbox(settings_option, parent=settings_frame)                    
+        
+        '''
+        # Add widgets in the "Settings" subframe
+        normalize_check = tk.Checkbutton(settings_frame, text="Normalize")
+        normalize_check.pack(anchor="w")
+
+        efficiency_check = tk.Checkbutton(settings_frame, text="Save Chart Data")
+        efficiency_check.pack(anchor="w")
+        '''
         self.calculate_button = tk.Button(output_frame, text="Calculate", command=self.generate_outputs, state='disabled')
         self.calculate_button.pack()
-
+    
+    def create_settings_checkbox(self, text, parent):
+        var = tk.IntVar()
+        chk = tk.Checkbutton(parent, text=text, variable=self.settings_vars[text], onvalue=1, offvalue=0)
+        chk.pack(anchor=tk.W)
+        #self.checkbox_vars.append(var)
+        #self.checkboxes.append(chk)
+    
     def create_input_param_checkbox(self, text, value, parent):
         var = tk.IntVar()
         chk = tk.Checkbutton(parent, text=text, variable=var, onvalue=value, offvalue=0, command=self.update_count, state='disabled')
@@ -137,7 +164,7 @@ class HillChartCalculator(tk.Tk):
         self.checkbox_vars.append(var)
         self.checkboxes.append(chk)
     
-    def create_output_checkbox(self, text, var, parent):
+    def create_output_checkbox(self, text, parent):
         # Create the main checkbox with a command to toggle sub-options
         chk = tk.Checkbutton(parent, text=text, variable=self.output_vars[text], onvalue=1, offvalue=0, command=lambda: self.toggle_suboptions(text))
         chk.pack(anchor=tk.W)
@@ -267,20 +294,28 @@ class HillChartCalculator(tk.Tk):
         except ValueError:
             messagebox.showerror("Input error", "Please enter a valid integer for the number of contours.")
 
+    def get_min_efficiency_lim(self):
+        try:
+            self.min_efficiency_limit = float(self.min_efficiency_entry.get())
+        except ValueError:
+            messagebox.showerror("Input error", "Please enter a valid float for the number of contours.")
+
     def generate_outputs(self):
         # Gather all GUI inputs before processing
-        self.get_n_contours()        
+        self.get_n_contours()    
+        self.get_min_efficiency_lim()    
         self.get_selected_values()
         self.get_extrapolation_values()
         
         plot_processor = HillChartProcessor()
         plot_processor.get_file_path(self.datapath)
         plot_processor.get_turbine_parameters(self.selected_values, self.var1, self.var2)
-        plot_processor.get_plot_parameters(self.n_contours,[self.extrapolation_options_vars[0].get(),self.extrapolation_options_vars[1].get()],self.extrapolation_values_n11,self.extrapolation_values_blade_angles)        
+        plot_processor.get_plot_parameters(self.n_contours, [self.extrapolation_options_vars[0].get(),self.extrapolation_options_vars[1].get()],self.extrapolation_values_n11,self.extrapolation_values_blade_angles, min_efficiency_limit=self.min_efficiency_limit)        
         plot_options = {option: var.get() for option, var in self.output_vars.items()}
         plot_suboptions = {option: {sub_option: sub_var.get() for sub_option, sub_var in zip(self.sub_output_options[option], sub_vars)}
             for option, sub_vars in self.sub_output_vars.items()}
-        plot_processor.get_output_parameters(plot_options, plot_suboptions)        
+        settings_options = {option: var.get() for option, var in self.settings_vars.items()}
+        plot_processor.get_output_parameters(plot_options, plot_suboptions, settings_options)        
         plot_processor.generate_outputs()        
 
     def get_selected_values(self):

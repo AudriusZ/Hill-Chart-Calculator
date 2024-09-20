@@ -20,9 +20,9 @@ class HillChartProcessor:
         self.var1 = var1
         self.var2 = var2  
 
-    def get_plot_parameters(self,n_contours,extrapolation_options_vars,extrapolation_values_n11,extrapolation_values_blade_angles):
+    def get_plot_parameters(self, n_contours, extrapolation_options_vars,extrapolation_values_n11,extrapolation_values_blade_angles, min_efficiency_limit = 0.5):
         self.n_contours = n_contours        
-        
+        self.min_efficiency_limit = min_efficiency_limit
         
         self.extrapolate_n11 = extrapolation_options_vars[0]
         if self.extrapolate_n11:
@@ -36,9 +36,10 @@ class HillChartProcessor:
             self.max_angle = extrapolation_values_blade_angles[1]
             self.n_angle = extrapolation_values_blade_angles[2]
 
-    def get_output_parameters(self, output_options, output_suboptions):        
+    def get_output_parameters(self, output_options, output_suboptions, settings_options):        
         self.output_options = output_options   
-        self.output_suboptions = output_suboptions   
+        self.output_suboptions = output_suboptions
+        self.settings_options = settings_options   
 
     def prepare_core_data(self):
         
@@ -59,63 +60,49 @@ class HillChartProcessor:
         if self.extrapolate_blade:
             hill_values.extrapolate_along_blade_angles(min_angle=self.min_angle, max_angle=self.max_angle, n_angle=self.n_angle)
 
-        hill_values.prepare_hill_chart_data()
+        hill_values.prepare_hill_chart_data(min_efficiency_limit = self.min_efficiency_limit)
 
         return BEP_data, hill_values, Raw_data
     
     def generate_outputs(self):        
         BEP_data, hill_values, raw_data = self.prepare_core_data()
 
+        if self.output_options.get("Best efficiency point summary"):
+            self.display_results_in_textbox(BEP_data)
+        
         # Generate the outputs based on user selection
         if self.output_options.get("3D Hill Chart"):
             self.plot_3d_hill_chart(hill_values)
-
+        
+        # Check if normalize setting is enabled
+        normalize = self.settings_options.get("Normalize")                    
+        save_data = self.settings_options.get("Save Chart Data")                    
+        
         if self.output_options.get("Hill Chart Contour"):            
             suboptions = self.output_suboptions.get("Hill Chart Contour", {})
-            plot_blade_angles = not suboptions.get("Hide Blade Angle Lines")                
-            self.plot_hill_chart_contour(hill_values, BEP_data, plot_blade_angles=plot_blade_angles)            
+            plot_blade_angles = not suboptions.get("Hide Blade Angle Lines")  
+            if normalize:              
+                self.plot_normalized_hill_chart_contour(hill_values, BEP_data, plot_blade_angles = plot_blade_angles)
+            else:
+                self.plot_hill_chart_contour(hill_values, BEP_data, plot_blade_angles=plot_blade_angles)            
 
         if self.output_options.get("2D Curve Slices"):
-            self.plot_curve_slices(hill_values, BEP_data)
+            self.plot_curve_slices(hill_values, BEP_data, normalize = normalize, save_data = save_data)        
 
-        # Check if the main option "2D Curve Slices - const.blade" exists and is enabled
         if self.output_options.get("2D Curve Slices - const.blade"):
             suboptions = self.output_suboptions.get("2D Curve Slices - const.blade", {})
 
             # Now check the sub-options within "2D Curve Slices - const.blade"
-            if suboptions.get("Const. Head"):
-                self.plot_blade_slices(hill_values, BEP_data)
+            if suboptions.get("Const. Head"):                
+                self.plot_blade_slices(hill_values, BEP_data, normalize = normalize, save_data = save_data)
 
             if suboptions.get("Const. n"):
-                self.plot_blade_slices_const_n(hill_values, BEP_data)
+                self.plot_blade_slices_const_n(hill_values, BEP_data, normalize = normalize, save_data = save_data)
 
             if suboptions.get("Const. efficiency"): 
-                self.plot_blade_slices_const_efficiency(raw_data,BEP_data)                
+                self.plot_blade_slices_const_efficiency(raw_data, BEP_data, normalize = normalize, save_data = save_data)                
 
-        if self.output_options.get("Normalized Hill Chart Contour"):
-            suboptions = self.output_suboptions.get("Normalized Hill Chart Contour", {})
-            plot_blade_angles = not suboptions.get("Hide Blade Angle Lines")        
-            self.plot_normalized_hill_chart_contour(hill_values, BEP_data, plot_blade_angles = plot_blade_angles)
-
-        if self.output_options.get("Normalized 2D Curve Slices"):
-            self.plot_curve_slices(hill_values, BEP_data, normalize = True)
-
-        if self.output_options.get("Normalized 2D Curve Slices - const.blade"):           
-
-            suboptions = self.output_suboptions.get("Normalized 2D Curve Slices - const.blade", {})
-
-            # Now check the sub-options within "2D Curve Slices - const.blade"
-            if suboptions.get("Const. Head"):
-                self.plot_blade_slices(hill_values, BEP_data, normalize = True)
-
-            if suboptions.get("Const. n"):
-                self.plot_blade_slices_const_n(hill_values, BEP_data, normalize = True)
-
-            if suboptions.get("Const. efficiency"): 
-                self.plot_blade_slices_const_efficiency(raw_data, BEP_data, normalize = True)     
-
-        if self.output_options.get("Best efficiency point summary"):
-            self.display_results_in_textbox(BEP_data)
+        
     
     def plot_3d_hill_chart(self, hill_values):
         fig = plt.figure()
@@ -196,7 +183,7 @@ class HillChartProcessor:
         plt.tight_layout()
         plt.show(block=False)
 
-    def plot_curve_slices(self, hill_values, BEP_data, normalize = False):
+    def plot_curve_slices(self, hill_values, BEP_data, normalize = False, save_data = False):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         
         q_curve_values = copy.deepcopy(hill_values)      
@@ -210,9 +197,10 @@ class HillChartProcessor:
             labels = 'normalized'
         else:
             labels = 'default'
-        q_curve_values.plot_2D_chart('Q', 'efficiency',ax=ax3[0,0], label_type = labels)      
-        q_curve_values.plot_2D_chart('Q', 'power',ax=ax3[1,0], label_type = labels) 
-        #q_curve_values.save_2D_chart_to_csv('Q', 'efficiency',file_name='output1.csv', label_type = labels)     
+        q_curve_values.plot_and_save_chart('Q', 'efficiency', ax3[0, 0], label_type=labels, save_data=save_data)
+        q_curve_values.plot_and_save_chart('Q', 'power', ax3[1, 0], label_type=labels, save_data=save_data)
+
+        
         
 
         n_curve_values = copy.deepcopy(hill_values)
@@ -226,12 +214,12 @@ class HillChartProcessor:
             labels = 'normalized'
         else:
             labels = 'default'        
-        n_curve_values.plot_2D_chart('n', 'efficiency',ax=ax3[0,1], label_type = labels)      
-        n_curve_values.plot_2D_chart('n', 'power',ax=ax3[1,1], label_type = labels)      
+        n_curve_values.plot_and_save_chart('n', 'efficiency',ax=ax3[0,1], label_type = labels, save_data=save_data)      
+        n_curve_values.plot_and_save_chart('n', 'power',ax=ax3[1,1], label_type = labels, save_data=save_data)      
         
         plt.show(block=False)
         
-    def plot_blade_slices(self, hill_values, BEP_data, normalize = False):
+    def plot_blade_slices(self, hill_values, BEP_data, normalize = False, save_data = False):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         blade_slice_values = copy.deepcopy(hill_values)
         blade_slice_values = PerformanceCurve(blade_slice_values)
@@ -246,15 +234,15 @@ class HillChartProcessor:
         else:
             labels = 'default'
        
-        blade_slice_values.plot_2D_chart('Q','efficiency', ax=ax3[0,0],title_type = 'const_blade', label_type = labels)
-        blade_slice_values.plot_2D_chart('Q','power', ax=ax3[1,0],title_type = 'const_blade', label_type = labels)
-        blade_slice_values.plot_2D_chart('n','efficiency', ax=ax3[0,1],title_type = 'const_blade', label_type = labels)
-        blade_slice_values.plot_2D_chart('n','power', ax=ax3[1,1],title_type = 'const_blade', label_type = labels)
-        #blade_slice_values.save_2D_chart_to_csv('Q', 'efficiency',file_name='output_blade_const.csv', title_type = 'const_blade', label_type = labels)     
+        blade_slice_values.plot_and_save_chart('Q', 'efficiency', ax3[0, 0], title_type='const_blade', label_type = labels, save_data=save_data)
+        blade_slice_values.plot_and_save_chart('Q', 'power', ax3[1, 0], title_type='const_blade', label_type = labels, save_data=save_data)
+        blade_slice_values.plot_and_save_chart('n', 'efficiency', ax3[0, 1], title_type='const_blade', label_type = labels, save_data=save_data)
+        blade_slice_values.plot_and_save_chart('n', 'power', ax3[1, 1], title_type='const_blade', label_type = labels, save_data=save_data)       
+        
         
         plt.show(block=False)    
 
-    def plot_blade_slices_const_n(self, hill_values, BEP_data, normalize = False):
+    def plot_blade_slices_const_n(self, hill_values, BEP_data, normalize = False, save_data = False):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         blade_slice_values = copy.deepcopy(hill_values)
         blade_slice_values = PerformanceCurve(blade_slice_values)                
@@ -269,15 +257,15 @@ class HillChartProcessor:
         else:
             labels = 'default'        
 
-        blade_slice_values.plot_2D_chart('H','Q',ax=ax3[0,0],title_type = 'const_n',label_type = labels)
-        blade_slice_values.plot_2D_chart('H','efficiency', ax=ax3[0,1],title_type = 'const_n',label_type = labels)
-        blade_slice_values.plot_2D_chart('H','power', ax=ax3[1,0],title_type = 'const_n',label_type = labels)
-        blade_slice_values.plot_2D_chart('Q','efficiency', ax=ax3[1,1],title_type = 'const_n',label_type = labels)
-        #blade_slice_values.save_2D_chart_to_csv('Q', 'efficiency',file_name='output_n_const.csv', title_type = 'const_n', label_type = labels)     
+        blade_slice_values.plot_and_save_chart('H','Q',ax=ax3[0,0],title_type = 'const_n',label_type = labels, save_data=save_data)
+        blade_slice_values.plot_and_save_chart('H','efficiency', ax=ax3[0,1],title_type = 'const_n',label_type = labels, save_data=save_data)
+        blade_slice_values.plot_and_save_chart('H','power', ax=ax3[1,0],title_type = 'const_n',label_type = labels, save_data=save_data)
+        blade_slice_values.plot_and_save_chart('Q','efficiency', ax=ax3[1,1],title_type = 'const_n',label_type = labels, save_data=save_data)
+        
         
         plt.show(block=False)    
 
-    def plot_blade_slices_const_efficiency(self, raw_data, BEP_data, normalize = False):
+    def plot_blade_slices_const_efficiency(self, raw_data, BEP_data, normalize = False, save_data = False):
                 
         _, ax4 = plt.subplots(1, 2, figsize=(15, 5))                  
         
@@ -300,8 +288,8 @@ class HillChartProcessor:
         else:
             labels = 'default'
          
-        fixed_hillchart_point.plot_2D_chart('H','Q',ax=ax4[0],title_type = 'const_efficiency',label_type = labels)
-        fixed_hillchart_point.plot_2D_chart('H','power',ax=ax4[1],title_type = 'const_efficiency',label_type = labels)
+        fixed_hillchart_point.plot_and_save_chart('H','Q',ax=ax4[0],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
+        fixed_hillchart_point.plot_and_save_chart('H','power',ax=ax4[1],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
         
         
         plt.show(block=False) 
@@ -328,7 +316,7 @@ class HillChartProcessor:
     def display_results_in_textbox(self, BEP_data):
         prepared_text = self.prepare_text_results(BEP_data)
 
-        # Create a new top-level window using the hidden root window
+        # Create a new top-level window
         result_window = tk.Toplevel(self.root_window)
         result_window.title("BEP Results")
         result_window.geometry("400x300")
@@ -343,5 +331,5 @@ class HillChartProcessor:
         # Make the Text widget read-only
         text_widget.config(state=tk.DISABLED)
 
-        # Ensure the GUI is updated
-        self.root_window.mainloop()          
+        # You do not need to call mainloop() here. It is already running.
+          

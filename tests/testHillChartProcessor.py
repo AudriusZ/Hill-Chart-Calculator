@@ -39,25 +39,27 @@ class TestHillChartProcessor(unittest.TestCase):
         self.test_instance.get_plot_parameters(n_contours, extrapolation_options_vars, extrapolation_values_n11, extrapolation_values_blade_angles)
 
     def default_output_parameters(self):
+        
+        
         output_options = {
-            '3D Hill Chart': 1,
-            'Hill Chart Contour': 1,
+            '3D Hill Chart': 0,
+            'Hill Chart Contour': 0,
             '2D Curve Slices': 1,
-            '2D Curve Slices - const.blade': 1,
-            'Normalized Hill Chart Contour': 1,
-            'Normalized 2D Curve Slices': 1,
-            'Normalized 2D Curve Slices - const.blade': 1,
-            'Best efficiency point summary': 0
+            '2D Curve Slices - const.blade': 1,            
+            'Best efficiency point summary': 1
         }
                
         output_suboptions = {
-            'Hill Chart Contour': {'Hide Blade Angle Lines': 0},
-            'Normalized Hill Chart Contour': {'Hide Blade Angle Lines': 1},
-            '2D Curve Slices - const.blade': {'Const. Head': 1, 'Const. n': 1, 'Const. efficiency': 0},
-            'Normalized 2D Curve Slices - const.blade': {'Const. Head': 1, 'Const. n': 1, 'Const. efficiency': 0}
+            'Hill Chart Contour': {'Hide Blade Angle Lines': 0},            
+            '2D Curve Slices - const.blade': {'Const. Head': 1, 'Const. n': 1, 'Const. efficiency': 1}            
         }
 
-        self.test_instance.get_output_parameters(output_options, output_suboptions)
+        settings_options = {
+            'Normalize': 1,
+            'Save Chart Data': 1
+        }
+        
+        self.test_instance.get_output_parameters(output_options, output_suboptions, settings_options)
 
     def test_generate_outputs(self):
         # Test the generate_outputs method
