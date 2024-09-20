@@ -1,5 +1,6 @@
 import os
-from HillChart import HillChart 
+from HillChart import HillChart
+from PerformanceCurve import PerformanceCurve 
 import matplotlib.pyplot as plt
 import copy
 import tkinter as tk
@@ -198,7 +199,8 @@ class HillChartProcessor:
     def plot_curve_slices(self, hill_values, BEP_data, normalize = False):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         
-        q_curve_values = copy.deepcopy(hill_values)        
+        q_curve_values = copy.deepcopy(hill_values)      
+        q_curve_values = PerformanceCurve(q_curve_values)  
         q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)        
         q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])    
         if normalize:
@@ -213,7 +215,8 @@ class HillChartProcessor:
         #q_curve_values.save_2D_chart_to_csv('Q', 'efficiency',file_name='output1.csv', label_type = labels)     
         
 
-        n_curve_values = copy.deepcopy(hill_values)        
+        n_curve_values = copy.deepcopy(hill_values)
+        n_curve_values = PerformanceCurve(n_curve_values)        
         n_curve_values.slice_hill_chart_data(selected_Q11=BEP_data.Q11[0])        
         n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])   
         if normalize:
@@ -230,7 +233,8 @@ class HillChartProcessor:
         
     def plot_blade_slices(self, hill_values, BEP_data, normalize = False):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
-        blade_slice_values = copy.deepcopy(hill_values)                
+        blade_slice_values = copy.deepcopy(hill_values)
+        blade_slice_values = PerformanceCurve(blade_slice_values)
         blade_slice_values.slice_hill_chart_data(selected_blade_angle = BEP_data.blade_angle[0])                
         blade_slice_values.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])  
         if normalize:
@@ -252,7 +256,8 @@ class HillChartProcessor:
 
     def plot_blade_slices_const_n(self, hill_values, BEP_data, normalize = False):
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
-        blade_slice_values = copy.deepcopy(hill_values)                
+        blade_slice_values = copy.deepcopy(hill_values)
+        blade_slice_values = PerformanceCurve(blade_slice_values)                
         blade_slice_values.slice_hill_chart_data(selected_blade_angle = BEP_data.blade_angle[0])        
         blade_slice_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])                
         if normalize:
@@ -276,7 +281,8 @@ class HillChartProcessor:
                 
         _, ax4 = plt.subplots(1, 2, figsize=(15, 5))                  
         
-        fixed_hillchart_point = copy.deepcopy(raw_data) 
+        fixed_hillchart_point = copy.deepcopy(raw_data)
+        fixed_hillchart_point = PerformanceCurve(fixed_hillchart_point) 
         fixed_hillchart_point.filter_for_maximum_efficiency()                                
         H_nom = BEP_data.H[0]        
         H_min = H_nom * 0.2
