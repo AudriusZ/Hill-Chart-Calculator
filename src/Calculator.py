@@ -26,7 +26,7 @@ class HillChartCalculator(tk.Tk):
             "2D Curve Slices - const.blade": ["Const. Head", "Const. n", "Const. efficiency"]            
         }
         self.sub_output_vars = {key: [tk.IntVar() for _ in value] for key, value in self.sub_output_options.items()}
-        self.settings_options = ["Normalize", "Save Chart Data"]
+        self.settings_options = ["Normalize", "Save 2D Chart Data"]
         self.settings_vars = {option: tk.IntVar() for option in self.settings_options}
         self.extrapolation_options = ["Extrapolate unit speed n11 [rpm]", "Extrapolate Blade Angles [degree]"]
         self.extrapolation_options_vars = [tk.IntVar() for _ in self.extrapolation_options]
