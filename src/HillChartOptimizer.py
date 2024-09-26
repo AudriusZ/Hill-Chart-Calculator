@@ -3,11 +3,15 @@ from HillChart import HillChart
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
+from scipy.interpolate import PchipInterpolator
+from PerformanceCurve import PerformanceCurve  # Assuming this class is in a separate file
 
 class HillChartOptimizer(HillChart):
     def __init__(self):
         # Call the parent constructor to initialize the data
         super().__init__()
+
+    
 
     def calculate_power_hill_chart(self):
         """
@@ -77,3 +81,85 @@ class HillChartOptimizer(HillChart):
         except Exception as e:
             print(f"Error in plotting power Hill chart: {e}")
             raise
+
+    def get_n11_for_given_Q11_and_blade_angle(self, input_Q11, input_blade_angle):
+        """
+        Takes Q11 and blade_angle as inputs, slices the hill chart data by blade angle,
+        and returns the interpolated n11 value.
+        """
+        try:
+            # Initialize PerformanceCurve with the current hill chart data
+            performance_curve = PerformanceCurve(self)
+            
+            # Slice the data based on the provided blade angle
+            n11_slice, Q11_slice, efficiency_slice, blade_angle_slice = performance_curve.slice_hill_chart_data(selected_blade_angle=input_blade_angle)
+            
+            # Check if input Q11 is within the sliced Q11 range
+            if not (min(Q11_slice) <= input_Q11 <= max(Q11_slice)):
+                raise ValueError(f"Input Q11 {input_Q11} is out of range for the selected blade angle.")
+            
+            # Interpolate the n11 value for the given Q11
+            n11_interpolator = PchipInterpolator(Q11_slice, n11_slice)
+            output_n11 = n11_interpolator(input_Q11)
+
+            efficiency_interpolator = PchipInterpolator(Q11_slice, efficiency_slice)
+            output_efficiency = efficiency_interpolator(input_Q11)
+            
+            return output_n11, output_efficiency
+        
+        except Exception as e:
+            print(f"Error in get_n11_for_given_Q11_and_blade_angle: {e}")
+            return None, None
+
+import os
+import copy
+
+optimizer = HillChartOptimizer()
+datapath = os.path.join(os.path.dirname(__file__), '../src/Mogu_D1.65m.csv')
+optimizer.read_hill_chart_values(datapath)
+optimizer.prepare_hill_chart_data()
+
+
+D = 1.65
+
+
+# Loop for user inputs
+while True:
+    try:
+        optimizer2 = copy.deepcopy(optimizer)
+        # Prompt user for inputs
+        Q = float(input("Enter Q (flow rate): "))
+        H = float(input("Enter H (head): "))
+        Blade = float(input("Enter Blade angle: "))
+        
+        # Calculate Q11
+        Q11 = Q / (D**2 * H**0.5)
+        
+        # Get n11 and efficiency
+        n11, efficiency = optimizer2.get_n11_for_given_Q11_and_blade_angle(Q11, Blade)
+        
+        # Calculate n
+        n = n11 * H**0.5 / D
+
+        power = 9.8 * 1000 * Q * H * efficiency
+        
+        # Print results
+        print("----------------")
+        print(f"n11 = {n11}")
+        print(f"Q11 = {Q11}")
+        print(f"efficiency = {efficiency}")
+        print("")
+        print(f"n = {n}")
+        
+        print(f"power = {power}")
+        
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    
+    # Ask user if they want to continue or exit the loop
+    cont = input("Do you want to continue? (y/n): ").strip().lower()
+    if cont != 'y':
+        break
+
+
+

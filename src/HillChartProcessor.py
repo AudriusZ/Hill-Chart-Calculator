@@ -267,7 +267,7 @@ class HillChartProcessor:
 
     def plot_blade_slices_const_efficiency(self, raw_data, BEP_data, normalize = False, save_data = False):
                 
-        _, ax4 = plt.subplots(1, 2, figsize=(15, 5))                  
+        _, ax4 = plt.subplots(2, 2, figsize=(15, 10))                  
         
         fixed_hillchart_point = copy.deepcopy(raw_data)
         fixed_hillchart_point = PerformanceCurve(fixed_hillchart_point) 
@@ -288,8 +288,10 @@ class HillChartProcessor:
         else:
             labels = 'default'
          
-        fixed_hillchart_point.plot_and_save_chart('H','Q',ax=ax4[0],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
-        fixed_hillchart_point.plot_and_save_chart('H','power',ax=ax4[1],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
+        fixed_hillchart_point.plot_and_save_chart('H','Q',ax=ax4[0,0],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
+        fixed_hillchart_point.plot_and_save_chart('H','n',ax=ax4[1,0],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
+        fixed_hillchart_point.plot_and_save_chart('H','power',ax=ax4[0,1],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
+        fixed_hillchart_point.plot_and_save_chart('Q','power',ax=ax4[1,1],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
         
         
         plt.show(block=False) 
