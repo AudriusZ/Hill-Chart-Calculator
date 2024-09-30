@@ -113,7 +113,7 @@ class HillChartOptimizer(HillChart):
             raise
 
 
-
+'''
 # Main optimization loop
 def optimization_loop(optimizer, D):
     while True:
@@ -172,3 +172,4 @@ optimizer.prepare_hill_chart_data()
 
 # Start the optimization loop
 optimization_loop(optimizer, D=1.65)
+'''
