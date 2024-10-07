@@ -1,11 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 import os
-import copy
-from PerformanceCurve import PerformanceCurve
-from HillChartOptimizer import HillChartOptimizer
+from TurbineControlSimulator import TurbineControlSimulator
 
-class HillChartOptimizerGUI:
+class TurbineControlSimulatorGUI:
     def __init__(self, master, optimizer, D):
         self.master = master
         self.optimizer = optimizer
@@ -50,46 +48,24 @@ class HillChartOptimizerGUI:
         self.update_output()
 
     def debounced_update_output(self):
-        # If there's already a scheduled update, cancel it
         if self.update_id is not None:
             self.master.after_cancel(self.update_id)
-
-        # Schedule a new update with the delay specified
         self.update_id = self.master.after(self.update_delay, self.update_output)
 
     def update_output(self):
         try:
-            # Read the inputs
             Q = float(self.q_input.get())
             Blade = float(self.blade_input.get())
             n = float(self.n_input.get())
 
-            # Copy the optimizer and prepare the slices
-            optimizer2 = copy.deepcopy(self.optimizer)
-            performance_curve = PerformanceCurve(optimizer2)
-            n11_slice, Q11_slice, efficiency_slice, _ = performance_curve.slice_hill_chart_data(selected_blade_angle=Blade)
-
-            if len(Q11_slice) < 2 or len(n11_slice) < 2:
-                for key in self.result_labels:
-                    self.result_labels[key].config(text=f"{key} Error")
-                return
-
-            # Initial guess for n11
-            n11_initial_guess = 127.7
-
-            # Calculate the results using the recursive function
-            n11_solution, H_solution, Q11_solution, efficiency = optimizer2.solve_recursive_n11_guess(
-                Q, self.D, n, n11_initial_guess, n11_slice, Q11_slice, efficiency_slice
-            )
-
-            # Calculate power
-            power = 9.8 * 1000 * Q * H_solution * efficiency
+            # Call the optimizer to get results
+            Q11, n11, efficiency, H, power = self.optimizer.compute_results(Q, self.D, n, Blade)
 
             # Update the result labels
-            self.result_labels["Q11:"].config(text=f"Q11: {Q11_solution:.2f}")
-            self.result_labels["n11:"].config(text=f"n11: {n11_solution:.1f}")
+            self.result_labels["Q11:"].config(text=f"Q11: {Q11:.2f}")
+            self.result_labels["n11:"].config(text=f"n11: {n11:.1f}")
             self.result_labels["Efficiency:"].config(text=f"Efficiency: {efficiency:.2f}")
-            self.result_labels["H:"].config(text=f"H: {H_solution:.2f}")
+            self.result_labels["H:"].config(text=f"H: {H:.2f}")
             self.result_labels["Power:"].config(text=f"Power: {power:.0f}")
 
         except Exception as e:
@@ -97,16 +73,26 @@ class HillChartOptimizerGUI:
                 self.result_labels[key].config(text=f"{key} Error")
             print(f"An error occurred: {e}")
 
-# Create the HillChartOptimizer instance and load data
-optimizer = HillChartOptimizer()
-datapath = os.path.join(os.path.dirname(__file__), '../src/Mogu_D1.65m.csv')
-optimizer.read_hill_chart_values(datapath)
-optimizer.prepare_hill_chart_data()
+def main():
+    # Create the TurbineControlSimulator instance and load data
+    optimizer = TurbineControlSimulator()
+    datapath = os.path.join(os.path.dirname(__file__), '../src/Mogu_D1.65m.csv')
+    
+    # Ensure the file path exists before proceeding
+    if not os.path.exists(datapath):
+        print(f"Error: Data file '{datapath}' not found.")
+        return
 
-# Create the GUI window
-root = tk.Tk()
-app = HillChartOptimizerGUI(root, optimizer, D=1.65)
+    optimizer.read_hill_chart_values(datapath)
+    optimizer.prepare_hill_chart_data()
 
-# Run the GUI event loop
-root.mainloop()
+    # Create the GUI window
+    root = tk.Tk()
+    app = TurbineControlSimulatorGUI(root, optimizer, D=1.65)
+    
+    # Run the GUI event loop
+    root.mainloop()
 
+# Run the main function if this script is run directly
+if __name__ == "__main__":
+    main()
