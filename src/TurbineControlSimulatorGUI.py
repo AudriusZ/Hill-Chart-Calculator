@@ -1,5 +1,7 @@
+#pyinstaller --onefile --name Turbine_Control_Simulator_0.1.2 --icon=icon.ico TurbineControlSimulatorGUI.py
 import tkinter as tk
 from tkinter import ttk
+from tkinter import filedialog
 import os
 from TurbineControlSimulator import TurbineControlSimulator
 
@@ -8,8 +10,8 @@ class TurbineControlSimulatorGUI:
         self.master = master
         self.optimizer = optimizer
         self.D = D
-        self.update_delay = 500  # Set delay time in milliseconds (e.g., 500ms = 0.5s)
-        self.update_id = None    # Variable to hold the ID of the after() timer
+        self.update_delay = 500  # Set delay time in milliseconds
+        self.update_id = None
 
         # Set up the GUI layout
         self.master.title("Hill Chart Optimizer")
@@ -33,19 +35,68 @@ class TurbineControlSimulatorGUI:
         self.n_input.grid(row=2, column=1, padx=10, pady=5)
         self.n_input.insert(0, "113.5")
 
+        # Create the Load Data button to browse for the CSV file
+        self.load_data_button = ttk.Button(master, text="Load Data", command=self.load_data)
+        self.load_data_button.grid(row=3, column=0, columnspan=2, pady=10)
+
         # Create output labels for results
         self.result_labels = {}
         for idx, text in enumerate(["Q11:", "n11:", "Efficiency:", "H:", "Power:"]):
             self.result_labels[text] = ttk.Label(master, text=f"{text} --")
-            self.result_labels[text].grid(row=3 + idx, column=0, columnspan=2, padx=10, pady=5)
+            self.result_labels[text].grid(row=4 + idx, column=0, columnspan=2, padx=10, pady=5)
 
         # Add event listeners for input changes with debounce handling
         self.q_input.bind("<KeyRelease>", lambda event: self.debounced_update_output())
         self.blade_input.bind("<KeyRelease>", lambda event: self.debounced_update_output())
         self.n_input.bind("<KeyRelease>", lambda event: self.debounced_update_output())
 
+        # Automatically load the default file if it exists in the home directory
+        self.load_default_file()
+
         # Trigger an initial update
         self.update_output()
+
+    def load_default_file(self):
+        """Automatically load Mogu_D1.65m.csv if it is found in the script directory's parent folder."""
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        default_filepath = os.path.join(script_dir, "Mogu_D1.65m.csv")
+
+        if os.path.exists(default_filepath):
+            try:
+                self.optimizer.read_hill_chart_values(default_filepath)
+                self.optimizer.prepare_hill_chart_data()
+                print(f"Data successfully loaded from {default_filepath}")
+
+                # Update GUI to reflect successful data load
+                self.master.title(f"Hill Chart Optimizer - Data Loaded: {os.path.basename(default_filepath)}")
+                for key in self.result_labels:
+                    self.result_labels[key].config(text=f"{key} --")  # Clear the previous results
+            except Exception as e:
+                print(f"Error loading default data: {e}")
+                for key in self.result_labels:
+                    self.result_labels[key].config(text=f"{key} Error")
+
+    def load_data(self):
+        """Prompt the user to select a CSV file and load the data."""
+        filepath = filedialog.askopenfilename(
+            filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")],
+            title="Select Hill Chart Data File"
+        )
+
+        if filepath:
+            try:
+                self.optimizer.read_hill_chart_values(filepath)
+                self.optimizer.prepare_hill_chart_data()
+                print(f"Data successfully loaded from {filepath}")
+                
+                # Update GUI to reflect successful data load
+                self.master.title(f"Hill Chart Optimizer - Data Loaded: {os.path.basename(filepath)}")
+                for key in self.result_labels:
+                    self.result_labels[key].config(text=f"{key} --")  # Clear the previous results
+            except Exception as e:
+                print(f"Error loading data: {e}")
+                for key in self.result_labels:
+                    self.result_labels[key].config(text=f"{key} Error")
 
     def debounced_update_output(self):
         if self.update_id is not None:
@@ -74,17 +125,8 @@ class TurbineControlSimulatorGUI:
             print(f"An error occurred: {e}")
 
 def main():
-    # Create the TurbineControlSimulator instance and load data
+    # Create the TurbineControlSimulator instance with no data loaded initially
     optimizer = TurbineControlSimulator()
-    datapath = os.path.join(os.path.dirname(__file__), '../src/Mogu_D1.65m.csv')
-    
-    # Ensure the file path exists before proceeding
-    if not os.path.exists(datapath):
-        print(f"Error: Data file '{datapath}' not found.")
-        return
-
-    optimizer.read_hill_chart_values(datapath)
-    optimizer.prepare_hill_chart_data()
 
     # Create the GUI window
     root = tk.Tk()
