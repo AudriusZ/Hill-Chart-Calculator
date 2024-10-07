@@ -64,7 +64,7 @@ class HillChartOptimizer(HillChart):
             print(f"Error in lookup_n11: {e}")
             return None, None
 
-    def solve_recursive(self, Q, D, n, Q11_guess, n11_slice, Q11_slice, efficiency_slice, tolerance=1e-6, max_iter=1000, iter_count=0):
+    def solve_recursive_Q11_guess(self, Q, D, n, Q11_guess, n11_slice, Q11_slice, efficiency_slice, tolerance=1e-6, max_iter=1000, iter_count=0):
         """
         Recursive function to solve for Q11 and H based on the given input values and precomputed slices.
         Parameters:
@@ -106,14 +106,54 @@ class HillChartOptimizer(HillChart):
                 Q11_refined = Q11_guess * (n11_calculated / n11_lookup)
 
                 # Recursive call with updated Q11 guess
-                return self.solve_recursive(Q, D, n, Q11_refined, n11_slice, Q11_slice, efficiency_slice, tolerance, max_iter, iter_count + 1)
+                return self.solve_recursive_Q11_guess(Q, D, n, Q11_refined, n11_slice, Q11_slice, efficiency_slice, tolerance, max_iter, iter_count + 1)
 
         except Exception as e:
             print(f"Error in recursive solution: {e}")
             raise
 
+    def solve_recursive_n11_guess(self, Q, D, n, n11_guess, n11_slice, Q11_slice, efficiency_slice, tolerance=1e-3, max_iter=1000, iter_count=0):        
+            try:
+                # Calculate the head H based on the current guess of n11
+                H = (n * D / n11_guess) ** 2
+
+                # Calculate Q11 using the calculated H
+                Q11_calculated = Q / (D**2 * np.sqrt(H))
+
+                
+                # Check for non-finite values in `efficiency_slice`
+                finite_mask = np.isfinite(efficiency_slice)
+
+                # Filter both arrays to remove non-finite values
+                n11_clean = n11_slice[finite_mask]
+                efficiency_finite = efficiency_slice[finite_mask]                
+                
+                # Interpolate the n11 and efficiency based on the given Q11 guess using the precomputed slices
+                Q11_interpolator = PchipInterpolator(n11_slice, Q11_slice)
+                efficiency_interpolator = PchipInterpolator(n11_clean, efficiency_finite)
+
+                Q11_lookup = Q11_interpolator(n11_guess)
+                efficiency = efficiency_interpolator(n11_guess)
+
+                # Step 4: Check for convergence based on the difference between the calculated and looked-up n11
+                if abs(Q11_calculated - Q11_lookup) < tolerance or iter_count >= max_iter:
+                    
+                    return n11_guess, H, Q11_calculated, efficiency
+                else:
+                    # Step 5: Refine the guess for n11 using the ratio of the Q11 values to bring them closer
+                    n11_refined = n11_guess * (Q11_lookup / Q11_calculated)
+                    print(iter_count)
+                    print(n11_guess, Q11_lookup, Q11_calculated)
+                    # Recursive call with updated Q11 guess
+                    return self.solve_recursive_n11_guess(Q, D, n, n11_refined, n11_slice, Q11_slice, efficiency_slice, tolerance, max_iter, iter_count + 1)
+
+            except Exception as e:
+                print(f"Error in recursive solution: {e}")
+                raise
+
 
 '''
+
 # Main optimization loop
 def optimization_loop(optimizer, D):
     while True:
@@ -139,7 +179,7 @@ def optimization_loop(optimizer, D):
             Q11_initial_guess = 1.0
 
             # Call the recursive function with precomputed slices
-            Q11_solution, H_solution, n11_solution, efficiency = optimizer2.solve_recursive(
+            Q11_solution, H_solution, n11_solution, efficiency = optimizer2.solve_recursive_Q11_guess(
                 Q, D, n, Q11_initial_guess, n11_slice, Q11_slice, efficiency_slice
             )
 

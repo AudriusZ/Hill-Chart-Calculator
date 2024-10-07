@@ -74,12 +74,12 @@ class HillChartOptimizerGUI:
                     self.result_labels[key].config(text=f"{key} Error")
                 return
 
-            # Initial guess for Q11
-            Q11_initial_guess = 1.0
+            # Initial guess for n11
+            n11_initial_guess = 127.7
 
             # Calculate the results using the recursive function
-            Q11_solution, H_solution, n11_solution, efficiency = optimizer2.solve_recursive(
-                Q, self.D, n, Q11_initial_guess, n11_slice, Q11_slice, efficiency_slice
+            n11_solution, H_solution, Q11_solution, efficiency = optimizer2.solve_recursive_n11_guess(
+                Q, self.D, n, n11_initial_guess, n11_slice, Q11_slice, efficiency_slice
             )
 
             # Calculate power
