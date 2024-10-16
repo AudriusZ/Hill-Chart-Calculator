@@ -16,6 +16,9 @@ class TurbineControlSimulatorGUI:
         # Set up the GUI layout
         self.master.title("Hill Chart Optimizer")
 
+        self.head_control = False
+        self.head_setting = 3
+        
         # Create input labels and fields
         self.q_label = ttk.Label(master, text="Flow Rate (Q):")
         self.q_label.grid(row=0, column=0, padx=10, pady=5)
@@ -108,9 +111,27 @@ class TurbineControlSimulatorGUI:
             Q = float(self.q_input.get())
             Blade = float(self.blade_input.get())
             n = float(self.n_input.get())
+            D = self.D  # Assuming diameter is already stored during initialization
 
-            # Call the optimizer to get results
-            Q11, n11, efficiency, H, power = self.optimizer.compute_results(Q, self.D, n, Blade)
+            # Use head control if enabled
+            if self.head_control:
+                head = self.head_setting
+                # Call the new method from TurbineControlSimulator
+                result = self.optimizer.set_head_and_adjust(head, Q, D)
+
+                # Extract updated rotational speed and blade angle
+                n = result["Rotational Speed (n)"]
+                #Blade = result["Blade Angle"]
+                #efficiency = result["Efficiency"]
+
+                # Update inputs to show adjusted values
+                #self.blade_input.delete(0, tk.END)
+                #self.blade_input.insert(0, f"{Blade:.2f}")
+                self.n_input.delete(0, tk.END)
+                self.n_input.insert(0, f"{n:.2f}")
+
+            # Existing logic for computing results
+            Q11, n11, efficiency, H, power = self.optimizer.compute_results(Q, D, n, Blade)
 
             # Update the result labels
             self.result_labels["Q11:"].config(text=f"Q11: {Q11:.2f}")
