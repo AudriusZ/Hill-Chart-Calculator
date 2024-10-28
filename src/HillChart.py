@@ -183,6 +183,27 @@ class HillChart:
 
         return self.data.n11, self.data.Q11, self.data.blade_angle
     
+    def get_blade_angle(self, Q11_value, n11_value):
+        """Interpolate the blade angle based on Q11 and n11, handling NaN values."""
+        if self.data.Q11 is None or self.data.n11 is None or self.data.blade_angle is None:
+            raise ValueError("Blade angle data not prepared. Ensure hill chart data is loaded and prepared.")
+
+        # Flatten and filter out NaN values
+        Q11_flat = self.data.Q11.flatten()
+        n11_flat = self.data.n11.flatten()
+        blade_angles_flat = self.data.blade_angle.flatten()
+
+        valid_mask = ~np.isnan(blade_angles_flat) & ~np.isnan(Q11_flat) & ~np.isnan(n11_flat)
+
+        # Only use valid points
+        points = np.array(list(zip(Q11_flat[valid_mask], n11_flat[valid_mask])))
+        values = blade_angles_flat[valid_mask]
+
+        # Interpolate blade angle
+        blade_angle = griddata(points, values, (Q11_value, n11_value), method='cubic')
+
+        return float(blade_angle)
+    
     def filter_for_maximum_efficiency(self):
         try:
             # Check if efficiency list is not empty

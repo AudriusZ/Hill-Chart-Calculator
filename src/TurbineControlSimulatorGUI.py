@@ -16,8 +16,8 @@ class TurbineControlSimulatorGUI:
         # Set up the GUI layout
         self.master.title("Hill Chart Optimizer")
 
-        self.head_control = False
-        self.head_setting = 3
+        self.head_control = True
+        self.head_setting = 2.15
         
         # Create input labels and fields
         self.q_label = ttk.Label(master, text="Flow Rate (Q):")
@@ -109,7 +109,7 @@ class TurbineControlSimulatorGUI:
     def update_output(self):
         try:
             Q = float(self.q_input.get())
-            Blade = float(self.blade_input.get())
+            blade_angle = float(self.blade_input.get())
             n = float(self.n_input.get())
             D = self.D  # Assuming diameter is already stored during initialization
 
@@ -122,16 +122,20 @@ class TurbineControlSimulatorGUI:
                 # Extract updated rotational speed and blade angle
                 n = result["Rotational Speed (n)"]
                 #Blade = result["Blade Angle"]
+                n11 = n * D / head**0.5
+                Q11 = result["Blade Angle"]                
+                blade_angle = self.optimizer.get_blade_angle(Q11, n11)
+                print(blade_angle)                
                 #efficiency = result["Efficiency"]
 
                 # Update inputs to show adjusted values
-                #self.blade_input.delete(0, tk.END)
-                #self.blade_input.insert(0, f"{Blade:.2f}")
+                self.blade_input.delete(0, tk.END)
+                self.blade_input.insert(0, f"{blade_angle:.2f}")
                 self.n_input.delete(0, tk.END)
                 self.n_input.insert(0, f"{n:.2f}")
 
             # Existing logic for computing results
-            Q11, n11, efficiency, H, power = self.optimizer.compute_results(Q, D, n, Blade)
+            Q11, n11, efficiency, H, power = self.optimizer.compute_results(Q, D, n, blade_angle)
 
             # Update the result labels
             self.result_labels["Q11:"].config(text=f"Q11: {Q11:.2f}")
