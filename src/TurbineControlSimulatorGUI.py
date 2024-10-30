@@ -8,10 +8,9 @@ from TurbineData import TurbineData
 
 
 class TurbineControlSimulatorGUI:
-    def __init__(self, master, optimizer, D):         
-        self.data = TurbineData() 
+    def __init__(self, master, simulator, D):                 
         self.master = master
-        self.optimizer = optimizer
+        self.simulator = simulator
         self.D = D
         self.update_delay = 500  # Set delay time in milliseconds
         self.update_id = None
@@ -69,8 +68,8 @@ class TurbineControlSimulatorGUI:
 
         if os.path.exists(default_filepath):
             try:
-                self.optimizer.read_hill_chart_values(default_filepath)
-                self.optimizer.prepare_hill_chart_data()
+                self.simulator.read_hill_chart_values(default_filepath)
+                self.simulator.prepare_hill_chart_data()
                 print(f"Data successfully loaded from {default_filepath}")
 
                 # Update GUI to reflect successful data load
@@ -91,8 +90,8 @@ class TurbineControlSimulatorGUI:
 
         if filepath:
             try:
-                self.optimizer.read_hill_chart_values(filepath)
-                self.optimizer.prepare_hill_chart_data()
+                self.simulator.read_hill_chart_values(filepath)
+                self.simulator.prepare_hill_chart_data()
                 print(f"Data successfully loaded from {filepath}")
                 
                 # Update GUI to reflect successful data load
@@ -111,23 +110,29 @@ class TurbineControlSimulatorGUI:
 
     def update_output(self):
         try:
-            self.data.Q = float(self.q_input.get())
+            Q = float(self.q_input.get())
             blade_angle = float(self.blade_input.get())
             n = float(self.n_input.get())
             D = self.D  # Assuming diameter is already stored during initialization
+
+            # Set the attribute dynamically
+            self.simulator.set_operation_attribute("Q", Q)
+            self.simulator.set_operation_attribute("blade_angle", blade_angle)
+            self.simulator.set_operation_attribute("n", n)
+            self.simulator.set_operation_attribute("D", D)
 
             # Use head control if enabled
             if self.head_control:
                 H_target = self.head_setting
                 # Call the new method from TurbineControlSimulator
-                result = self.optimizer.set_head_and_adjust(H_target, self.data.Q, D)
+                result = self.simulator.set_head_and_adjust(H_target, Q, D)
 
                 # Extract updated rotational speed and blade angle
                 n = result["Rotational Speed (n)"]
                 #Blade = result["Blade Angle"]
                 n11 = n * D / H_target**0.5
                 Q11 = result["Blade Angle"]                
-                blade_angle = self.optimizer.get_blade_angle(Q11, n11)
+                blade_angle = self.simulator.get_blade_angle(Q11, n11)
                 print(blade_angle)                
                 #efficiency = result["Efficiency"]
 
@@ -138,14 +143,15 @@ class TurbineControlSimulatorGUI:
                 self.n_input.insert(0, f"{n:.2f}")
 
             # Existing logic for computing results
-            Q11, n11, efficiency, H, power = self.optimizer.compute_results(self.data.Q, D, n, blade_angle)
+            #Q11, n11, efficiency, H, power = self.simulator.compute_results(Q, D, n, blade_angle)
+            operation_point = self.simulator.compute_results()
 
             # Update the result labels
-            self.result_labels["Q11:"].config(text=f"Q11: {Q11:.2f}")
-            self.result_labels["n11:"].config(text=f"n11: {n11:.1f}")
-            self.result_labels["Efficiency:"].config(text=f"Efficiency: {efficiency:.2f}")
-            self.result_labels["H:"].config(text=f"H: {H:.2f}")
-            self.result_labels["Power:"].config(text=f"Power: {power:.0f}")
+            self.result_labels["Q11:"].config(text=f"Q11: {operation_point.Q11:.2f}")
+            self.result_labels["n11:"].config(text=f"n11: {operation_point.n11:.1f}")
+            self.result_labels["Efficiency:"].config(text=f"Efficiency: {operation_point.efficiency:.2f}")
+            self.result_labels["H:"].config(text=f"H: {operation_point.H:.2f}")
+            self.result_labels["Power:"].config(text=f"Power: {operation_point.power:.0f}")
 
         except Exception as e:
             for key in self.result_labels:
@@ -154,11 +160,11 @@ class TurbineControlSimulatorGUI:
 
 def main():
     # Create the TurbineControlSimulator instance with no data loaded initially
-    optimizer = TurbineControlSimulator()
+    simulator = TurbineControlSimulator()
 
     # Create the GUI window
     root = tk.Tk()
-    app = TurbineControlSimulatorGUI(root, optimizer, D=1.65)
+    app = TurbineControlSimulatorGUI(root, simulator, D=1.65)
     
     # Run the GUI event loop
     root.mainloop()

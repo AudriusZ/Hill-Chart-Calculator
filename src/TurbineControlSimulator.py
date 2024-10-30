@@ -9,6 +9,10 @@ class TurbineControlSimulator(HillChart):
     """Class for optimizing hill chart data and performing various calculations."""    
     def __init__(self):        
         self.data = TurbineData()   
+        self.operation_point = TurbineData()   
+
+    def set_operation_attribute(self, attribute_name, value):
+        setattr(self.operation_point, attribute_name, value)
 
     def compute_n11_iteratively(self, Q, D, n, n11_guess, n11_slice, Q11_slice, efficiency_slice, tolerance=1e-3, max_iter=1000):
         """Iteratively solve for n11, Q11, and head (H) until convergence."""
@@ -45,8 +49,13 @@ class TurbineControlSimulator(HillChart):
             print(f"Error in iterative solution: {e}")
             raise    
 
-    def compute_results(self, Q, D, n, blade_angle):
+    def compute_results(self):
         """Calculate and return the results for given inputs."""
+        Q = self.operation_point.Q
+        D = self.operation_point.D
+        n = self.operation_point.n
+        blade_angle = self.operation_point.blade_angle        
+        
         performance_curve = PerformanceCurve(self)
         simulator_copy = copy.deepcopy(performance_curve)
         n11_slice, Q11_slice, efficiency_slice, _ = simulator_copy.slice_hill_chart_data(selected_blade_angle=blade_angle)
@@ -58,12 +67,19 @@ class TurbineControlSimulator(HillChart):
         n11_initial_guess = 127.7
 
         # Calculate the results using the iterative function
-        n11_solution, H_solution, Q11_solution, efficiency = self.compute_n11_iteratively(
+        n11, H, Q11, efficiency = self.compute_n11_iteratively(
             Q, D, n, n11_initial_guess, n11_slice, Q11_slice, efficiency_slice
         )
 
-        power = 9.8 * 1000 * Q * H_solution * efficiency
-        return Q11_solution, n11_solution, efficiency, H_solution, power
+        power = 9.8 * 1000 * Q * H * efficiency
+
+        self.operation_point.n11 = n11
+        self.operation_point.H = H
+        self.operation_point.Q11 = Q11
+        self.operation_point.efficiency = efficiency
+        self.operation_point.power = power    
+
+        return self.operation_point
     
     def adjust_rotational_speed_for_constant_head(self, H, D):
         """
