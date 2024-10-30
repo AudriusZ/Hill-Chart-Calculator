@@ -4,9 +4,12 @@ from tkinter import ttk
 from tkinter import filedialog
 import os
 from TurbineControlSimulator import TurbineControlSimulator
+from TurbineData import TurbineData
+
 
 class TurbineControlSimulatorGUI:
-    def __init__(self, master, optimizer, D):
+    def __init__(self, master, optimizer, D):         
+        self.data = TurbineData() 
         self.master = master
         self.optimizer = optimizer
         self.D = D
@@ -16,7 +19,7 @@ class TurbineControlSimulatorGUI:
         # Set up the GUI layout
         self.master.title("Hill Chart Optimizer")
 
-        self.head_control = True
+        self.head_control = False
         self.head_setting = 2.15
         
         # Create input labels and fields
@@ -108,21 +111,21 @@ class TurbineControlSimulatorGUI:
 
     def update_output(self):
         try:
-            Q = float(self.q_input.get())
+            self.data.Q = float(self.q_input.get())
             blade_angle = float(self.blade_input.get())
             n = float(self.n_input.get())
             D = self.D  # Assuming diameter is already stored during initialization
 
             # Use head control if enabled
             if self.head_control:
-                head = self.head_setting
+                H_target = self.head_setting
                 # Call the new method from TurbineControlSimulator
-                result = self.optimizer.set_head_and_adjust(head, Q, D)
+                result = self.optimizer.set_head_and_adjust(H_target, self.data.Q, D)
 
                 # Extract updated rotational speed and blade angle
                 n = result["Rotational Speed (n)"]
                 #Blade = result["Blade Angle"]
-                n11 = n * D / head**0.5
+                n11 = n * D / H_target**0.5
                 Q11 = result["Blade Angle"]                
                 blade_angle = self.optimizer.get_blade_angle(Q11, n11)
                 print(blade_angle)                
@@ -135,7 +138,7 @@ class TurbineControlSimulatorGUI:
                 self.n_input.insert(0, f"{n:.2f}")
 
             # Existing logic for computing results
-            Q11, n11, efficiency, H, power = self.optimizer.compute_results(Q, D, n, blade_angle)
+            Q11, n11, efficiency, H, power = self.optimizer.compute_results(self.data.Q, D, n, blade_angle)
 
             # Update the result labels
             self.result_labels["Q11:"].config(text=f"Q11: {Q11:.2f}")
