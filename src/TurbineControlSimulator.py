@@ -14,8 +14,12 @@ class TurbineControlSimulator(HillChart):
     def set_operation_attribute(self, attribute_name, value):
         setattr(self.operation_point, attribute_name, value)
 
-    def compute_n11_iteratively(self, Q, D, n, n11_guess, n11_slice, Q11_slice, efficiency_slice, tolerance=1e-3, max_iter=1000):
+    def compute_n11_iteratively(self, n11_guess, n11_slice, Q11_slice, efficiency_slice, tolerance=1e-3, max_iter=1000):
         """Iteratively solve for n11, Q11, and head (H) until convergence."""
+        Q = self.operation_point.Q
+        D = self.operation_point.D
+        n = self.operation_point.n    
+
         try:
             finite_mask = np.isfinite(efficiency_slice) & np.isfinite(n11_slice) & np.isfinite(Q11_slice)
 
@@ -67,9 +71,7 @@ class TurbineControlSimulator(HillChart):
         n11_initial_guess = 127.7
 
         # Calculate the results using the iterative function
-        n11, H, Q11, efficiency = self.compute_n11_iteratively(
-            Q, D, n, n11_initial_guess, n11_slice, Q11_slice, efficiency_slice
-        )
+        n11, H, Q11, efficiency = self.compute_n11_iteratively(n11_initial_guess, n11_slice, Q11_slice, efficiency_slice)
 
         power = 9.8 * 1000 * Q * H * efficiency
 
@@ -81,10 +83,11 @@ class TurbineControlSimulator(HillChart):
 
         return self.operation_point
     
-    def adjust_rotational_speed_for_constant_head(self, H, D):
+    def adjust_rotational_speed_for_constant_head(self, H):
         """
         Adjust the rotational speed (n) based on a constant head (H) using best efficiency n11.
         """
+        D = self.operation_point.D
         try:
             # Fetch the best efficiency point n11
             #best_n11 lookpup - to do
@@ -98,10 +101,17 @@ class TurbineControlSimulator(HillChart):
             print(f"Error in adjusting rotational speed: {e}")
             raise            
 
-    def adjust_blade_angle_for_constant_H_and_Q(self, H, D, Q):        
+    def adjust_blade_angle_for_constant_H_and_Q(self, H):        
+        D = self.operation_point.D
+        Q = self.operation_point.Q
+        n = self.operation_point.n
         try:            
             Q11 = Q / (D**2 * H**0.5)            
-            blade_angle = Q11 #this isn't correct, hod do I lookup/interpolate blade_angle based on Q11?
+            n11 = n * D / H**0.5                
+            blade_angle = self.get_blade_angle(Q11, n11)
+
+            #blade_angle = Q11 #this isn't correct, hod do I lookup/interpolate blade_angle based on Q11?
+
             return blade_angle
 
         except Exception as e:
@@ -109,17 +119,17 @@ class TurbineControlSimulator(HillChart):
             raise
 
     
-    def set_head_and_adjust(self, H, Q, D):
+    def set_head_and_adjust(self, H):
         """
         Set the head and adjust both rotational speed and blade angle accordingly.
         """
-        try:
+        try:            
+            
             # Step 1: Adjust rotational speed for the constant head
-            n = self.adjust_rotational_speed_for_constant_head(H, D)
+            n = self.adjust_rotational_speed_for_constant_head(H)
             
             # Step 2: Adjust blade angle iteratively
-            blade_angle = self.adjust_blade_angle_for_constant_H_and_Q(H, D, Q)
-            
+            blade_angle = self.adjust_blade_angle_for_constant_H_and_Q(H)                       
 
             return {
                 "Rotational Speed (n)": n,

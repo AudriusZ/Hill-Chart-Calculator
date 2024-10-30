@@ -18,7 +18,7 @@ class TurbineControlSimulatorGUI:
         # Set up the GUI layout
         self.master.title("Hill Chart Optimizer")
 
-        self.head_control = False
+        self.head_control = True
         self.head_setting = 2.15
         
         # Create input labels and fields
@@ -125,16 +125,11 @@ class TurbineControlSimulatorGUI:
             if self.head_control:
                 H_target = self.head_setting
                 # Call the new method from TurbineControlSimulator
-                result = self.simulator.set_head_and_adjust(H_target, Q, D)
-
-                # Extract updated rotational speed and blade angle
+                result = self.simulator.set_head_and_adjust(H_target)                
                 n = result["Rotational Speed (n)"]
-                #Blade = result["Blade Angle"]
-                n11 = n * D / H_target**0.5
-                Q11 = result["Blade Angle"]                
-                blade_angle = self.simulator.get_blade_angle(Q11, n11)
-                print(blade_angle)                
-                #efficiency = result["Efficiency"]
+                blade_angle = result["Blade Angle"]                
+                self.simulator.set_operation_attribute("n", n)                
+                self.simulator.set_operation_attribute("blade_angle", blade_angle)                
 
                 # Update inputs to show adjusted values
                 self.blade_input.delete(0, tk.END)
