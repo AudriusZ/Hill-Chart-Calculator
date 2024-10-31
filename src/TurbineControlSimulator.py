@@ -67,8 +67,8 @@ class TurbineControlSimulator(HillChart):
         if len(Q11_slice) < 2 or len(n11_slice) < 2:
             raise ValueError("Insufficient data for computation")
 
-        # Initial guess for n11
-        n11_initial_guess = 127.7
+        # Initial guess for n11                         
+        n11_initial_guess = self.BEP_data.n11[0]
 
         # Calculate the results using the iterative function
         n11, H, Q11, efficiency = self.compute_n11_iteratively(n11_initial_guess, n11_slice, Q11_slice, efficiency_slice)
@@ -90,8 +90,7 @@ class TurbineControlSimulator(HillChart):
         D = self.operation_point.D
         try:
             # Fetch the best efficiency point n11
-            #best_n11 lookpup - to do
-            best_n11 = 127.7
+            best_n11 = self.BEP_data.n11[0]            
             
             # Calculate rotational speed (n) using the constant head and D
             n = best_n11 * (H ** 0.5) / D
@@ -108,9 +107,7 @@ class TurbineControlSimulator(HillChart):
         try:            
             Q11 = Q / (D**2 * H**0.5)            
             n11 = n * D / H**0.5                
-            blade_angle = self.get_blade_angle(Q11, n11)
-
-            #blade_angle = Q11 #this isn't correct, hod do I lookup/interpolate blade_angle based on Q11?
+            blade_angle = self.get_blade_angle(Q11, n11)            
 
             return blade_angle
 

@@ -6,6 +6,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import griddata
 from scipy.interpolate import PchipInterpolator
 from matplotlib import path as mpath
+import copy
 
 
 class HillChart:
@@ -18,10 +19,10 @@ class HillChart:
                 reader = csv.DictReader(csvfile)
                 #print("CSV Headers:", reader.fieldnames)  # Should now correctly show headers without BOM
                 
-                self.data.blade_angle.clear()
-                self.data.Q11.clear()
-                self.data.n11.clear()
-                self.data.efficiency.clear()
+                self.data.blade_angle = []
+                self.data.Q11 = []
+                self.data.n11 = []
+                self.data.efficiency = []
                 
 
                 for row in reader:
@@ -204,7 +205,7 @@ class HillChart:
 
         return float(blade_angle)
     
-    def filter_for_maximum_efficiency(self):
+    def filter_for_maximum_efficiency(self, remove = True):
         try:
             # Check if efficiency list is not empty
             if not self.data.efficiency:
@@ -220,13 +221,21 @@ class HillChart:
             max_efficiency = self.data.efficiency[max_eff_index]
             max_blade_angle = self.data.blade_angle[max_eff_index] 
 
-            # Clear existing lists and append only the max values
-            self.data.clear_data()
+            if remove:
+                # Clear existing lists and append only the max values
+                self.data.clear_data()
 
-            self.data.Q11 = [max_Q11]
-            self.data.n11 = [max_n11]
-            self.data.efficiency = [max_efficiency]
-            self.data.blade_angle = [max_blade_angle]
+                self.data.Q11 = [max_Q11]
+                self.data.n11 = [max_n11]
+                self.data.efficiency = [max_efficiency]
+                self.data.blade_angle = [max_blade_angle]
+
+            else:
+                self.BEP_data = TurbineData()
+                self.BEP_data.Q11 = [max_Q11]
+                self.BEP_data.n11 = [max_n11]
+                self.BEP_data.efficiency = [max_efficiency]
+                self.BEP_data.blade_angle = [max_blade_angle]
 
             #print("Filtered to maximum efficiency data.")
         except Exception as e:
