@@ -6,16 +6,46 @@ import copy
 from TurbineData import TurbineData
 
 class TurbineControlSimulator(HillChart):
-    """Class for optimizing hill chart data and performing various calculations."""    
+    """Class for simulating turbine control."""    
     def __init__(self):        
+        """
+        Initialize the TurbineControlSimulator, setting up data attributes for turbine operations.
+
+        Attributes:
+            data (TurbineData): The main turbine data, including Q11, n11, efficiency, etc.
+            operation_point (TurbineData): The current operational state, used for calculations.
+        """
         self.data = TurbineData()   
         self.operation_point = TurbineData()   
 
     def set_operation_attribute(self, attribute_name, value):
+        """
+        Set an attribute in the operation_point data structure.
+
+        Args:
+            attribute_name (str): Name of the attribute to set.
+            value (any): The value to assign to the specified attribute.
+        """
         setattr(self.operation_point, attribute_name, value)
 
     def compute_n11_iteratively(self, n11_guess, n11_slice, Q11_slice, efficiency_slice, tolerance=1e-3, max_iter=1000):
-        """Iteratively solve for n11, Q11, and head (H) until convergence."""
+        """
+        Iteratively solve for n11, Q11, and head (H) values until a solution converges within tolerance.
+
+        Args:
+            n11_guess (float): Initial guess for n11.
+            n11_slice (array): Array of n11 values for interpolation.
+            Q11_slice (array): Array of Q11 values for interpolation.
+            efficiency_slice (array): Array of efficiency values for interpolation.
+            tolerance (float): Convergence threshold for the iterative solution.
+            max_iter (int): Maximum number of iterations before stopping.
+
+        Returns:
+            tuple: (n11, H, Q11, efficiency) - calculated values for n11, head, Q11, and efficiency.
+
+        Raises:
+            ValueError: If solution does not converge or data is insufficient.
+        """
         Q = self.operation_point.Q
         D = self.operation_point.D
         n = self.operation_point.n    
@@ -54,7 +84,18 @@ class TurbineControlSimulator(HillChart):
             raise    
 
     def compute_results(self):
-        """Calculate and return the results for given inputs."""
+        """
+        Calculate and return the results for the given input parameters.
+
+        The method calculates operational parameters (e.g., n11, H, Q11, efficiency, and power)
+        and updates them in the `operation_point` attribute.
+
+        Returns:
+            TurbineData: An instance containing the updated operational values.
+
+        Raises:
+            ValueError: If data is insufficient for computation.
+        """
         Q = self.operation_point.Q
         D = self.operation_point.D
         n = self.operation_point.n
@@ -75,6 +116,7 @@ class TurbineControlSimulator(HillChart):
 
         power = 9.8 * 1000 * Q * H * efficiency
 
+        # Update the operation point data
         self.operation_point.n11 = n11
         self.operation_point.H = H
         self.operation_point.Q11 = Q11
@@ -86,6 +128,15 @@ class TurbineControlSimulator(HillChart):
     def adjust_rotational_speed_for_constant_head(self, H):
         """
         Adjust the rotational speed (n) based on a constant head (H) using best efficiency n11.
+
+        Args:
+            H (float): The target head value.
+
+        Returns:
+            float: The adjusted rotational speed (n) for the given head.
+
+        Raises:
+            Exception: If an error occurs in the calculation process.
         """
         D = self.operation_point.D
         try:
@@ -101,6 +152,18 @@ class TurbineControlSimulator(HillChart):
             raise            
 
     def adjust_blade_angle_for_constant_H_and_Q(self, H):        
+        """
+        Adjust the blade angle based on a constant head (H) and flow rate (Q).
+
+        Args:
+            H (float): The head value for which to adjust the blade angle.
+
+        Returns:
+            float: The calculated blade angle.
+
+        Raises:
+            Exception: If an error occurs in calculating the blade angle.
+        """
         D = self.operation_point.D
         Q = self.operation_point.Q
         n = self.operation_point.n
@@ -115,13 +178,20 @@ class TurbineControlSimulator(HillChart):
             print(f"Error in adjusting Q11: {e}")
             raise
 
-    
     def set_head_and_adjust(self, H):
         """
         Set the head and adjust both rotational speed and blade angle accordingly.
+
+        Args:
+            H (float): The desired head value for the turbine.
+
+        Returns:
+            dict: A dictionary containing the adjusted rotational speed and blade angle.
+
+        Raises:
+            Exception: If an error occurs in the adjustment process.
         """
         try:            
-            
             # Step 1: Adjust rotational speed for the constant head
             n = self.adjust_rotational_speed_for_constant_head(H)
             
@@ -136,4 +206,3 @@ class TurbineControlSimulator(HillChart):
         except Exception as e:
             print(f"Error in setting head and adjusting parameters: {e}")
             raise
-    
