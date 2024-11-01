@@ -76,14 +76,14 @@ class TurbineControlSimulatorGUI:
         self.blade_label.grid(row=4, column=0, padx=10, pady=5)
         self.blade_input = ttk.Entry(master)
         self.blade_input.grid(row=4, column=1, padx=10, pady=5)
-        self.blade_input.insert(0, "16.2")
+        self.blade_input.insert(0, "13")
 
         # Rotational Speed input
         self.n_label = ttk.Label(master, text="Rotational Speed (n):")
         self.n_label.grid(row=5, column=0, padx=10, pady=5)
         self.n_input = ttk.Entry(master)
         self.n_input.grid(row=5, column=1, padx=10, pady=5)
-        self.n_input.insert(0, "113.5")
+        self.n_input.insert(0, "50")
 
         # Button to load data file (CSV)
         self.load_data_button = ttk.Button(master, text="Load Data", command=self.load_data)
@@ -95,6 +95,10 @@ class TurbineControlSimulatorGUI:
             self.result_labels[text] = ttk.Label(master, text=f"{text} --")
             self.result_labels[text].grid(row=7 + idx, column=0, columnspan=2, padx=10, pady=5)
 
+        # Test Button to maximise output
+        self.maximise_output_button = ttk.Button(master, text="Test Maximise Output", command=self.maximise_output)
+        self.maximise_output_button.grid(row=12, column=0, columnspan=2, pady=10)
+
         # Bind input fields to trigger output updates with debounce handling
         self.q_input.bind("<KeyRelease>", lambda event: self.update_output())
         self.blade_input.bind("<KeyRelease>", lambda event: self.update_output())
@@ -105,6 +109,8 @@ class TurbineControlSimulatorGUI:
 
         # Initial output update
         self.update_output()
+    def maximise_output(self):
+        self.simulator.maximize_output()
 
     def load_data(self, file_name=False):
         """

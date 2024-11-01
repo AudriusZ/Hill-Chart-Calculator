@@ -50,6 +50,9 @@ class TurbineControlSimulator(HillChart):
         D = self.operation_point.D
         n = self.operation_point.n    
 
+        print('n11 slice = ', n11_slice)
+        print('Q11 slice =', Q11_slice)
+
         try:
             finite_mask = np.isfinite(efficiency_slice) & np.isfinite(n11_slice) & np.isfinite(Q11_slice)
 
@@ -61,27 +64,38 @@ class TurbineControlSimulator(HillChart):
             if len(n11_clean) < 2 or len(Q11_clean) < 2 or len(efficiency_clean) < 2:
                 raise ValueError("Insufficient valid data points after filtering non-finite values.")
 
+            # Define min and max bounds for n11 based on the data range
+            min_n11 = n11_clean.min()
+            max_n11 = n11_clean.max()
+
             Q11_interpolator = PchipInterpolator(n11_clean, Q11_clean)
             efficiency_interpolator = PchipInterpolator(n11_clean, efficiency_clean)
 
             # Iteratively solve for n11, Q11, and H using the initial guess
             for iter_count in range(max_iter):
+                # Cap n11_guess within the bounds
+                n11_guess = np.clip(n11_guess, min_n11, max_n11)
+
                 H = (n * D / n11_guess) ** 2
                 Q11_calculated = Q / (D**2 * np.sqrt(H))
 
                 Q11_lookup = Q11_interpolator(n11_guess)
                 efficiency = efficiency_interpolator(n11_guess)
 
-                if abs(Q11_calculated - Q11_lookup) < tolerance:
+                if abs(Q11_calculated - Q11_lookup) / abs(Q11_lookup) < tolerance:
                     return n11_guess, H, Q11_calculated, efficiency
+                elif iter_count == max_iter - 1:
+                    return np.nan, np.nan, np.nan, np.nan
 
-                n11_guess *= Q11_lookup / Q11_calculated
+                print(n11_guess, Q11_lookup, Q11_calculated, efficiency)
+                damping_factor = 0.1
+                n11_guess *= 1 + damping_factor * ((Q11_lookup / Q11_calculated) - 1)
 
             raise ValueError("Solution did not converge within the specified number of iterations.")
 
         except Exception as e:
             print(f"Error in iterative solution: {e}")
-            raise    
+            raise  
 
     def compute_results(self):
         """
@@ -206,3 +220,22 @@ class TurbineControlSimulator(HillChart):
         except Exception as e:
             print(f"Error in setting head and adjusting parameters: {e}")
             raise
+
+    def maximize_output(self):
+        H_min = 0.5
+        H_max = 2.5
+        n_min = 50
+        n_max = 220
+        blade_angle_min = 9
+        blade_angle_max = 19
+        
+        n_range = range(n_min, n_max, 10)
+        blade_angle_range = range(blade_angle_min, blade_angle_max, 1)
+
+        for n in n_range:
+            for blade_angle in blade_angle_range:
+                self.operation_point.n = n
+                self.operation_point.blade_angle = blade_angle
+                output = self.compute_results()
+                print(output)
+
