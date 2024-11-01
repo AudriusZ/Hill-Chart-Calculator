@@ -4,6 +4,8 @@ from HillChart import HillChart
 from PerformanceCurve import PerformanceCurve
 import copy
 from TurbineData import TurbineData
+import pandas as pd
+import copy
 
 class TurbineControlSimulator(HillChart):
     """Class for simulating turbine control."""    
@@ -50,8 +52,8 @@ class TurbineControlSimulator(HillChart):
         D = self.operation_point.D
         n = self.operation_point.n    
 
-        print('n11 slice = ', n11_slice)
-        print('Q11 slice =', Q11_slice)
+        #print('n11 slice = ', n11_slice)
+        #print('Q11 slice =', Q11_slice)
 
         try:
             finite_mask = np.isfinite(efficiency_slice) & np.isfinite(n11_slice) & np.isfinite(Q11_slice)
@@ -87,7 +89,7 @@ class TurbineControlSimulator(HillChart):
                 elif iter_count == max_iter - 1:
                     return np.nan, np.nan, np.nan, np.nan
 
-                print(n11_guess, Q11_lookup, Q11_calculated, efficiency)
+                #print(n11_guess, Q11_lookup, Q11_calculated, efficiency)
                 damping_factor = 0.1
                 n11_guess *= 1 + damping_factor * ((Q11_lookup / Q11_calculated) - 1)
 
@@ -221,21 +223,55 @@ class TurbineControlSimulator(HillChart):
             print(f"Error in setting head and adjusting parameters: {e}")
             raise
 
+    
+
     def maximize_output(self):
         H_min = 0.5
-        H_max = 2.5
-        n_min = 50
-        n_max = 220
-        blade_angle_min = 9
-        blade_angle_max = 19
-        
-        n_range = range(n_min, n_max, 10)
-        blade_angle_range = range(blade_angle_min, blade_angle_max, 1)
+        H_max = 2.25
+         
+        n_range = range(93, 150, 5) # can't be float
+        blade_angle_range = range(14, 19, 1)
+
+        all_outputs = []
 
         for n in n_range:
             for blade_angle in blade_angle_range:
                 self.operation_point.n = n
                 self.operation_point.blade_angle = blade_angle
                 output = self.compute_results()
-                print(output)
+
+                # Debugging print to check values
+                # print(f"n: {n}, blade_angle: {blade_angle}, output: {output}")
+
+                # Use copy to avoid reference issues
+                all_outputs.append(copy.deepcopy(vars(output)))
+
+        df = pd.DataFrame(all_outputs)
+        df_filtered = df.dropna(subset=['power'])        
+        df_capped_H = df_filtered[(df_filtered['H'] >= H_min) & (df_filtered['H'] <= H_max)]        
+        max_power_row = df_capped_H.loc[df_capped_H['power'].idxmax()]
+
+        
+        # Set display options to show the full DataFrame
+        pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.width', None)
+        
+        # Displaying the DataFrames
+        print("Complete DataFrame:")
+        print(df)
+        print("\nFiltered DataFrame (without NaN values for power):")
+        print(df_filtered)
+        print("\nFiltered DataFrame with H within specified range:")
+        print(df_capped_H)
+        print("\nRow with maximum power in capped H range:")
+        print(max_power_row)
+        
+
+        # Reset display options to default after printing
+        pd.reset_option('display.max_rows')
+        pd.reset_option('display.max_columns')
+        pd.reset_option('display.width')
+
+        return df, df_filtered
 
