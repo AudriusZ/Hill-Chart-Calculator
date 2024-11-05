@@ -1,12 +1,15 @@
 from TurbineData import TurbineData
 import csv
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import griddata
 from scipy.interpolate import PchipInterpolator
 from matplotlib import path as mpath
 import copy
+import matplotlib.backends.backend_agg as agg
+import matplotlib.figure as figure
 
 
 class HillChart:
@@ -344,10 +347,13 @@ class HillChart:
             target_angles = list(range(min_angle_int, max_angle_int, step))        
         else:
             target_angles = [target_angles]
-        # Create a new figure and axis for 2D contour plotting
-        fig, ax = plt.subplots()  # Use plt.subplots() to create figure and axis
+        
+        # Create an off-screen figure using Agg backend without global backend switch
+        fig = figure.Figure()  # Create a figure without pyplot
+        canvas = agg.FigureCanvasAgg(fig)  # Attach Agg canvas to the figure
+        ax = fig.add_subplot(111)  # Add a subplot to this figure
 
-        # Plot contours on the new 2D axis
+        # Plot contours on the off-screen axis
         contour = ax.contour(n, Q, blade_angle, levels=target_angles)
 
         # Initialize dictionary to store contour coordinates for each target angle
@@ -358,14 +364,16 @@ class HillChart:
             for path in collection.get_paths():
                 if isinstance(path, mpath.Path):
                     vertices = path.vertices
-                    # Determine which level (angle) this path corresponds to
                     for angle in target_angles:
                         if np.isclose(level, angle):
                             contours_dict[angle][0].extend(vertices[:, 0])
                             contours_dict[angle][1].extend(vertices[:, 1])
 
-        # Close the figure to avoid displaying it
-        plt.close(fig)
+        # Clear and delete the figure to free memory
+        fig.clf()
+        plt.close(fig)  # Close the figure completely
+        del fig, ax, canvas  # Delete all references to ensure garbage collection
+        
 
         # Return a dictionary with contour coordinates for each target angle
         return {angle: (np.array(n11_contour), np.array(Q11_contour)) 
