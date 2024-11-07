@@ -110,7 +110,7 @@ class TurbineControlSimulatorGUI:
         # Initial output update
         self.update_output()
     def maximise_output(self):
-        self.simulator.maximize_output()
+        self.simulator.maximize_output_in_flow_range()
 
     def load_data(self, file_name=False):
         """
@@ -192,7 +192,7 @@ class TurbineControlSimulatorGUI:
                 self.n_input.insert(0, f"{n:.2f}")
 
             # Compute results using the simulator
-            operation_point = self.simulator.compute_results()
+            operation_point = self.simulator.compute_with_slicing()
 
             # Update output result labels with computed values
             self.result_labels["Q11:"].config(text=f"Q11: {operation_point.Q11:.2f}")

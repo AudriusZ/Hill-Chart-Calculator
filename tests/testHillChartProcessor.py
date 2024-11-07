@@ -42,8 +42,8 @@ class TestHillChartProcessor(unittest.TestCase):
         
         
         output_options = {
-            '3D Hill Chart': 0,
-            'Hill Chart Contour': 0,
+            '3D Hill Chart': 1,
+            'Hill Chart Contour': 1,
             '2D Curve Slices': 1,
             '2D Curve Slices - const.blade': 1,            
             'Best efficiency point summary': 1
@@ -56,7 +56,7 @@ class TestHillChartProcessor(unittest.TestCase):
 
         settings_options = {
             'Normalize': 1,
-            'Save Chart Data': 1
+            'Save Chart Data': 0
         }
         
         self.test_instance.get_output_parameters(output_options, output_suboptions, settings_options)
