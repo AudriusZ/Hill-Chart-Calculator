@@ -58,6 +58,7 @@ class TurbineControlSimulatorGUI:
                 self.H_target_input.config(state="normal")
             else:
                 self.H_target_input.config(state="disabled")
+            self.update_output()
 
         # Checkbox for activating H_target_input field
         self.activate_checkbox = ttk.Checkbutton(
@@ -104,6 +105,7 @@ class TurbineControlSimulatorGUI:
         self.q_input.bind("<KeyRelease>", lambda event: self.update_output())
         self.blade_input.bind("<KeyRelease>", lambda event: self.update_output())
         self.n_input.bind("<KeyRelease>", lambda event: self.update_output())
+        self.H_target_input.bind("<KeyRelease>", lambda event: self.update_output())
 
         # Automatically load default data file if present in the directory
         self.load_data(file_name=True)  # Load default file if available

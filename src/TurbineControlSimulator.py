@@ -289,6 +289,9 @@ class TurbineControlSimulator(HillChart):
         Q_range_len = len(self.Q_range)
         counter = 0
 
+        # Start timing the operation
+        start_time = time.time()
+
         # Iterate over Q_range and calculate maximum power for each Q
         for Q in self.Q_range:
             print("\nTotal progress = ", counter,'/',Q_range_len)
@@ -300,6 +303,13 @@ class TurbineControlSimulator(HillChart):
             
         print("\nComplete")
 
+        # End timing the operation
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        # Print the elapsed time in seconds
+        print(f"\nTotal elapsed time: {elapsed_time:.0f} seconds")
+
         # Plot results based on the calculated max power data
         self.plot_results(max_power_results)
         return max_power_results
@@ -310,7 +320,9 @@ class TurbineControlSimulator(HillChart):
         counter = 0
         total = len(self.n_range) * len(self.blade_angle_range)        
 
-        
+        # Start timing the operation
+        start_time = time.time()
+
         for blade_angle in self.blade_angle_range:
             # Slice data based on the blade angle
             n11_slice, Q11_slice, efficiency_slice = self.slice_data_for_blade_angle(blade_angle)
@@ -324,7 +336,12 @@ class TurbineControlSimulator(HillChart):
                 output = self.calculate_results_from_slice(n11_slice, Q11_slice, efficiency_slice)                
                 all_outputs.append(copy.deepcopy(vars(output)))
                 
-                
+        # End timing the operation
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        # Print the elapsed time in seconds
+        print(f"\nElapsed time: {elapsed_time:.0f} seconds")
 
         # Process the collected outputs
         df = pd.DataFrame(all_outputs).dropna(subset=['power'])
