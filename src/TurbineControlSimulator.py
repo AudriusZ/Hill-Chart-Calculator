@@ -13,14 +13,18 @@ class TurbineControlSimulator(HillChart):
     """Class for simulating turbine control."""    
     def __init__(self):        
         """
-        Initialize the TurbineControlSimulator, setting up data attributes for turbine operations.
-
-        Attributes:
-            data (TurbineData): The main turbine data, including Q11, n11, efficiency, etc.
-            operation_point (TurbineData): The current operational state, used for calculations.
+        Initialize the TurbineControlSimulator without range values, 
+        allowing them to be set later.
         """
+        super().__init__()
         self.data = TurbineData()   
-        self.operation_point = TurbineData()   
+        self.operation_point = TurbineData()
+
+        # Initialize range attributes as None (they will be set later)
+        self.Q_range = None
+        self.H_range = None
+        self.n_range = None
+        self.blade_angle_range = None   
 
     def set_operation_attribute(self, attribute_name, value):
         """
@@ -31,6 +35,22 @@ class TurbineControlSimulator(HillChart):
             value (any): The value to assign to the specified attribute.
         """
         setattr(self.operation_point, attribute_name, value)
+
+    def set_ranges(self, Q_range=None, H_range=None, n_range=None, blade_angle_range=None):
+        """
+        Set the ranges for Q, H, n, and blade angle.
+
+        Args:
+            Q_range (array-like): Range of flow rates to iterate over.
+            H_range (tuple): Range of head values (min, max).
+            n_range (array-like): Range of rotational speeds.
+            blade_angle_range (array-like): Range of blade angles.
+        """
+        self.Q_range = Q_range if Q_range is not None else np.arange(0.5, 10, 1)
+        self.H_range = H_range if H_range is not None else (0, 2.15)
+        self.n_range = n_range if n_range is not None else np.arange(10, 150, 5)
+        self.blade_angle_range = blade_angle_range if blade_angle_range is not None else np.arange(9, 21, 2)
+
 
     def compute_n11_iteratively(self, n11_guess, n11_slice, Q11_slice, efficiency_slice, tolerance=1e-3, max_iter=1000):
         """
@@ -254,174 +274,91 @@ class TurbineControlSimulator(HillChart):
 
     
     def maximize_output_in_flow_range(self):
-        Q_range = np.arange(1, 2.5, 0.25)  # Flow rates to iterate over
-        max_power_results = {}  # Dictionary to store maximum power results for each Q
+        """
+        Calculate and maximize power output within the specified ranges.
 
-        # Perform calculations for each Q in Q_range
-        for Q in Q_range:
-            self.operation_point.Q = Q  # Set the flow rate for this iteration
-            max_power_row = self.maximize_output()  # Call maximize_output to find max power for this Q
-            max_power_results[Q] = max_power_row  # Store the result keyed by Q value
+        Raises:
+            ValueError: If any required range is still unset (None).
+        """
+        # Ensure that all ranges have been set
+        if any(x is None for x in (self.Q_range, self.H_range, self.n_range, self.blade_angle_range)):
+            raise ValueError("Ranges for Q, H, n, and blade_angle must be set before calling this method.")
 
-        # Extract data for plotting
-        Q_values = []
-        Q11_values = []
-        power_values = []
-        n_values = []
-        n11_values = []        
-        blade_angle_values = []
-        efficiency_values = []
-        head_values = []
+        min_H, max_H = self.H_range
+        max_power_results = {}
+        Q_range_len = len(self.Q_range)
+        counter = 0
 
+        # Iterate over Q_range and calculate maximum power for each Q
+        for Q in self.Q_range:
+            print("\nTotal progress = ", counter,'/',Q_range_len)
+            counter += 1
+            
+            self.operation_point.Q = Q
+            max_power_row = self.maximize_output(min_H, max_H)
+            max_power_results[Q] = max_power_row
+            
+        print("\nComplete")
+
+        # Plot results based on the calculated max power data
+        self.plot_results(max_power_results)
+        return max_power_results
+
+    def maximize_output(self, min_H, max_H):
+        """Iterate through n_range and blade_angle_range to find max power within head constraints."""
+        all_outputs = []
+        counter = 0
+        total = len(self.n_range) * len(self.blade_angle_range)        
+
+        
+        for blade_angle in self.blade_angle_range:
+            # Slice data based on the blade angle
+            n11_slice, Q11_slice, efficiency_slice = self.slice_data_for_blade_angle(blade_angle)
+            for n in self.n_range:
+                counter += 1
+                print(f"\rProgress for current Q = {counter}/{total}", end="")
+                
+                
+                self.operation_point.n = n
+                self.operation_point.blade_angle = blade_angle
+                output = self.calculate_results_from_slice(n11_slice, Q11_slice, efficiency_slice)                
+                all_outputs.append(copy.deepcopy(vars(output)))
+                
+                
+
+        # Process the collected outputs
+        df = pd.DataFrame(all_outputs).dropna(subset=['power'])
+        df_capped_H = df[(df['H'] >= min_H) & (df['H'] <= max_H)]
+        max_power_row = df_capped_H.loc[df_capped_H['power'].idxmax()] if not df_capped_H.empty else None
+
+        return max_power_row
+
+    def plot_results(self, max_power_results):
+        """Plot the results based on the max power data collected."""
+        Q_values, power_values, n_values, blade_angle_values, efficiency_values, head_values = [], [], [], [], [], []
         for Q, result in max_power_results.items():
             if result is not None:
                 Q_values.append(Q)
-                Q11_values.append(result['Q11'])
                 power_values.append(result['power'])
                 n_values.append(result['n'])
-                n11_values.append(result['n11'])
                 blade_angle_values.append(result['blade_angle'])
                 efficiency_values.append(result['efficiency'])
                 head_values.append(result['H'])
 
-        # Create plots
-        plt.figure()
-        plt.plot(Q_values, power_values, marker='o')
-        plt.xlabel("Flow Rate (Q)")
-        plt.ylabel("Power")
-        plt.title("Power vs Flow Rate (Q)")
-        plt.grid()
-        plt.show(block=False)
-
-        plt.figure()
-        plt.plot(Q_values, n_values, marker='o')
-        plt.xlabel("Flow Rate (Q)")
-        plt.ylabel("Rotational Speed (n)")
-        plt.title("Rotational Speed vs Flow Rate (Q)")
-        plt.grid()
-        plt.show(block=False)
-
-        plt.figure()
-        plt.plot(Q_values, blade_angle_values, marker='o')
-        plt.xlabel("Flow Rate (Q)")
-        plt.ylabel("Blade Angle")
-        plt.title("Blade Angle vs Flow Rate (Q)")
-        plt.grid()
-        plt.show(block=False)
-
-        plt.figure()
-        plt.plot(Q_values, efficiency_values, marker='o')
-        plt.xlabel("Flow Rate (Q)")
-        plt.ylabel("Efficiency")
-        plt.title("Efficiency vs Flow Rate (Q)")
-        plt.grid()
-        plt.show(block=False)
-
-        plt.figure()
-        plt.plot(Q_values, head_values, marker='o')
-        plt.xlabel("Flow Rate (Q)")
-        plt.ylabel("Head (H)")
-        plt.title("Head vs Flow Rate (Q)")
-        plt.grid()
-        plt.show(block=False)
-
-        plt.figure()
-        plt.plot(Q_values, n11_values, marker='o')
-        plt.xlabel("Flow Rate (Q)")
-        plt.ylabel("Unit Speed (n11)")
-        plt.title("Unit Speed vs Flow Rate (Q)")
-        plt.grid()
-        plt.show(block=False)
-
-        plt.figure()
-        plt.plot(Q_values, Q11_values, marker='o')
-        plt.xlabel("Flow Rate (Q)")
-        plt.ylabel("Unit Flow Rate (Q11)")
-        plt.title("Unit Flow vs Flow Rate (Q)")
-        plt.grid()
-        plt.show(block=False)
-
-
-        return max_power_results  # Return the dictionary of results
-
-    def maximize_output(self):
-            H_min = 0.1
-            H_max = 2.16
-            
-            n_range = np.arange(10, 80, 0.2)
-            blade_angle_range = np.arange(8, 10, 2)
-            #n_range = np.arange(50, 220, 0.25)
-            #blade_angle_range = np.arange(8, 21, 0.1)
-
-            all_outputs = []
-            counter = 0
-            total = len(n_range) * len(blade_angle_range)
-
-            start_time = time.time()
-
-            for blade_angle in blade_angle_range:
-                # Slice the data for the current blade angle only once
-                n11_slice, Q11_slice, efficiency_slice = self.slice_data_for_blade_angle(blade_angle)
-                
-                # Inner loop for each n
-                for n in n_range:
-                    self.operation_point.n = n
-                    self.operation_point.blade_angle = blade_angle
-                    output = self.calculate_results_from_slice(n11_slice, Q11_slice, efficiency_slice)
-                    counter += 1
-                    print(f"\r{counter} / {total}", end="")
-
-                    # Use copy to avoid reference issues
-                    all_outputs.append(copy.deepcopy(vars(output)))
-
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-            print(f"\nTime to complete: {elapsed_time:.1f} seconds")
-
-            # Set display options to show the full DataFrame
-            pd.set_option('display.max_rows', None)
-            pd.set_option('display.max_columns', None)
-            pd.set_option('display.width', None)
-            
-            df = pd.DataFrame(all_outputs)
-            #print("Complete DataFrame:")
-            #print(df)
-
-            # First filter: Removing rows with NaN in 'power'
-            df_filtered = df.dropna(subset=['power'])
-            if df_filtered.empty:
-                print("\nFiltered DataFrame is empty after dropping rows with NaN in 'power'.")
-                print("Possible reasons: All combinations of parameters were outside of the available Hill Chart data.")
-                return None  # Return None if no valid data
-            
-            # Second filter: Keeping rows where 'H' is within specified range
-            df_capped_H = df_filtered[(df_filtered['H'] >= H_min) & (df_filtered['H'] <= H_max)]
-            if df_capped_H.empty:
-                min_H = df_filtered['H'].min() if not df_filtered.empty else None
-                max_H = df_filtered['H'].max() if not df_filtered.empty else None
-                print("\nFiltered DataFrame with H within specified range is empty.")
-                if min_H is not None and min_H > H_max:
-                    print(f"Minimum calculated 'H' ({min_H:.2f}) was above the maximum allowed range ({H_max:.2f}).")
-                elif max_H is not None and max_H < H_min:
-                    print(f"Maximum calculated 'H' ({max_H:.2f}) was below the minimum allowed range ({H_min:.2f}).")
-                else:
-                    print("All values of 'H' were outside the specified range.")
-                return None  # Return None if no valid data in H range
-
-            # Finding the row with maximum power
-            if not df_capped_H.empty:
-                max_power_row = df_capped_H.loc[df_capped_H['power'].idxmax()]
-                print("\nRow with maximum power in capped H range:")
-                print(max_power_row)
-            else:
-                max_power_row = None
-                print("\nNo row with maximum power available because filtered DataFrame is empty.")
-            
-            # Reset display options to default after printing
-            pd.reset_option('display.max_rows')
-            pd.reset_option('display.max_columns')
-            pd.reset_option('display.width')
-
-            return max_power_row
+        # Generate plots for each attribute
+        for values, ylabel, title in [
+            (power_values, "Power", "Power vs Flow Rate (Q)"),
+            (n_values, "Rotational Speed (n)", "Rotational Speed vs Flow Rate (Q)"),
+            (blade_angle_values, "Blade Angle", "Blade Angle vs Flow Rate (Q)"),
+            (efficiency_values, "Efficiency", "Efficiency vs Flow Rate (Q)"),
+            (head_values, "Head (H)", "Head vs Flow Rate (Q)")
+        ]:
+            plt.figure()
+            plt.plot(Q_values, values, marker='o')
+            plt.xlabel("Flow Rate (Q)")
+            plt.ylabel(ylabel)
+            plt.title(title)
+            plt.grid()
+            plt.show(block=False)
 
 

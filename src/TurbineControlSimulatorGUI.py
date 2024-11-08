@@ -6,6 +6,7 @@ from tkinter import ttk, filedialog, BooleanVar
 import os
 from TurbineControlSimulator import TurbineControlSimulator
 from TurbineData import TurbineData
+import numpy as np
 
 
 class TurbineControlSimulatorGUI:
@@ -110,6 +111,11 @@ class TurbineControlSimulatorGUI:
         # Initial output update
         self.update_output()
     def maximise_output(self):
+        Q_range = np.arange(0.5, 4.5, 0.5)
+        H_range = (0.5, 2.15)
+        n_range = np.arange(40, 150, 5)
+        blade_angle_range = np.arange(9, 21, 2)
+        self.simulator.set_ranges(Q_range=Q_range, H_range=H_range, n_range=n_range, blade_angle_range=blade_angle_range)
         self.simulator.maximize_output_in_flow_range()
 
     def load_data(self, file_name=False):
