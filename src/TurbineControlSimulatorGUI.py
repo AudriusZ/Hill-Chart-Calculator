@@ -115,11 +115,7 @@ class TurbineControlSimulatorGUI:
 
         # Notebook for plot tabs
         self.plot_notebook = ttk.Notebook(master)
-        self.plot_notebook.grid(row=0, column=3, rowspan=14, padx=10, pady=10, sticky="nsew")
-
-        # Add initial tabs with example plots
-        self.add_plot_tab("Plot 1")
-        self.add_plot_tab("Plot 2")
+        self.plot_notebook.grid(row=0, column=3, rowspan=14, padx=10, pady=10, sticky="nsew")        
         
         # Automatically load default data file if present in the directory
         self.load_data(file_name=True)  # Load default file if available
@@ -141,6 +137,22 @@ class TurbineControlSimulatorGUI:
         ax.plot([1, 2, 3], [1, 4, 9])
         ax.set_title(f"{title} - Example Plot")
         canvas.draw()
+
+    def display_plots_in_tabs(self, figures):
+        """Clear existing tabs and add a new tab for each figure in the notebook."""
+        # Clear existing tabs
+        for tab in self.plot_notebook.tabs():
+            self.plot_notebook.forget(tab)
+
+        # Add a tab for each figure
+        for title, fig in figures.items():
+            frame = ttk.Frame(self.plot_notebook)
+            self.plot_notebook.add(frame, text=title)
+
+            # Create canvas for the plot
+            canvas = FigureCanvasTkAgg(fig, master=frame)
+            canvas.get_tk_widget().pack(fill="both", expand=True)
+            canvas.draw()
 
     def open_range_prompt(self):
         """Open a prompt window to get range inputs from the user for maximization."""
@@ -251,11 +263,17 @@ class TurbineControlSimulatorGUI:
             self.simulator.set_ranges(Q_range=Q_range, H_range=H_range, n_range=n_range, blade_angle_range=blade_angle_range)
 
             # Run the maximization function
-            self.simulator.maximize_output_in_flow_range()
+            max_power_results = self.simulator.maximize_output_in_flow_range()
             print("Maximization completed successfully.")
 
             # Close the prompt
             self.range_prompt.destroy()
+
+            # Retrieve figures from plot_results
+            figures = self.simulator.plot_results(max_power_results)
+            
+            # Display figures in tabs
+            self.display_plots_in_tabs(figures)
 
         except ValueError as e:
             print(f"Invalid input: {e}")

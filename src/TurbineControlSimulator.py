@@ -351,7 +351,7 @@ class TurbineControlSimulator(HillChart):
         return max_power_row
 
     def plot_results(self, max_power_results):
-        """Plot the results based on the max power data collected."""
+        """Generate plots and return them as figures to be displayed in GUI tabs."""
         Q_values, power_values, n_values, blade_angle_values, efficiency_values, head_values = [], [], [], [], [], []
         for Q, result in max_power_results.items():
             if result is not None:
@@ -362,6 +362,9 @@ class TurbineControlSimulator(HillChart):
                 efficiency_values.append(result['efficiency'])
                 head_values.append(result['H'])
 
+        # Create a dictionary to store figures
+        figures = {}
+
         # Generate plots for each attribute
         for values, ylabel, title in [
             (power_values, "Power", "Power vs Flow Rate (Q)"),
@@ -370,12 +373,16 @@ class TurbineControlSimulator(HillChart):
             (efficiency_values, "Efficiency", "Efficiency vs Flow Rate (Q)"),
             (head_values, "Head (H)", "Head vs Flow Rate (Q)")
         ]:
-            plt.figure()
-            plt.plot(Q_values, values, marker='o')
-            plt.xlabel("Flow Rate (Q)")
-            plt.ylabel(ylabel)
-            plt.title(title)
-            plt.grid()
-            plt.show(block=False)
+            fig, ax = plt.subplots()
+            ax.plot(Q_values, values, marker='o')
+            ax.set_xlabel("Flow Rate (Q)")
+            ax.set_ylabel(ylabel)
+            ax.set_title(title)
+            ax.grid()
+
+            # Add figure to the dictionary with title as the key
+            figures[title] = fig
+
+        return figures
 
 
