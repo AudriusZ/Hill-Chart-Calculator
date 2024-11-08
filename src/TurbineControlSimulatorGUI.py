@@ -9,6 +9,9 @@ from TurbineControlSimulator import TurbineControlSimulator
 from TurbineData import TurbineData
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
+import time
+from collections import deque
+from matplotlib.animation import FuncAnimation
 
 
 class TurbineControlSimulatorGUI:
@@ -24,15 +27,11 @@ class TurbineControlSimulatorGUI:
         """
         self.master = master
         self.simulator = simulator        
-        self.update_delay = 500  # Delay time in milliseconds for updating outputs
+        self.update_delay = 1000  # Delay time in milliseconds for updating outputs
         self.update_id = None
 
         # Set up the main window title
         self.master.title("Turbine Control Simulator")
-
-        # Configure the main grid layout
-        self.master.columnconfigure(0, weight=1)
-        self.master.columnconfigure(2, weight=3)  # Give more space to the notebook column
 
         # Create and configure input fields for turbine parameters
         self.D_label = ttk.Label(master, text="Diameter (D) - Temporary input:")
@@ -113,20 +112,47 @@ class TurbineControlSimulatorGUI:
         self.n_input.bind("<KeyRelease>", lambda event: self.update_output())
         self.H_target_input.bind("<KeyRelease>", lambda event: self.update_output())
 
-        # Notebook for plot tabs
-        self.plot_notebook = ttk.Notebook(master)
-        self.plot_notebook.grid(row=0, column=3, rowspan=14, padx=10, pady=10, sticky="nsew")        
-        
+        # Canvas and Notebook for plots
+        self.notebook = ttk.Notebook(master)
+        self.notebook.grid(row=0, column=3, rowspan=15, padx=10, pady=5, sticky="nsew")
+
+        # Tab for multiple subplots (Overview Plots)
+        self.sub_plot_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.sub_plot_tab, text="Overview Plots")
+
+        # Initialize figure and axis for the Overview Plots tab with 5 subplots
+        self.overview_fig, self.overview_ax = plt.subplots(5, 1, figsize=(6, 8), sharex=True)
+        self.sub_plot_canvas = FigureCanvasTkAgg(self.overview_fig, master=self.sub_plot_tab)
+        self.sub_plot_canvas.get_tk_widget().pack(fill="both", expand=True)
+
+        # Setup for live plot data in the Overview Plots tab
+        self.time_data = deque(maxlen=300)  # Store time points up to 30s (assuming 10 updates/sec)
+        self.q11_data = deque(maxlen=300)
+        self.n11_data = deque(maxlen=300)
+        self.efficiency_data = deque(maxlen=300)
+        self.h_data = deque(maxlen=300)
+        self.power_data = deque(maxlen=300)
+        self.start_time = time.time()  # Track start time for elapsed time on x-axis
+
+        # Initialize the live plot animation
+        self.anim = FuncAnimation(self.overview_fig, self.update_live_plot, interval=1000)
+
         # Automatically load default data file if present in the directory
         self.load_data(file_name=True)  # Load default file if available
 
         # Initial output update
         self.update_output()
 
+    def schedule_continuous_update(self):
+        """Schedules the continuous update for live plot data regardless of input change."""
+        self.update_live_plot(None)  # Call the live plot update directly
+        self.master.after(1000, self.schedule_continuous_update)  # Repeat every second
+
+
     def add_plot_tab(self, title):
         """Adds a new tab with a canvas for plotting to the notebook."""
-        frame = ttk.Frame(self.plot_notebook)
-        self.plot_notebook.add(frame, text=title)
+        frame = ttk.Frame(self.notebook)  # Corrected from self.plot_notebook
+        self.notebook.add(frame, text=title)
 
         # Create and place a canvas for each plot
         fig, ax = plt.subplots(figsize=(5, 4))
@@ -138,16 +164,40 @@ class TurbineControlSimulatorGUI:
         ax.set_title(f"{title} - Example Plot")
         canvas.draw()
 
-    def display_plots_in_tabs(self, figures):
-        """Clear existing tabs and add a new tab for each figure in the notebook."""
-        # Clear existing tabs
-        for tab in self.plot_notebook.tabs():
-            self.plot_notebook.forget(tab)
+    def plot_results(self, max_power_results):
+        """Plot the results in the second tab dynamically."""
+        # This method remains as before, but plots will be added to `self.plot_tab` now
+        Q_values, power_values, n_values, blade_angle_values, efficiency_values, head_values = [], [], [], [], [], []
+        for Q, result in max_power_results.items():
+            if result is not None:
+                Q_values.append(Q)
+                power_values.append(result['power'])
+                n_values.append(result['n'])
+                blade_angle_values.append(result['blade_angle'])
+                efficiency_values.append(result['efficiency'])
+                head_values.append(result['H'])
 
-        # Add a tab for each figure
+        fig, ax = plt.subplots()
+        ax.plot(Q_values, power_values, marker='o')
+        ax.set_xlabel("Flow Rate (Q)")
+        ax.set_ylabel("Power")
+        ax.set_title("Power vs Flow Rate (Q)")
+
+        # Display the plot on the second tab
+        canvas = FigureCanvasTkAgg(fig, self.plot_tab)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+    def display_plots_in_tabs(self, figures):
+        """Clear dynamically added tabs and add a new tab for each figure in the notebook."""
+        # Remove all tabs except the first one (Overview Plots)
+        while len(self.notebook.tabs()) > 1:
+            self.notebook.forget(1)
+
+        # Add a new tab for each figure
         for title, fig in figures.items():
-            frame = ttk.Frame(self.plot_notebook)
-            self.plot_notebook.add(frame, text=title)
+            frame = ttk.Frame(self.notebook)
+            self.notebook.add(frame, text=title)
 
             # Create canvas for the plot
             canvas = FigureCanvasTkAgg(fig, master=frame)
@@ -359,11 +409,60 @@ class TurbineControlSimulatorGUI:
             self.result_labels["H:"].config(text=f"H: {operation_point.H:.2f}")
             self.result_labels["Power:"].config(text=f"Power: {operation_point.power:.0f}")
 
+            # Update live plot data
+            elapsed_time = time.time() - self.start_time
+            self.time_data.append(elapsed_time)
+            self.q11_data.append(operation_point.H)
+            self.n11_data.append(operation_point.Q)
+            self.efficiency_data.append(operation_point.blade_angle)
+            self.h_data.append(operation_point.n)
+            self.power_data.append(operation_point.power)
+
+            # Update output result labels
+            self.result_labels["Q11:"].config(text=f"Q11: {operation_point.Q11:.2f}")
+            self.result_labels["n11:"].config(text=f"n11: {operation_point.n11:.1f}")
+            self.result_labels["Efficiency:"].config(text=f"Efficiency: {operation_point.efficiency:.2f}")
+            self.result_labels["H:"].config(text=f"H: {operation_point.H:.2f}")
+            self.result_labels["Power:"].config(text=f"Power: {operation_point.power:.0f}")
+
+            # Redraw the live plot with new data
+            self.sub_plot_canvas.draw()
+
         except Exception as e:
             # Display error message on result labels in case of failure
             for key in self.result_labels:
                 self.result_labels[key].config(text=f"{key} Error")
             print(f"An error occurred: {e}")
+    
+    def update_live_plot(self, frame):
+            """Update the live plot with the latest data."""
+            for ax in self.overview_ax:
+                ax.clear()
+
+            # Plot each variable in separate subplots
+            self.overview_ax[0].plot(self.time_data, self.q11_data, label="H")
+            self.overview_ax[0].set_ylabel("H")
+
+            self.overview_ax[1].plot(self.time_data, self.n11_data, label="Q")
+            self.overview_ax[1].set_ylabel("Q")
+
+            self.overview_ax[2].plot(self.time_data, self.efficiency_data, label="Blade Angle")
+            self.overview_ax[2].set_ylabel("Blade Angle")
+
+            self.overview_ax[3].plot(self.time_data, self.h_data, label="n")
+            self.overview_ax[3].set_ylabel("n")
+
+            self.overview_ax[4].plot(self.time_data, self.power_data, label="Power")
+            self.overview_ax[4].set_ylabel("Power")
+            self.overview_ax[4].set_xlabel("Time (s)")
+
+            # Set x-axis limit to last 30 seconds
+            self.overview_ax[0].set_xlim(max(0, self.time_data[-1] - 30), self.time_data[-1])
+
+            # Draw legends and apply tight layout
+            for ax in self.overview_ax:
+                ax.legend()
+            self.overview_fig.tight_layout()
 
 def main():
     simulator = TurbineControlSimulator()
