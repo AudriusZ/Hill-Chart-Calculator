@@ -4,9 +4,9 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, BooleanVar
 import os
+import numpy as np
 from TurbineControlSimulator import TurbineControlSimulator
 from TurbineData import TurbineData
-import numpy as np
 
 
 class TurbineControlSimulatorGUI:
@@ -77,14 +77,14 @@ class TurbineControlSimulatorGUI:
         self.blade_label.grid(row=4, column=0, padx=10, pady=5)
         self.blade_input = ttk.Entry(master)
         self.blade_input.grid(row=4, column=1, padx=10, pady=5)
-        self.blade_input.insert(0, "13")
+        self.blade_input.insert(0, "16.2")
 
         # Rotational Speed input
         self.n_label = ttk.Label(master, text="Rotational Speed (n):")
         self.n_label.grid(row=5, column=0, padx=10, pady=5)
         self.n_input = ttk.Entry(master)
         self.n_input.grid(row=5, column=1, padx=10, pady=5)
-        self.n_input.insert(0, "50")
+        self.n_input.insert(0, "113.5")
 
         # Button to load data file (CSV)
         self.load_data_button = ttk.Button(master, text="Load Data", command=self.load_data)
@@ -96,8 +96,8 @@ class TurbineControlSimulatorGUI:
             self.result_labels[text] = ttk.Label(master, text=f"{text} --")
             self.result_labels[text].grid(row=7 + idx, column=0, columnspan=2, padx=10, pady=5)
 
-        # Test Button to maximise output
-        self.maximise_output_button = ttk.Button(master, text="Test Maximise Output", command=self.maximise_output)
+        # Button to maximize output, triggering the pop-up
+        self.maximise_output_button = ttk.Button(master, text="Maximise Output", command=self.open_range_prompt)
         self.maximise_output_button.grid(row=12, column=0, columnspan=2, pady=10)
 
         # Bind input fields to trigger output updates with debounce handling
@@ -110,24 +110,127 @@ class TurbineControlSimulatorGUI:
 
         # Initial output update
         self.update_output()
-    def maximise_output(self):
-        Q_range = np.arange(0.5, 4.5, 0.5)
-        H_range = (0.5, 2.15)
-        n_range = np.arange(40, 150, 5)
-        blade_angle_range = np.arange(9, 21, 2)
-        self.simulator.set_ranges(Q_range=Q_range, H_range=H_range, n_range=n_range, blade_angle_range=blade_angle_range)
-        self.simulator.maximize_output_in_flow_range()
+
+    def open_range_prompt(self):
+        """Open a prompt window to get range inputs from the user for maximization."""
+        # Create a new Toplevel window as a modal dialog
+        self.range_prompt = tk.Toplevel(self.master)
+        self.range_prompt.title("Set Range Limits for Maximization")
+
+        # Make the prompt window modal
+        self.range_prompt.transient(self.master)
+        self.range_prompt.grab_set()
+
+        # Add input fields for Q, H, n, and blade angle ranges
+        self.create_range_inputs(self.range_prompt)
+
+        # Add a submit button
+        submit_button = ttk.Button(self.range_prompt, text="Submit", command=self.submit_ranges)
+        submit_button.grid(row=5, column=0, columnspan=4, pady=10)
+
+    def create_range_inputs(self, prompt):
+        """Create input fields for Q_range, H_range, n_range, and blade_angle_range in the prompt window."""
+        
+        # Flow Rate Range (Q_range)
+        ttk.Label(prompt, text="Flow Rate Range (Q): Start").grid(row=0, column=0, padx=10, pady=5)
+        self.q_start_input = ttk.Entry(prompt)
+        self.q_start_input.grid(row=0, column=1, padx=10, pady=5)
+        self.q_start_input.insert(0, "0.5")
+        
+        ttk.Label(prompt, text="Stop").grid(row=0, column=2, padx=10, pady=5)
+        self.q_stop_input = ttk.Entry(prompt)
+        self.q_stop_input.grid(row=0, column=3, padx=10, pady=5)
+        self.q_stop_input.insert(0, "4.5")
+        
+        ttk.Label(prompt, text="Step").grid(row=0, column=4, padx=10, pady=5)
+        self.q_step_input = ttk.Entry(prompt)
+        self.q_step_input.grid(row=0, column=5, padx=10, pady=5)
+        self.q_step_input.insert(0, "0.5")
+        
+        # Head Range (H_range)
+        ttk.Label(prompt, text="Head Range (H): Min").grid(row=1, column=0, padx=10, pady=5)
+        self.h_min_input = ttk.Entry(prompt)
+        self.h_min_input.grid(row=1, column=1, padx=10, pady=5)
+        self.h_min_input.insert(0, "0.5")
+        
+        ttk.Label(prompt, text="Max").grid(row=1, column=2, padx=10, pady=5)
+        self.h_max_input = ttk.Entry(prompt)
+        self.h_max_input.grid(row=1, column=3, padx=10, pady=5)
+        self.h_max_input.insert(0, "2.15")
+
+        # Rotational Speed Range (n_range)
+        ttk.Label(prompt, text="Rotational Speed Range (n): Start").grid(row=2, column=0, padx=10, pady=5)
+        self.n_start_input = ttk.Entry(prompt)
+        self.n_start_input.grid(row=2, column=1, padx=10, pady=5)
+        self.n_start_input.insert(0, "40")
+        
+        ttk.Label(prompt, text="Stop").grid(row=2, column=2, padx=10, pady=5)
+        self.n_stop_input = ttk.Entry(prompt)
+        self.n_stop_input.grid(row=2, column=3, padx=10, pady=5)
+        self.n_stop_input.insert(0, "150")
+        
+        ttk.Label(prompt, text="Step").grid(row=2, column=4, padx=10, pady=5)
+        self.n_step_input = ttk.Entry(prompt)
+        self.n_step_input.grid(row=2, column=5, padx=10, pady=5)
+        self.n_step_input.insert(0, "10")
+
+        # Blade Angle Range
+        ttk.Label(prompt, text="Blade Angle Range: Start").grid(row=3, column=0, padx=10, pady=5)
+        self.blade_start_input = ttk.Entry(prompt)
+        self.blade_start_input.grid(row=3, column=1, padx=10, pady=5)
+        self.blade_start_input.insert(0, "9")
+        
+        ttk.Label(prompt, text="Stop").grid(row=3, column=2, padx=10, pady=5)
+        self.blade_stop_input = ttk.Entry(prompt)
+        self.blade_stop_input.grid(row=3, column=3, padx=10, pady=5)
+        self.blade_stop_input.insert(0, "21")
+        
+        ttk.Label(prompt, text="Step").grid(row=3, column=4, padx=10, pady=5)
+        self.blade_step_input = ttk.Entry(prompt)
+        self.blade_step_input.grid(row=3, column=5, padx=10, pady=5)
+        self.blade_step_input.insert(0, "3")
+
+    def submit_ranges(self):
+        """Retrieve range values from the prompt and perform maximization."""
+        try:
+            # Retrieve and parse Q_range
+            Q_start = float(self.q_start_input.get())
+            Q_stop = float(self.q_stop_input.get())
+            Q_step = float(self.q_step_input.get())
+            Q_range = np.arange(Q_start, Q_stop + Q_step, Q_step)
+
+            # Retrieve and parse H_range
+            H_min = float(self.h_min_input.get())
+            H_max = float(self.h_max_input.get())
+            H_range = (H_min, H_max)
+
+            # Retrieve and parse n_range
+            n_start = float(self.n_start_input.get())
+            n_stop = float(self.n_stop_input.get())
+            n_step = float(self.n_step_input.get())
+            n_range = np.arange(n_start, n_stop + n_step, n_step)
+
+            # Retrieve and parse blade_angle_range
+            blade_start = float(self.blade_start_input.get())
+            blade_stop = float(self.blade_stop_input.get())
+            blade_step = float(self.blade_step_input.get())
+            blade_angle_range = np.arange(blade_start, blade_stop + blade_step, blade_step)
+
+            # Set the ranges in the simulator
+            self.simulator.set_ranges(Q_range=Q_range, H_range=H_range, n_range=n_range, blade_angle_range=blade_angle_range)
+
+            # Run the maximization function
+            self.simulator.maximize_output_in_flow_range()
+            print("Maximization completed successfully.")
+
+            # Close the prompt
+            self.range_prompt.destroy()
+
+        except ValueError as e:
+            print(f"Invalid input: {e}")
 
     def load_data(self, file_name=False):
-        """
-        Load data from a specified file or prompt the user to select one.
-
-        Args:
-            file_name (bool or str): 
-                - If True, attempts to load a default file from the script's directory.
-                - If a string, uses it directly as the file path.
-                - If False, opens a file dialog to select a file.
-        """
+        """Load data from a specified file or prompt the user to select one."""
         # Determine the appropriate file path based on file_name parameter
         if file_name is True:
             # Load default data file from the script's directory
@@ -214,20 +317,10 @@ class TurbineControlSimulatorGUI:
             print(f"An error occurred: {e}")
 
 def main():
-    """
-    Main function to initialize the Turbine Control Simulator application.
-    Creates an instance of the simulator and starts the tkinter GUI event loop.
-    """
-    # Initialize the simulator instance with no initial data
     simulator = TurbineControlSimulator()
-
-    # Initialize the main application window
     root = tk.Tk()
     app = TurbineControlSimulatorGUI(root, simulator)
-    
-    # Start the tkinter main event loop
     root.mainloop()
 
-# Run the main function if this script is run directly
 if __name__ == "__main__":
     main()
