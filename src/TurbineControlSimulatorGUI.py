@@ -7,6 +7,8 @@ import os
 import numpy as np
 from TurbineControlSimulator import TurbineControlSimulator
 from TurbineData import TurbineData
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
 
 
 class TurbineControlSimulatorGUI:
@@ -27,6 +29,10 @@ class TurbineControlSimulatorGUI:
 
         # Set up the main window title
         self.master.title("Turbine Control Simulator")
+
+        # Configure the main grid layout
+        self.master.columnconfigure(0, weight=1)
+        self.master.columnconfigure(2, weight=3)  # Give more space to the notebook column
 
         # Create and configure input fields for turbine parameters
         self.D_label = ttk.Label(master, text="Diameter (D) - Temporary input:")
@@ -107,11 +113,34 @@ class TurbineControlSimulatorGUI:
         self.n_input.bind("<KeyRelease>", lambda event: self.update_output())
         self.H_target_input.bind("<KeyRelease>", lambda event: self.update_output())
 
+        # Notebook for plot tabs
+        self.plot_notebook = ttk.Notebook(master)
+        self.plot_notebook.grid(row=0, column=3, rowspan=14, padx=10, pady=10, sticky="nsew")
+
+        # Add initial tabs with example plots
+        self.add_plot_tab("Plot 1")
+        self.add_plot_tab("Plot 2")
+        
         # Automatically load default data file if present in the directory
         self.load_data(file_name=True)  # Load default file if available
 
         # Initial output update
         self.update_output()
+
+    def add_plot_tab(self, title):
+        """Adds a new tab with a canvas for plotting to the notebook."""
+        frame = ttk.Frame(self.plot_notebook)
+        self.plot_notebook.add(frame, text=title)
+
+        # Create and place a canvas for each plot
+        fig, ax = plt.subplots(figsize=(5, 4))
+        canvas = FigureCanvasTkAgg(fig, master=frame)
+        canvas.get_tk_widget().pack(fill="both", expand=True)
+
+        # Example plot (update with real data as needed)
+        ax.plot([1, 2, 3], [1, 4, 9])
+        ax.set_title(f"{title} - Example Plot")
+        canvas.draw()
 
     def open_range_prompt(self):
         """Open a prompt window to get range inputs from the user for maximization."""
