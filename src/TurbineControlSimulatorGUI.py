@@ -2,7 +2,8 @@
 # pyinstaller --onefile --name Turbine_Control_Simulator_0.1.3 --icon=icon.ico TurbineControlSimulatorGUI.py
 
 import tkinter as tk
-from tkinter import ttk, filedialog, BooleanVar
+from tkinter import filedialog, BooleanVar
+from tkinter import ttk
 import os
 import numpy as np
 from TurbineControlSimulator import TurbineControlSimulator
@@ -13,43 +14,56 @@ import time
 from collections import deque
 from matplotlib.animation import FuncAnimation
 
-
 class TurbineControlSimulatorGUI:
     """GUI class for the Turbine Control Simulator application, built with tkinter."""
 
-    def __init__(self, master, simulator):                 
-        """
-        Initialize the GUI application with main window setup, input fields, and output labels.
-
-        Args:
-            master: The root window for tkinter.
-            simulator: The TurbineControlSimulator instance handling turbine calculations.
-        """
+    def __init__(self, master, simulator):
         self.master = master
-        self.simulator = simulator        
-        self.update_delay = 1000  # Delay time in milliseconds for updating outputs
+        self.simulator = simulator
+        self.update_delay = 100  # Delay time in milliseconds for updating outputs
         self.update_id = None
 
         # Set up the main window title
         self.master.title("Turbine Control Simulator")
 
-        # Create and configure input fields for turbine parameters
-        self.D_label = ttk.Label(master, text="Diameter (D) - Temporary input:")
+        # Button to load data file (CSV)
+        self.load_data_button = tk.Button(master, text="Load Data", command=self.load_data)
+        self.load_data_button.grid(row=0, column=0, columnspan=2, pady=10)
+
+        # Set up notebook for tabs
+        self.notebook = ttk.Notebook(master)
+        self.notebook.grid(row=0, column=3, rowspan=15, padx=10, pady=5, sticky="nsew")
+
+        # Initialize the default Overview tab
+        self.add_overview_tab()
+
+        """*****************************************************
+        In development frame
+        *****************************************************"""
+        # Create a labeled frame for the "In Development" section
+        self.dev_section_frame = tk.LabelFrame(master, text="In Development", relief=tk.GROOVE, bd=2, padx=10, pady=10)
+        self.dev_section_frame.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
+
+        # Add input fields for turbine parameters inside the labeled frame
+        self.D_label = tk.Label(self.dev_section_frame, text="Runner D [m]:")
         self.D_label.grid(row=0, column=0, padx=10, pady=5)
-        self.D_input = ttk.Entry(master)
+        self.D_input = tk.Entry(self.dev_section_frame)
         self.D_input.grid(row=0, column=1, padx=10, pady=5)
         self.D_input.insert(0, "1.65")
 
-        # Horizontal separator line
-        self.separator = ttk.Separator(master, orient="horizontal")
-        self.separator.grid(row=1, column=0, columnspan=2, sticky="ew", padx=10, pady=5)
+        """*****************************************************
+        Input Parameters frame
+        *****************************************************"""
+        # Create a labeled frame for the "Input Parameters" section
+        self.inputs_frame = tk.LabelFrame(master, text="Input Parameters", relief=tk.GROOVE, bd=2, padx=10, pady=10)
+        self.inputs_frame.grid(row=2, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
 
-        # Target Head input field and activation checkbox
-        self.H_target_label = ttk.Label(master, text="Target Head (H):")
-        self.H_target_label.grid(row=2, column=0, padx=10, pady=5)
+        # Target Head input field and activation checkbox inside the "Input Parameters" frame
+        self.H_target_label = tk.Label(self.inputs_frame, text="Target H [m]:")
+        self.H_target_label.grid(row=0, column=0, padx=10, pady=5)
 
-        self.H_target_input = ttk.Entry(master)
-        self.H_target_input.grid(row=2, column=1, padx=10, pady=5)
+        self.H_target_input = tk.Entry(self.inputs_frame)
+        self.H_target_input.grid(row=0, column=1, padx=10, pady=5)
         self.H_target_input.insert(0, "2.15")
         self.H_target_input.config(state="disabled")  # Initially disabled
 
@@ -65,77 +79,78 @@ class TurbineControlSimulatorGUI:
                 self.H_target_input.config(state="disabled")
             self.update_output()
 
-        # Checkbox for activating H_target_input field
-        self.activate_checkbox = ttk.Checkbutton(
-            master, text="Activate", variable=self.activate_var, command=toggle_H_target
+        # Checkbox for activating H_target_input field inside the frame
+        self.activate_checkbox = tk.Checkbutton(
+            self.inputs_frame, text="Activate", variable=self.activate_var, command=toggle_H_target
         )
-        self.activate_checkbox.grid(row=2, column=2, padx=10, pady=5)
+        self.activate_checkbox.grid(row=0, column=2, padx=10, pady=5)
 
-        # Flow Rate input
-        self.q_label = ttk.Label(master, text="Flow Rate (Q):")
-        self.q_label.grid(row=3, column=0, padx=10, pady=5)
-        self.q_input = ttk.Entry(master)
-        self.q_input.grid(row=3, column=1, padx=10, pady=5)
+        # Flow Rate input inside the "Input Parameters" frame
+        self.q_label = tk.Label(self.inputs_frame, text="Q [m³/s]:")
+        self.q_label.grid(row=1, column=0, padx=10, pady=5)
+        self.q_input = tk.Entry(self.inputs_frame)
+        self.q_input.grid(row=1, column=1, padx=10, pady=5)
         self.q_input.insert(0, "3.375")
 
-        # Blade Angle input
-        self.blade_label = ttk.Label(master, text="Blade Angle:")
-        self.blade_label.grid(row=4, column=0, padx=10, pady=5)
-        self.blade_input = ttk.Entry(master)
-        self.blade_input.grid(row=4, column=1, padx=10, pady=5)
+        # Blade Angle input inside the "Input Parameters" frame
+        self.blade_label = tk.Label(self.inputs_frame, text="Blade Angle [°]:")
+        self.blade_label.grid(row=2, column=0, padx=10, pady=5)
+        self.blade_input = tk.Entry(self.inputs_frame)
+        self.blade_input.grid(row=2, column=1, padx=10, pady=5)
         self.blade_input.insert(0, "16.2")
 
-        # Rotational Speed input
-        self.n_label = ttk.Label(master, text="Rotational Speed (n):")
-        self.n_label.grid(row=5, column=0, padx=10, pady=5)
-        self.n_input = ttk.Entry(master)
-        self.n_input.grid(row=5, column=1, padx=10, pady=5)
+        # Rotational Speed input inside the "Input Parameters" frame
+        self.n_label = tk.Label(self.inputs_frame, text="n [rpm]:")
+        self.n_label.grid(row=3, column=0, padx=10, pady=5)
+        self.n_input = tk.Entry(self.inputs_frame)
+        self.n_input.grid(row=3, column=1, padx=10, pady=5)
         self.n_input.insert(0, "113.5")
 
-        # Button to load data file (CSV)
-        self.load_data_button = ttk.Button(master, text="Load Data", command=self.load_data)
-        self.load_data_button.grid(row=6, column=0, columnspan=2, pady=10)
+        """*****************************************************
+        Output Parameters frame
+        *****************************************************"""
+        # Create a labeled frame for the "Output Parameters" section
+        self.outputs_frame = tk.LabelFrame(master, text="Output Parameters", relief=tk.GROOVE, bd=2, padx=10, pady=10)
+        self.outputs_frame.grid(row=3, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
 
-        # Output labels for displaying computed results
+        # Output labels for displaying computed results inside the "Output Parameters" frame
         self.result_labels = {}
         for idx, text in enumerate(["Q11:", "n11:", "Efficiency:", "H:", "Power:"]):
-            self.result_labels[text] = ttk.Label(master, text=f"{text} --")
-            self.result_labels[text].grid(row=7 + idx, column=0, columnspan=2, padx=10, pady=5)
+            self.result_labels[text] = tk.Label(self.outputs_frame, text=f"{text} --")
+            self.result_labels[text].grid(row=idx, column=0, columnspan=2, padx=10, pady=5)
 
+        """*****************************************************
+        End of frames
+        *****************************************************"""
+       
         # Button to maximize output, triggering the pop-up
-        self.maximise_output_button = ttk.Button(master, text="Maximise Output", command=self.open_range_prompt)
+        self.maximise_output_button = tk.Button(master, text="Maximise Output", command=self.open_range_prompt)
         self.maximise_output_button.grid(row=12, column=0, columnspan=2, pady=10)
 
         # Bind input fields to trigger output updates with debounce handling
         self.q_input.bind("<KeyRelease>", lambda event: self.update_output())
         self.blade_input.bind("<KeyRelease>", lambda event: self.update_output())
         self.n_input.bind("<KeyRelease>", lambda event: self.update_output())
-        self.H_target_input.bind("<KeyRelease>", lambda event: self.update_output())
-
-        # Canvas and Notebook for plots
-        self.notebook = ttk.Notebook(master)
-        self.notebook.grid(row=0, column=3, rowspan=15, padx=10, pady=5, sticky="nsew")
-
-        # Tab for multiple subplots (Overview Plots)
-        self.sub_plot_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.sub_plot_tab, text="Overview Plots")
+        self.H_target_input.bind("<KeyRelease>", lambda event: self.update_output())                
 
         # Initialize figure and axis for the Overview Plots tab with 5 subplots
+        """
         self.overview_fig, self.overview_ax = plt.subplots(5, 1, figsize=(6, 8), sharex=True)
         self.sub_plot_canvas = FigureCanvasTkAgg(self.overview_fig, master=self.sub_plot_tab)
-        self.sub_plot_canvas.get_tk_widget().pack(fill="both", expand=True)
+        self.sub_plot_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
+        """
 
         # Setup for live plot data in the Overview Plots tab
-        self.time_data = deque(maxlen=300)  # Store time points up to 30s (assuming 10 updates/sec)
-        self.q11_data = deque(maxlen=300)
-        self.n11_data = deque(maxlen=300)
-        self.efficiency_data = deque(maxlen=300)
-        self.h_data = deque(maxlen=300)
-        self.power_data = deque(maxlen=300)
+        self.time_data = deque(maxlen=240)  # Store time points up to 120s
+        self.q11_data = deque(maxlen=240)
+        self.n11_data = deque(maxlen=240)
+        self.efficiency_data = deque(maxlen=240)
+        self.h_data = deque(maxlen=240)
+        self.power_data = deque(maxlen=240)
         self.start_time = time.time()  # Track start time for elapsed time on x-axis
 
         # Initialize the live plot animation
-        self.anim = FuncAnimation(self.overview_fig, self.update_live_plot, interval=1000)
+        self.anim = FuncAnimation(self.overview_fig, self.update_live_plot, interval=500)
 
         # Automatically load default data file if present in the directory
         self.load_data(file_name=True)  # Load default file if available
@@ -143,26 +158,13 @@ class TurbineControlSimulatorGUI:
         # Initial output update
         self.update_output()
 
+        # Start the scheduled continuous update loop
+        self.schedule_continuous_update()
+
     def schedule_continuous_update(self):
-        """Schedules the continuous update for live plot data regardless of input change."""
-        self.update_live_plot(None)  # Call the live plot update directly
-        self.master.after(1000, self.schedule_continuous_update)  # Repeat every second
-
-
-    def add_plot_tab(self, title):
-        """Adds a new tab with a canvas for plotting to the notebook."""
-        frame = ttk.Frame(self.notebook)  # Corrected from self.plot_notebook
-        self.notebook.add(frame, text=title)
-
-        # Create and place a canvas for each plot
-        fig, ax = plt.subplots(figsize=(5, 4))
-        canvas = FigureCanvasTkAgg(fig, master=frame)
-        canvas.get_tk_widget().pack(fill="both", expand=True)
-
-        # Example plot (update with real data as needed)
-        ax.plot([1, 2, 3], [1, 4, 9])
-        ax.set_title(f"{title} - Example Plot")
-        canvas.draw()
+        """Schedules the continuous update for live plot data at regular intervals."""
+        self.update_output()  # Update outputs and live plot data
+        self.master.after(500, self.schedule_continuous_update)  # Repeat interval    
 
     def plot_results(self, max_power_results):
         """Plot the results in the second tab dynamically."""
@@ -188,21 +190,38 @@ class TurbineControlSimulatorGUI:
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
+    def add_overview_tab(self):
+        """Add the default 'Overview Plots' tab with live plots."""
+        # Create a new frame within the notebook for overview plots
+        overview_tab = ttk.Frame(self.notebook)
+        self.notebook.add(overview_tab, text="Overview Plots")
+        
+        # Initialize figure and axes for the overview plots
+        self.overview_fig, self.overview_ax = plt.subplots(5, 1, figsize=(6, 8), sharex=True)
+        self.sub_plot_canvas = FigureCanvasTkAgg(self.overview_fig, master=overview_tab)
+        self.sub_plot_canvas.get_tk_widget().pack(fill="both", expand=True)   
+        
+
+    def add_plot_tab(self, title, fig):
+        """Adds a new tab with a given figure (plot) to the notebook."""
+        # Create a frame as a new tab
+        frame = ttk.Frame(self.notebook)
+        self.notebook.add(frame, text=title)
+
+        # Place the figure's canvas inside this tab
+        canvas = FigureCanvasTkAgg(fig, master=frame)
+        canvas.get_tk_widget().pack(fill="both", expand=True)
+        canvas.draw()
+
     def display_plots_in_tabs(self, figures):
         """Clear dynamically added tabs and add a new tab for each figure in the notebook."""
         # Remove all tabs except the first one (Overview Plots)
         while len(self.notebook.tabs()) > 1:
             self.notebook.forget(1)
 
-        # Add a new tab for each figure
+        # Add a new tab for each figure in the provided dictionary
         for title, fig in figures.items():
-            frame = ttk.Frame(self.notebook)
-            self.notebook.add(frame, text=title)
-
-            # Create canvas for the plot
-            canvas = FigureCanvasTkAgg(fig, master=frame)
-            canvas.get_tk_widget().pack(fill="both", expand=True)
-            canvas.draw()
+            self.add_plot_tab(title, fig)
 
     def open_range_prompt(self):
         """Open a prompt window to get range inputs from the user for maximization."""
@@ -218,68 +237,68 @@ class TurbineControlSimulatorGUI:
         self.create_range_inputs(self.range_prompt)
 
         # Add a submit button
-        submit_button = ttk.Button(self.range_prompt, text="Submit", command=self.submit_ranges)
+        submit_button = tk.Button(self.range_prompt, text="Submit", command=self.submit_ranges)
         submit_button.grid(row=5, column=0, columnspan=4, pady=10)
 
     def create_range_inputs(self, prompt):
         """Create input fields for Q_range, H_range, n_range, and blade_angle_range in the prompt window."""
         
         # Flow Rate Range (Q_range)
-        ttk.Label(prompt, text="Flow Rate Range (Q): Start").grid(row=0, column=0, padx=10, pady=5)
-        self.q_start_input = ttk.Entry(prompt)
+        tk.Label(prompt, text="Flow Rate Range (Q): Start").grid(row=0, column=0, padx=10, pady=5)
+        self.q_start_input = tk.Entry(prompt)
         self.q_start_input.grid(row=0, column=1, padx=10, pady=5)
         self.q_start_input.insert(0, "0.5")
         
-        ttk.Label(prompt, text="Stop").grid(row=0, column=2, padx=10, pady=5)
-        self.q_stop_input = ttk.Entry(prompt)
+        tk.Label(prompt, text="Stop").grid(row=0, column=2, padx=10, pady=5)
+        self.q_stop_input = tk.Entry(prompt)
         self.q_stop_input.grid(row=0, column=3, padx=10, pady=5)
         self.q_stop_input.insert(0, "4.5")
         
-        ttk.Label(prompt, text="Step").grid(row=0, column=4, padx=10, pady=5)
-        self.q_step_input = ttk.Entry(prompt)
+        tk.Label(prompt, text="Step").grid(row=0, column=4, padx=10, pady=5)
+        self.q_step_input = tk.Entry(prompt)
         self.q_step_input.grid(row=0, column=5, padx=10, pady=5)
         self.q_step_input.insert(0, "0.5")
         
         # Head Range (H_range)
-        ttk.Label(prompt, text="Head Range (H): Min").grid(row=1, column=0, padx=10, pady=5)
-        self.h_min_input = ttk.Entry(prompt)
+        tk.Label(prompt, text="Head Range (H): Min").grid(row=1, column=0, padx=10, pady=5)
+        self.h_min_input = tk.Entry(prompt)
         self.h_min_input.grid(row=1, column=1, padx=10, pady=5)
         self.h_min_input.insert(0, "0.5")
         
-        ttk.Label(prompt, text="Max").grid(row=1, column=2, padx=10, pady=5)
-        self.h_max_input = ttk.Entry(prompt)
+        tk.Label(prompt, text="Max").grid(row=1, column=2, padx=10, pady=5)
+        self.h_max_input = tk.Entry(prompt)
         self.h_max_input.grid(row=1, column=3, padx=10, pady=5)
         self.h_max_input.insert(0, "2.15")
 
         # Rotational Speed Range (n_range)
-        ttk.Label(prompt, text="Rotational Speed Range (n): Start").grid(row=2, column=0, padx=10, pady=5)
-        self.n_start_input = ttk.Entry(prompt)
+        tk.Label(prompt, text="Rotational Speed Range (n): Start").grid(row=2, column=0, padx=10, pady=5)
+        self.n_start_input = tk.Entry(prompt)
         self.n_start_input.grid(row=2, column=1, padx=10, pady=5)
         self.n_start_input.insert(0, "40")
         
-        ttk.Label(prompt, text="Stop").grid(row=2, column=2, padx=10, pady=5)
-        self.n_stop_input = ttk.Entry(prompt)
+        tk.Label(prompt, text="Stop").grid(row=2, column=2, padx=10, pady=5)
+        self.n_stop_input = tk.Entry(prompt)
         self.n_stop_input.grid(row=2, column=3, padx=10, pady=5)
         self.n_stop_input.insert(0, "150")
         
-        ttk.Label(prompt, text="Step").grid(row=2, column=4, padx=10, pady=5)
-        self.n_step_input = ttk.Entry(prompt)
+        tk.Label(prompt, text="Step").grid(row=2, column=4, padx=10, pady=5)
+        self.n_step_input = tk.Entry(prompt)
         self.n_step_input.grid(row=2, column=5, padx=10, pady=5)
         self.n_step_input.insert(0, "10")
 
         # Blade Angle Range
-        ttk.Label(prompt, text="Blade Angle Range: Start").grid(row=3, column=0, padx=10, pady=5)
-        self.blade_start_input = ttk.Entry(prompt)
+        tk.Label(prompt, text="Blade Angle Range: Start").grid(row=3, column=0, padx=10, pady=5)
+        self.blade_start_input = tk.Entry(prompt)
         self.blade_start_input.grid(row=3, column=1, padx=10, pady=5)
         self.blade_start_input.insert(0, "9")
         
-        ttk.Label(prompt, text="Stop").grid(row=3, column=2, padx=10, pady=5)
-        self.blade_stop_input = ttk.Entry(prompt)
+        tk.Label(prompt, text="Stop").grid(row=3, column=2, padx=10, pady=5)
+        self.blade_stop_input = tk.Entry(prompt)
         self.blade_stop_input.grid(row=3, column=3, padx=10, pady=5)
         self.blade_stop_input.insert(0, "21")
         
-        ttk.Label(prompt, text="Step").grid(row=3, column=4, padx=10, pady=5)
-        self.blade_step_input = ttk.Entry(prompt)
+        tk.Label(prompt, text="Step").grid(row=3, column=4, padx=10, pady=5)
+        self.blade_step_input = tk.Entry(prompt)
         self.blade_step_input.grid(row=3, column=5, padx=10, pady=5)
         self.blade_step_input.insert(0, "3")
 
@@ -368,7 +387,7 @@ class TurbineControlSimulatorGUI:
                 self.result_labels[key].config(text=f"{key} Error")
 
     def update_output(self):
-        """Calculate and update the output based on the current input values."""
+        """Calculate and update output, also updating time-based data for live plots."""
         try:
             # Retrieve input values and parse them as floats
             Q = float(self.q_input.get())
@@ -383,17 +402,13 @@ class TurbineControlSimulatorGUI:
             self.simulator.set_operation_attribute("n", n)
             self.simulator.set_operation_attribute("D", D)
 
-            # Adjust attributes based on head control settings if enabled
             if head_control:
                 H_target = float(self.H_target_input.get())
-                # Adjust head control in the simulator
                 result = self.simulator.set_head_and_adjust(H_target)
                 n = result["Rotational Speed (n)"]
                 blade_angle = result["Blade Angle"]
                 self.simulator.set_operation_attribute("n", n)
                 self.simulator.set_operation_attribute("blade_angle", blade_angle)
-
-                # Update GUI inputs to show adjusted values
                 self.blade_input.delete(0, tk.END)
                 self.blade_input.insert(0, f"{blade_angle:.2f}")
                 self.n_input.delete(0, tk.END)
@@ -402,14 +417,7 @@ class TurbineControlSimulatorGUI:
             # Compute results using the simulator
             operation_point = self.simulator.compute_with_slicing()
 
-            # Update output result labels with computed values
-            self.result_labels["Q11:"].config(text=f"Q11: {operation_point.Q11:.2f}")
-            self.result_labels["n11:"].config(text=f"n11: {operation_point.n11:.1f}")
-            self.result_labels["Efficiency:"].config(text=f"Efficiency: {operation_point.efficiency:.2f}")
-            self.result_labels["H:"].config(text=f"H: {operation_point.H:.2f}")
-            self.result_labels["Power:"].config(text=f"Power: {operation_point.power:.0f}")
-
-            # Update live plot data
+            # Update time-based data for live plotting
             elapsed_time = time.time() - self.start_time
             self.time_data.append(elapsed_time)
             self.q11_data.append(operation_point.H)
@@ -419,50 +427,55 @@ class TurbineControlSimulatorGUI:
             self.power_data.append(operation_point.power)
 
             # Update output result labels
-            self.result_labels["Q11:"].config(text=f"Q11: {operation_point.Q11:.2f}")
+            self.result_labels["Q11:"].config(text=f"Q11: {operation_point.Q11:.2f} ")
             self.result_labels["n11:"].config(text=f"n11: {operation_point.n11:.1f}")
-            self.result_labels["Efficiency:"].config(text=f"Efficiency: {operation_point.efficiency:.2f}")
-            self.result_labels["H:"].config(text=f"H: {operation_point.H:.2f}")
-            self.result_labels["Power:"].config(text=f"Power: {operation_point.power:.0f}")
+            self.result_labels["Efficiency:"].config(text=f"Efficiency: {operation_point.efficiency:.2f} [-]")
+            self.result_labels["H:"].config(text=f"H: {operation_point.H:.2f} [m]")
+            self.result_labels["Power:"].config(text=f"Power: {operation_point.power:.0f} [W]")
 
             # Redraw the live plot with new data
-            self.sub_plot_canvas.draw()
+            self.update_live_plot(None)
 
         except Exception as e:
-            # Display error message on result labels in case of failure
+            # Display error message on result labels if calculation fails
             for key in self.result_labels:
                 self.result_labels[key].config(text=f"{key} Error")
             print(f"An error occurred: {e}")
     
     def update_live_plot(self, frame):
-            """Update the live plot with the latest data."""
-            for ax in self.overview_ax:
-                ax.clear()
+        """Update the live plot with the latest time-based data."""
+        for ax in self.overview_ax:
+            ax.clear()
 
-            # Plot each variable in separate subplots
-            self.overview_ax[0].plot(self.time_data, self.q11_data, label="H")
-            self.overview_ax[0].set_ylabel("H")
+        # Plot each variable against time in separate subplots
+        self.overview_ax[0].plot(self.time_data, self.q11_data, label="H")
+        self.overview_ax[0].set_ylabel("H [m]")
 
-            self.overview_ax[1].plot(self.time_data, self.n11_data, label="Q")
-            self.overview_ax[1].set_ylabel("Q")
+        self.overview_ax[1].plot(self.time_data, self.n11_data, label="Q")
+        self.overview_ax[1].set_ylabel("Q [m^3/s]")
 
-            self.overview_ax[2].plot(self.time_data, self.efficiency_data, label="Blade Angle")
-            self.overview_ax[2].set_ylabel("Blade Angle")
+        self.overview_ax[2].plot(self.time_data, self.efficiency_data, label="Blade Angle")
+        self.overview_ax[2].set_ylabel("Blade Angle [°]")
 
-            self.overview_ax[3].plot(self.time_data, self.h_data, label="n")
-            self.overview_ax[3].set_ylabel("n")
+        self.overview_ax[3].plot(self.time_data, self.h_data, label="n")
+        self.overview_ax[3].set_ylabel("n [rpm]")
 
-            self.overview_ax[4].plot(self.time_data, self.power_data, label="Power")
-            self.overview_ax[4].set_ylabel("Power")
-            self.overview_ax[4].set_xlabel("Time (s)")
+        self.overview_ax[4].plot(self.time_data, self.power_data, label="Power")
+        self.overview_ax[4].set_ylabel("Power [W]")        
 
-            # Set x-axis limit to last 30 seconds
-            self.overview_ax[0].set_xlim(max(0, self.time_data[-1] - 30), self.time_data[-1])
+        # Determine x-axis limits based on the elapsed time
+        if self.time_data and self.time_data[-1] > 120:
+            # Shift the window to show only the last 120 seconds
+            self.overview_ax[0].set_xlim(self.time_data[-1] - 120, self.time_data[-1])
+        else:
+            # Set x-axis limit to the initial 0 to 120 seconds
+            self.overview_ax[0].set_xlim(0, 120)
 
-            # Draw legends and apply tight layout
-            for ax in self.overview_ax:
-                ax.legend()
-            self.overview_fig.tight_layout()
+        # Draw legends and apply tight layout        
+        self.overview_fig.tight_layout()
+
+        # Refresh the canvas to show updated plots
+        self.sub_plot_canvas.draw()
 
 def main():
     simulator = TurbineControlSimulator()
