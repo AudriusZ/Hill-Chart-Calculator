@@ -23,6 +23,12 @@ class TurbineControlSimulatorGUI:
         self.update_delay = 100  # Delay time in milliseconds for updating outputs
         self.update_id = None
 
+        # Store previous values for change detection
+        self.prev_q = None
+        self.prev_blade_angle = None
+        self.prev_n = None
+        self.prev_H_target = None        
+
         # Set up the main window title
         self.master.title("Turbine Control Simulator")
 
@@ -115,9 +121,27 @@ class TurbineControlSimulatorGUI:
 
         # Output labels for displaying computed results inside the "Output Parameters" frame
         self.result_labels = {}
-        for idx, text in enumerate(["Q11:", "n11:", "Efficiency:", "H:", "Power:"]):
-            self.result_labels[text] = tk.Label(self.outputs_frame, text=f"{text} --")
-            self.result_labels[text].grid(row=idx, column=0, columnspan=2, padx=10, pady=5)
+        output_texts = [
+            ("Q11 =", ""), 
+            ("n11 =", ""), 
+            ("Efficiency =", "[-]"), 
+            ("H =", "[m]"), 
+            ("Power =", "[W]")
+        ]
+
+        for idx, (label_text, unit_text) in enumerate(output_texts):
+            # Label for the parameter name
+            label = tk.Label(self.outputs_frame, text=label_text)
+            label.grid(row=idx, column=0, padx=10, pady=5, sticky="w")
+            
+            # Label for the computed value, initially blank
+            value_label = tk.Label(self.outputs_frame, text="--")
+            value_label.grid(row=idx, column=1, padx=10, pady=5, sticky="w")
+            self.result_labels[label_text] = value_label  # Store value labels for updating later
+
+            # Label for the unit
+            unit_label = tk.Label(self.outputs_frame, text=unit_text)
+            unit_label.grid(row=idx, column=2, padx=10, pady=5, sticky="w")
 
         """*****************************************************
         End of frames
@@ -125,7 +149,7 @@ class TurbineControlSimulatorGUI:
        
         # Button to maximize output, triggering the pop-up
         self.maximise_output_button = tk.Button(master, text="Maximise Output", command=self.open_range_prompt)
-        self.maximise_output_button.grid(row=4, column=0, columnspan=1, padx=10, pady=10, sticky="ew")
+        self.maximise_output_button.grid(row=0, column=1, columnspan=1, padx=10, pady=10, sticky="ew")
 
         # Bind input fields to trigger output updates with debounce handling
         self.q_input.bind("<KeyRelease>", lambda event: self.update_output())
@@ -181,9 +205,9 @@ class TurbineControlSimulatorGUI:
 
         fig, ax = plt.subplots()
         ax.plot(Q_values, power_values, marker='o')
-        ax.set_xlabel("Flow Rate (Q)")
-        ax.set_ylabel("Power")
-        ax.set_title("Power vs Flow Rate (Q)")
+        ax.set_xlabel("Q [m^3/s]")
+        ax.set_ylabel("Power [W]")
+        ax.set_title("Power vs Q")
 
         # Display the plot on the second tab
         canvas = FigureCanvasTkAgg(fig, self.plot_tab)
@@ -284,13 +308,13 @@ class TurbineControlSimulatorGUI:
         tk.Label(prompt, text="Step").grid(row=2, column=4, padx=10, pady=5)
         self.n_step_input = tk.Entry(prompt)
         self.n_step_input.grid(row=2, column=5, padx=10, pady=5)
-        self.n_step_input.insert(0, "10")
+        self.n_step_input.insert(0, "5")
 
         # Blade Angle Range
         tk.Label(prompt, text="Blade Angle Range: Start").grid(row=3, column=0, padx=10, pady=5)
         self.blade_start_input = tk.Entry(prompt)
         self.blade_start_input.grid(row=3, column=1, padx=10, pady=5)
-        self.blade_start_input.insert(0, "9")
+        self.blade_start_input.insert(0, "8")
         
         tk.Label(prompt, text="Stop").grid(row=3, column=2, padx=10, pady=5)
         self.blade_stop_input = tk.Entry(prompt)
@@ -300,7 +324,7 @@ class TurbineControlSimulatorGUI:
         tk.Label(prompt, text="Step").grid(row=3, column=4, padx=10, pady=5)
         self.blade_step_input = tk.Entry(prompt)
         self.blade_step_input.grid(row=3, column=5, padx=10, pady=5)
-        self.blade_step_input.insert(0, "3")
+        self.blade_step_input.insert(0, "1")
 
     def submit_ranges(self):
         """Retrieve range values from the prompt and perform maximization."""
@@ -395,6 +419,18 @@ class TurbineControlSimulatorGUI:
             n = float(self.n_input.get())
             D = float(self.D_input.get())
             head_control = bool(self.activate_var.get())
+            H_target = float(self.H_target_input.get())
+
+            """
+            # Check for changes to avoid unnecessary updates
+            if (
+                Q == self.prev_q and
+                blade_angle == self.prev_blade_angle and
+                n == self.prev_n and
+                not head_control
+            ):
+                return  # Skip update if values haven't changed
+            """                      
 
             # Set simulator attributes with user inputs
             self.simulator.set_operation_attribute("Q", Q)
@@ -402,8 +438,21 @@ class TurbineControlSimulatorGUI:
             self.simulator.set_operation_attribute("n", n)
             self.simulator.set_operation_attribute("D", D)
 
-            if head_control:
-                H_target = float(self.H_target_input.get())
+            if head_control:                
+                if (
+                    Q == self.prev_q and
+                    blade_angle == self.prev_blade_angle and
+                    n == self.prev_n and
+                    H_target == self.prev_H_target
+                ):
+                    return  # Skip update if values haven't changed                
+                
+                # Update stored previous values
+                self.prev_q = Q
+                self.prev_blade_angle = blade_angle
+                self.prev_n = n 
+                self.prev_H_target = H_target
+
                 result = self.simulator.set_head_and_adjust(H_target)
                 n = result["Rotational Speed (n)"]
                 blade_angle = result["Blade Angle"]
@@ -427,11 +476,11 @@ class TurbineControlSimulatorGUI:
             self.power_data.append(operation_point.power)
 
             # Update output result labels
-            self.result_labels["Q11:"].config(text=f"Q11: {operation_point.Q11:.2f} ")
-            self.result_labels["n11:"].config(text=f"n11: {operation_point.n11:.1f}")
-            self.result_labels["Efficiency:"].config(text=f"Efficiency: {operation_point.efficiency:.2f} [-]")
-            self.result_labels["H:"].config(text=f"H: {operation_point.H:.2f} [m]")
-            self.result_labels["Power:"].config(text=f"Power: {operation_point.power:.0f} [W]")
+            self.result_labels["Q11 ="].config(text=f"{operation_point.Q11:.2f} ")
+            self.result_labels["n11 ="].config(text=f"{operation_point.n11:.1f}")
+            self.result_labels["Efficiency ="].config(text=f"{operation_point.efficiency:.2f}")
+            self.result_labels["H ="].config(text=f"{operation_point.H:.2f}")
+            self.result_labels["Power ="].config(text=f"{operation_point.power:.0f}")
 
             # Redraw the live plot with new data
             self.update_live_plot(None)

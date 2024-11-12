@@ -367,15 +367,15 @@ class TurbineControlSimulator(HillChart):
 
         # Generate plots for each attribute
         for values, ylabel, title in [
-            (power_values, "Power", "Power vs Flow Rate (Q)"),
-            (n_values, "Rotational Speed (n)", "Rotational Speed vs Flow Rate (Q)"),
-            (blade_angle_values, "Blade Angle", "Blade Angle vs Flow Rate (Q)"),
-            (efficiency_values, "Efficiency", "Efficiency vs Flow Rate (Q)"),
-            (head_values, "Head (H)", "Head vs Flow Rate (Q)")
+            (power_values, "Power [W]", "Power vs Q"),
+            (n_values, "n [rpm]", "n vs Q"),
+            (blade_angle_values, "Blade Angle [°]", "Blade Angle vs Q"),
+            (efficiency_values, "Efficiency [-]", "Efficiency vs Q"),
+            (head_values, "H [m]", "H vs Q")
         ]:
             fig, ax = plt.subplots()
             ax.plot(Q_values, values, marker='o')
-            ax.set_xlabel("Flow Rate (Q)")
+            ax.set_xlabel("Q [m^3/s]")
             ax.set_ylabel(ylabel)
             ax.set_title(title)
             ax.grid()
