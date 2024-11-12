@@ -28,7 +28,7 @@ class TurbineControlSimulatorGUI:
 
         # Button to load data file (CSV)
         self.load_data_button = tk.Button(master, text="Load Data", command=self.load_data)
-        self.load_data_button.grid(row=0, column=0, columnspan=2, pady=10)
+        self.load_data_button.grid(row=0, column=0, columnspan=1, padx=10, pady=10, sticky="ew")
 
         # Set up notebook for tabs
         self.notebook = ttk.Notebook(master)
@@ -125,7 +125,7 @@ class TurbineControlSimulatorGUI:
        
         # Button to maximize output, triggering the pop-up
         self.maximise_output_button = tk.Button(master, text="Maximise Output", command=self.open_range_prompt)
-        self.maximise_output_button.grid(row=12, column=0, columnspan=2, pady=10)
+        self.maximise_output_button.grid(row=4, column=0, columnspan=1, padx=10, pady=10, sticky="ew")
 
         # Bind input fields to trigger output updates with debounce handling
         self.q_input.bind("<KeyRelease>", lambda event: self.update_output())
