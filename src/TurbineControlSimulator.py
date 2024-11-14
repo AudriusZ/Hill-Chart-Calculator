@@ -149,14 +149,22 @@ class TurbineControlSimulator(HillChart):
         Returns:
             tuple: n11_slice, Q11_slice, efficiency_slice
         """
+        # Initialize the performance curve and create a deep copy for slicing
         performance_curve = PerformanceCurve(self)
         simulator_copy = copy.deepcopy(performance_curve)
         n11_slice, Q11_slice, efficiency_slice, _ = simulator_copy.slice_hill_chart_data(selected_blade_angle=blade_angle)
 
+        # Verify that there’s sufficient data to proceed
         if len(Q11_slice) < 2 or len(n11_slice) < 2:
-            raise ValueError("Insufficient data for computation")
+            # Check if self.operation_point exists, otherwise use blade_angle info
+            operation_point_info = getattr(self, 'operation_point', f"Blade angle: {blade_angle}")
+            print("\n", operation_point_info)
+            raise ValueError("This point is outside of the available hill chart data range.")
+            
 
+        # Return slices if sufficient data is available
         return n11_slice, Q11_slice, efficiency_slice
+
 
     def calculate_results_from_slice(self, n11_slice, Q11_slice, efficiency_slice):
         """
@@ -301,6 +309,7 @@ class TurbineControlSimulator(HillChart):
             max_power_row = self.maximize_output(min_H, max_H)
             max_power_results[Q] = max_power_row
             
+        print("\nTotal progress = ", counter,'/',Q_range_len)
         print("\nComplete")
 
         # End timing the operation

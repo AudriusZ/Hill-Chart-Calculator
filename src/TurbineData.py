@@ -13,7 +13,13 @@ class TurbineData:
     efficiency: List[float] = field(default_factory=list)
     power: List[float] = field(default_factory=list)
     Ns: List[float] = field(default_factory=list)
+    
 
+    def __str__(self):
+        return (f"TurbineData(H={self.H:.2f}, Q={self.Q:.2f}, n={self.n:.2f}, D={self.D:.2f}, "
+                f"blade_angle={self.blade_angle:.2f}, Q11={self.Q11:.2f}, n11={self.n11:.2f}, "
+                f"efficiency={float(self.efficiency):.2f}, power={self.power:.2f}, Ns={self.Ns})")
+    
     def nomenclature_dict(self):
         return {
             'n': 'n',

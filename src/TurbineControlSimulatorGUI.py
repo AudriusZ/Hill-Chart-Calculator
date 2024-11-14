@@ -1,5 +1,5 @@
 # Application packaging command:
-# pyinstaller --onefile --name Turbine_Control_Simulator_0.1.3 --icon=icon.ico TurbineControlSimulatorGUI.py
+# pyinstaller --onefile --name Turbine_Control_Simulator_0.2.3 --icon=icon.ico TurbineControlSimulatorGUI.py
 
 import tkinter as tk
 from tkinter import filedialog, BooleanVar
@@ -22,6 +22,7 @@ class TurbineControlSimulatorGUI:
         self.simulator = simulator
         self.update_delay = 100  # Delay time in milliseconds for updating outputs
         self.update_id = None
+        self.data_loaded = False  # Track if data has been successfully loaded
 
         # Store previous values for change detection
         self.prev_q = None
@@ -174,7 +175,8 @@ class TurbineControlSimulatorGUI:
         self.start_time = time.time()  # Track start time for elapsed time on x-axis
 
         # Initialize the live plot animation
-        self.anim = FuncAnimation(self.overview_fig, self.update_live_plot, interval=500)
+        self.anim = FuncAnimation(self.overview_fig, self.update_live_plot, interval=500, cache_frame_data=False)
+
 
         # Automatically load default data file if present in the directory
         self.load_data(file_name=True)  # Load default file if available
@@ -373,45 +375,51 @@ class TurbineControlSimulatorGUI:
 
     def load_data(self, file_name=False):
         """Load data from a specified file or prompt the user to select one."""
-        # Determine the appropriate file path based on file_name parameter
         if file_name is True:
-            # Load default data file from the script's directory
             script_dir = os.path.dirname(os.path.abspath(__file__))
             filepath = os.path.join(script_dir, "Mogu_D1.65m.csv")
             if not os.path.exists(filepath):
-                print("Default file not found.")
+                print("Default file not found. Please load the data file.")
                 return
+            else:
+                print("Default file found. Loading data...")
         elif isinstance(file_name, str):
             filepath = file_name
+            print(f"Loading specified file: {filepath}")
         else:
-            # Open file dialog if no file is specified
             filepath = filedialog.askopenfilename(
                 filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")],
                 title="Select Hill Chart Data File"
             )
-            if not filepath:  # Exit if no file is selected
+            if not filepath:
+                print("No file selected. Exiting load_data.")
                 return
+            print(f"User selected file: {filepath}")
 
-        # Attempt to load data from the specified file path
         try:
             self.simulator.read_hill_chart_values(filepath)
             self.simulator.filter_for_maximum_efficiency(remove=False)
-            self.simulator.prepare_hill_chart_data()
+            self.simulator.prepare_hill_chart_data(min_efficiency_limit = 0.1)
+            self.data_loaded = True
             print(f"Data successfully loaded from {filepath}")
-
-            # Update GUI title to indicate successful data load
+            # GUI title update
             self.master.title(f"Turbine Control Simulator - Data Loaded: {os.path.basename(filepath)}")
-            # Clear previous result labels after data load
+            # Clear result labels
             for key in self.result_labels:
                 self.result_labels[key].config(text=f"{key} --")
         except Exception as e:
             print(f"Error loading data from {filepath}: {e}")
-            # Display error message on result labels if data load fails
             for key in self.result_labels:
                 self.result_labels[key].config(text=f"{key} Error")
 
+
+
+
     def update_output(self):
         """Calculate and update output, also updating time-based data for live plots."""
+        if not self.data_loaded:            
+            return  # Exit if data is not loaded
+        
         try:
             # Retrieve input values and parse them as floats
             Q = float(self.q_input.get())
@@ -493,6 +501,9 @@ class TurbineControlSimulatorGUI:
     
     def update_live_plot(self, frame):
         """Update the live plot with the latest time-based data."""
+        if not self.data_loaded:
+            return  # Skip updating live plot if data is not loaded
+        
         for ax in self.overview_ax:
             ax.clear()
 
