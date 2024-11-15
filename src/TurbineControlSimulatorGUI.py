@@ -1,5 +1,5 @@
 # Application packaging command:
-# pyinstaller --onefile --name Turbine_Control_Simulator_0.2.3 --icon=icon.ico TurbineControlSimulatorGUI.py
+# pyinstaller --onefile --name Turbine_Control_Simulator_0.3.0 --icon=icon.ico TurbineControlSimulatorGUI.py
 
 import tkinter as tk
 from tkinter import filedialog, BooleanVar
@@ -98,8 +98,12 @@ class TurbineControlSimulatorGUI:
         # Flow Rate input inside the "Input Parameters" frame
         self.q_label = tk.Label(self.inputs_frame, text="Q [m³/s]:")
         self.q_label.grid(row=1, column=0, padx=10, pady=5)
-        self.q_input = tk.Entry(self.inputs_frame)
+
+        self.q_input = tk.Spinbox(
+            self.inputs_frame, from_=0.0, to=10.0, increment=0.1, format="%.3f", width=18
+        )
         self.q_input.grid(row=1, column=1, padx=10, pady=5)
+        self.q_input.delete(0, tk.END)
         self.q_input.insert(0, "3.375")
 
         # Blade Angle input inside the "Input Parameters" frame
@@ -465,7 +469,7 @@ class TurbineControlSimulatorGUI:
                 self.prev_n = n 
                 self.prev_H_target = H_target
 
-                controller = TurbineControl.TurbineControl()
+                controller = TurbineControl.TurbineControl(blade_angle_step=0.5, n_step=1)
 
                 n_t = 113.5
                 output = controller.control_step(H, H_target, n, n_t, blade_angle)

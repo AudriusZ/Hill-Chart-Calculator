@@ -1,9 +1,10 @@
 class TurbineControl:
-    def __init__(self, n_step=5, blade_angle_step=1, n_min = 20, n_max=150, blade_angle_min=8, blade_angle_max=21):
+    def __init__(self, H_tolerance = 0.00, n_step=5, blade_angle_step=1, n_min = 20, n_max=150, blade_angle_min=8, blade_angle_max=21):
         """
         Initialize TurbineControl with configurable parameters.
 
         Parameters:
+            H_tolerance (float): Tolerance range for the target head (H_t), allowing acceptable deviation before adjustments are made.
             n_step (float): Step size for adjusting rotational speed.
             blade_angle_step (float): Step size for adjusting blade angle.
             n_min (float): Minimum allowable rotational speed.
@@ -11,20 +12,28 @@ class TurbineControl:
             blade_angle_min (float): Minimum allowable blade angle.
             blade_angle_max (float): Maximum allowable blade angle.
         """
-        self.n_step = n_step
-        self.blade_angle_step = blade_angle_step
+        self.H_tolerance = H_tolerance
+        self.n_step = n_step        
         self.n_min = n_min
         self.n_max = n_max
         self.blade_angle_min = blade_angle_min
         self.blade_angle_max = blade_angle_max
+        self.blade_angle_step = blade_angle_step
 
     def increase(self, value, step):
         """Increase a parameter by the given step."""
-        return value + step
+        value = self.adjust(value, step)
+        return value
 
     def decrease(self, value, step):
         """Decrease a parameter by the given step."""
-        return value - step    
+        value = self.adjust(value, -step)
+        return value
+    
+    def adjust(self, value, step):
+        """Adjust a parameter by the given step."""
+        value += step
+        return value
 
     def handle_overflow(self):
         """Handle the overflow scenario."""
@@ -50,7 +59,11 @@ class TurbineControl:
         Returns:
             dict: Updated values for n and blade_angle.
         """
-        if H > H_t:
+        def within_limits(value, min_val, max_val):
+            """Ensure the value stays within the defined limits."""
+            return max(min_val, min(value, max_val))
+
+        if H > H_t + self.H_tolerance:
             # Case 1: Head (H) is greater than the target head (H_t)
             if blade_angle >= self.blade_angle_max:
                 if n < self.n_max:
@@ -63,7 +76,7 @@ class TurbineControl:
                 else:
                     n = self.increase(n, self.n_step)
 
-        elif H < H_t:
+        elif H < H_t-self.H_tolerance:
             # Case 2: Head (H) is less than the target head (H_t)
             if blade_angle <= self.blade_angle_min:
                 if n > self.n_min:
@@ -83,6 +96,9 @@ class TurbineControl:
                     n = self.increase(n, self.n_step)
                 elif n > n_t:
                     n = self.decrease(n, self.n_step)
+
+        n = within_limits(n, self.n_min, self.n_max)
+        blade_angle = within_limits(blade_angle, self.blade_angle_min, self.blade_angle_max)
 
         return {
             "n": n,
