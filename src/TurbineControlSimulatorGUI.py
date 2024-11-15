@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import time
 from collections import deque
 from matplotlib.animation import FuncAnimation
+import TurbineControl
 
 class TurbineControlSimulatorGUI:
     """GUI class for the Turbine Control Simulator application, built with tkinter."""
@@ -29,6 +30,8 @@ class TurbineControlSimulatorGUI:
         self.prev_blade_angle = None
         self.prev_n = None
         self.prev_H_target = None        
+
+        self.prev_H = None
 
         # Set up the main window title
         self.master.title("Turbine Control Simulator")
@@ -428,6 +431,7 @@ class TurbineControlSimulatorGUI:
             D = float(self.D_input.get())
             head_control = bool(self.activate_var.get())
             H_target = float(self.H_target_input.get())
+            H = self.prev_H
 
             """
             # Check for changes to avoid unnecessary updates
@@ -461,9 +465,19 @@ class TurbineControlSimulatorGUI:
                 self.prev_n = n 
                 self.prev_H_target = H_target
 
+                controller = TurbineControl.TurbineControl()
+
+                n_t = 113.5
+                output = controller.control_step(H, H_target, n, n_t, blade_angle)
+                n = output["n"]
+                blade_angle = output["blade_angle"]
+                """
                 result = self.simulator.set_head_and_adjust(H_target)
                 n = result["Rotational Speed (n)"]
                 blade_angle = result["Blade Angle"]
+                """
+
+
                 self.simulator.set_operation_attribute("n", n)
                 self.simulator.set_operation_attribute("blade_angle", blade_angle)
                 self.blade_input.delete(0, tk.END)
@@ -473,6 +487,8 @@ class TurbineControlSimulatorGUI:
 
             # Compute results using the simulator
             operation_point = self.simulator.compute_with_slicing()
+
+            self.prev_H = operation_point.H
 
             # Update time-based data for live plotting
             elapsed_time = time.time() - self.start_time
