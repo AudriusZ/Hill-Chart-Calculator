@@ -174,11 +174,11 @@ class TurbineControlSimulatorGUI:
 
         # Setup for live plot data in the Overview Plots tab
         self.time_data = deque(maxlen=240)  # Store time points up to 120s
-        self.q11_data = deque(maxlen=240)
-        self.n11_data = deque(maxlen=240)
-        self.efficiency_data = deque(maxlen=240)
-        self.h_data = deque(maxlen=240)
-        self.power_data = deque(maxlen=240)
+        self.H = deque(maxlen=240)
+        self.Q = deque(maxlen=240)
+        self.blade_angle = deque(maxlen=240)
+        self.n = deque(maxlen=240)
+        self.power = deque(maxlen=240)
         self.start_time = time.time()  # Track start time for elapsed time on x-axis
 
         # Initialize the live plot animation
@@ -469,7 +469,7 @@ class TurbineControlSimulatorGUI:
                 self.prev_n = n 
                 self.prev_H_target = H_target
 
-                controller = TurbineControl.TurbineControl(blade_angle_step=0.5, n_step=1)
+                controller = TurbineControl.TurbineControl(H_tolerance=0.05, blade_angle_step=0.5, n_step=1)
 
                 n_t = 113.5
                 output = controller.control_step(H, H_target, n, n_t, blade_angle)
@@ -497,11 +497,11 @@ class TurbineControlSimulatorGUI:
             # Update time-based data for live plotting
             elapsed_time = time.time() - self.start_time
             self.time_data.append(elapsed_time)
-            self.q11_data.append(operation_point.H)
-            self.n11_data.append(operation_point.Q)
-            self.efficiency_data.append(operation_point.blade_angle)
-            self.h_data.append(operation_point.n)
-            self.power_data.append(operation_point.power)
+            self.H.append(operation_point.H)
+            self.Q.append(operation_point.Q)
+            self.blade_angle.append(operation_point.blade_angle)
+            self.n.append(operation_point.n)
+            self.power.append(operation_point.power)
 
             # Update output result labels
             self.result_labels["Q11 ="].config(text=f"{operation_point.Q11:.2f} ")
@@ -528,19 +528,19 @@ class TurbineControlSimulatorGUI:
             ax.clear()
 
         # Plot each variable against time in separate subplots
-        self.overview_ax[0].plot(self.time_data, self.q11_data, label="H")
+        self.overview_ax[0].plot(self.time_data, self.H, label="H")
         self.overview_ax[0].set_ylabel("H [m]")
 
-        self.overview_ax[1].plot(self.time_data, self.n11_data, label="Q")
+        self.overview_ax[1].plot(self.time_data, self.Q, label="Q")
         self.overview_ax[1].set_ylabel("Q [m^3/s]")
 
-        self.overview_ax[2].plot(self.time_data, self.efficiency_data, label="Blade Angle")
+        self.overview_ax[2].plot(self.time_data, self.blade_angle, label="Blade Angle")
         self.overview_ax[2].set_ylabel("Blade Angle [°]")
 
-        self.overview_ax[3].plot(self.time_data, self.h_data, label="n")
+        self.overview_ax[3].plot(self.time_data, self.n, label="n")
         self.overview_ax[3].set_ylabel("n [rpm]")
 
-        self.overview_ax[4].plot(self.time_data, self.power_data, label="Power")
+        self.overview_ax[4].plot(self.time_data, self.power, label="Power")
         self.overview_ax[4].set_ylabel("Power [W]")        
 
         # Determine x-axis limits based on the elapsed time

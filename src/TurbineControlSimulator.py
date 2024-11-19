@@ -8,6 +8,7 @@ import pandas as pd
 import copy
 import time
 import matplotlib.pyplot as plt
+from TurbineControl import TurbineControl
 
 class TurbineControlSimulator(HillChart):
     """Class for simulating turbine control."""    
@@ -18,6 +19,7 @@ class TurbineControlSimulator(HillChart):
         """
         super().__init__()
         self.data = TurbineData()   
+        self.control = TurbineControl(H_tolerance=0.1, n_step=1, blade_angle_step=0.5)
         self.operation_point = TurbineData()
 
         # Initialize range attributes as None (they will be set later)
