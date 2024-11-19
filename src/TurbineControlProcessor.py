@@ -184,41 +184,19 @@ class TurbineControlProcessor:
         axs[4].set_ylabel("Power [W]")
         axs[4].legend()
         axs[4].set_xlabel(f"Physical Time [{time_unit}]")  # Dynamically update x-axis label
-
-
-
-def main():
-    # Initialize processor and load data
-    processor = TurbineControlProcessor()
-    processor.load_data("Mogu_D1.65m.csv")
-
-    # Define initial simulation inputs
-    initial_Q = 3.375  # Initial flow rate
-    processor.update_inputs(
-        Q=initial_Q,  # Flow rate
-        blade_angle=16.2,  # Blade angle
-        n=113.5,  # Rotational speed
-        D=1.65  # Runner diameter
-    )
-    target_head = 2.15  # Desired head
-    head_control_active = True  # Enable head control
-
-    # Initialize plots
-    fig, axs = processor.initialize_plot()
-
-    # Initialize simulation state
-    simulation_state = {
-        "Q": initial_Q,  # Track the current flow rate
-        "start_time": time.time(),
-        "last_update_time": time.time()  # To calculate scaled time deltas
-    }
-
-    # Set time scaling factor (e.g., 1 hour of real time = 1 minute of simulation time)
-    time_scale_factor = 60  # Scale real time to simulation time by x240 (4 minutes = 1 second)
-
-    def update(frame):
+    
+    def update_animation(self, frame, simulation_state, initial_Q, target_head, head_control_active, time_scale_factor, axs):
         """
         Update the simulation and plots for each frame.
+
+        Args:
+            frame (int): The current animation frame.
+            simulation_state (dict): Tracks the simulation's current state.
+            initial_Q (float): Initial flow rate.
+            target_head (float): Desired head for control.
+            head_control_active (bool): Whether head control is active.
+            time_scale_factor (float): Scaling factor for physical time.
+            axs (list): List of axes for updating plots.
         """
         # Calculate elapsed real-world computation time
         current_time = time.time()
@@ -234,7 +212,9 @@ def main():
         # Introduce sinusoidal fluctuation for Q
         frequency = 0.25 / 3600  # 0.25 cycles per hour of physical time
         Q_rate = 0.5  # 50% per hour of physical time
-        simulation_state["Q"] = initial_Q * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
+        Q = initial_Q * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
+        Q = max(2.1, min(Q, 4.3))
+        simulation_state["Q"] = Q
 
         # Handle initial values for blade_angle and n
         if frame == 0:
@@ -243,12 +223,12 @@ def main():
             n = 113.5  # Initial RPM
         else:
             # Use the outputs from the previous control step for subsequent iterations
-            output = processor.perform_control_step(target_head, head_control_active)
+            output = self.perform_control_step(target_head, head_control_active)
             blade_angle = output["blade_angle"]
             n = output["n"]
 
         # Update simulation inputs
-        processor.update_inputs(
+        self.update_inputs(
             Q=simulation_state["Q"],
             blade_angle=blade_angle,
             n=n,
@@ -256,16 +236,53 @@ def main():
         )
 
         # Compute outputs and update plots
-        processor.compute_outputs(time_scale_factor)
-        processor.update_plot(axs)
+        self.compute_outputs(time_scale_factor)
+        self.update_plot(axs)
 
 
+def main():
+    # Initialize processor and load data
+    processor = TurbineControlProcessor()
+    processor.load_data("Mogu_D1.65m.csv")
+
+    # Define initial simulation inputs
+    initial_Q = 3.375  
+    initial_blade_angle = 16.2
+    initial_n = 113.5
+    D = 1.65
+
+    processor.update_inputs(
+        Q=initial_Q,  # Flow rate
+        blade_angle=initial_blade_angle,  # Blade angle
+        n=initial_n,  # Rotational speed
+        D=D  # Runner diameter
+    )
+    target_head = 2.15  # Desired head
+    head_control_active = True  # Enable head control
+
+    # Initialize plots
+    fig, axs = processor.initialize_plot()
+
+    # Initialize simulation state
+    simulation_state = {
+        "Q": initial_Q,  # Track the current flow rate
+        "start_time": time.time(),
+        "last_update_time": time.time()  # To calculate scaled time deltas
+    }
+
+    # Set time scaling factor (e.g., 1 hour of real time = 1 minute of simulation time)
+    time_scale_factor = 240  # Scale real time to simulation time by x60 (1 minutes = 1 second)
 
     # Create live updating animation
-    ani = FuncAnimation(fig, update, interval=500)  # Update every 500ms
+    ani = FuncAnimation(
+        fig,
+        lambda frame: processor.update_animation(frame, simulation_state, initial_Q, target_head, head_control_active, time_scale_factor, axs),
+        interval=500  # Update every 500ms
+    )
 
     # Display the plots
     plt.show()
+
 
 
 
