@@ -16,7 +16,7 @@ class TurbineControlProcessor:
     def __init__(self):
         # Initialize simulator and controller
         self.simulator = TurbineControlSimulator()
-        self.controller = TurbineControl(H_tolerance=0.1, n_step=1, blade_angle_step=0.5)
+        self.controller = TurbineControl(H_tolerance=0.05, n_step=2, blade_angle_step=0.2)
 
         # Initialize live data storage for plotting
         self.time_data = deque(maxlen=240)  # Store time points up to 120s
@@ -25,8 +25,17 @@ class TurbineControlProcessor:
         self.blade_angle = deque(maxlen=240)
         self.n = deque(maxlen=240)
         self.power = deque(maxlen=240)
+        self.time_scale_factor = 60 # Scale real time to simulation time by x60 (1 minutes = 1 second)
 
         self.start_time = time.time()  # Track start time for elapsed time on x-axis
+
+    def Q_function(self, elapsed_physical_time):
+        # Introduce sinusoidal fluctuation for Q
+        frequency = 0.25 / 3600  # 0.25 cycles per hour of physical time
+        Q_rate = 0.5  # 50% per hour of physical time
+        Q = 3.375 * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
+        Q = max(2.1, min(Q, 4.3))
+        return Q
 
     def load_data(self, file_name):
         """
@@ -44,34 +53,21 @@ class TurbineControlProcessor:
         self.simulator.read_hill_chart_values(filepath)
         self.simulator.filter_for_maximum_efficiency(remove=False)
         self.simulator.prepare_hill_chart_data(min_efficiency_limit=0.1)
-        print(f"Data successfully loaded from {filepath}")
+        print(f"Data successfully loaded from {filepath}")    
 
-    def update_inputs(self, Q, blade_angle, n, D):
-        """
-        Update turbine simulation inputs.
-
-        Args:
-            Q (float): Flow rate [m³/s].
-            blade_angle (float): Blade angle [°].
-            n (float): Rotational speed [rpm].
-            D (float): Runner diameter [m].
-        """
-        self.simulator.set_operation_attribute("Q", Q)
-        self.simulator.set_operation_attribute("blade_angle", blade_angle)
-        self.simulator.set_operation_attribute("n", n)
-        self.simulator.set_operation_attribute("D", D)
-
-    def perform_control_step(self, target_head, head_control_active):
+    def perform_control_step(self, H_t, head_control_active):
         """
         Perform a single control step to adjust turbine parameters.
 
         Args:
-            target_head (float): Desired head value.
+            H_t (float): Desired head value.
             head_control_active (bool): Whether head control is active.
 
         Returns:
             dict: Updated state of the turbine (n, blade_angle, H).
         """
+
+        n_t = 113.5  # target n optimum for target head, decide where to calculate it
         if head_control_active:
             H = self.simulator.operation_point.H
             n = self.simulator.operation_point.n
@@ -79,9 +75,9 @@ class TurbineControlProcessor:
 
             output = self.controller.control_step(
                 H=H,
-                H_t=target_head,
+                H_t=H_t,
                 n=n,
-                n_t=113.5,  # Example target RPM
+                n_t=n_t,
                 blade_angle=blade_angle
             )
 
@@ -97,7 +93,7 @@ class TurbineControlProcessor:
             "H": self.simulator.operation_point.H
         }
 
-    def compute_outputs(self, time_scale_factor):
+    def compute_outputs(self):
         """
         Compute turbine outputs using the simulator.
 
@@ -111,7 +107,7 @@ class TurbineControlProcessor:
 
         # Calculate elapsed physical time
         computation_time = time.time() - self.start_time
-        elapsed_physical_time = computation_time * time_scale_factor
+        elapsed_physical_time = computation_time * self.time_scale_factor
 
         # Append physical time to time_data for plotting
         self.time_data.append(elapsed_physical_time)
@@ -127,7 +123,54 @@ class TurbineControlProcessor:
             "efficiency": operation_point.efficiency,
             "H": operation_point.H,
             "power": operation_point.power
-        }
+        }    
+    
+    def update_simulation(self, frame, H_t, head_control_active, axs):
+        """
+        Update the simulation and plots for each frame.
+
+        Args:
+            frame (int): The current animation frame.            
+            initial_Q (float): Initial flow rate.
+            H_t (float): Desired head for control.
+            head_control_active (bool): Whether head control is active.
+            time_scale_factor (float): Scaling factor for physical time.
+            axs (list): List of axes for updating plots.
+        """
+        # Calculate elapsed real-world computation time
+        current_time = time.time()        
+
+        # Scale computation time to physical time        
+        elapsed_physical_time = (current_time - self.start_time) * self.time_scale_factor
+
+        
+        
+        
+        Q = self.Q_function(elapsed_physical_time)
+
+        # Handle initial values for blade_angle and n
+        if frame == 0:
+            # Pass initial values for the first iteration
+            blade_angle = 16.2  # Initial blade angle
+            n = 113.5  # Initial RPM
+        else:
+            # Use the outputs from the previous control step for subsequent iterations
+            output = self.perform_control_step(H_t, head_control_active)
+            blade_angle = output["blade_angle"]
+            n = output["n"]        
+        
+        # Update simulation inputs
+        self.simulator.set_operation_attribute("Q", Q)
+        self.simulator.set_operation_attribute("blade_angle", blade_angle)
+        self.simulator.set_operation_attribute("n", n)              
+
+        # Compute outputs and update plots
+        self.compute_outputs()
+        if axs.any() != None:
+            self.update_plot(axs)
+            #plt.show(block=False)
+
+        print(f"  H: {self.simulator.operation_point.H:.2f}")
 
     def initialize_plot(self):
         """
@@ -184,61 +227,6 @@ class TurbineControlProcessor:
         axs[4].set_ylabel("Power [W]")
         axs[4].legend()
         axs[4].set_xlabel(f"Physical Time [{time_unit}]")  # Dynamically update x-axis label
-    
-    def update_animation(self, frame, simulation_state, initial_Q, target_head, head_control_active, time_scale_factor, axs):
-        """
-        Update the simulation and plots for each frame.
-
-        Args:
-            frame (int): The current animation frame.
-            simulation_state (dict): Tracks the simulation's current state.
-            initial_Q (float): Initial flow rate.
-            target_head (float): Desired head for control.
-            head_control_active (bool): Whether head control is active.
-            time_scale_factor (float): Scaling factor for physical time.
-            axs (list): List of axes for updating plots.
-        """
-        # Calculate elapsed real-world computation time
-        current_time = time.time()
-        computation_time = current_time - simulation_state["last_update_time"]
-
-        # Scale computation time to physical time
-        scaled_time_delta = computation_time * time_scale_factor
-        elapsed_physical_time = (current_time - simulation_state["start_time"]) * time_scale_factor
-
-        # Update simulation state
-        simulation_state["last_update_time"] = current_time
-
-        # Introduce sinusoidal fluctuation for Q
-        frequency = 0.25 / 3600  # 0.25 cycles per hour of physical time
-        Q_rate = 0.5  # 50% per hour of physical time
-        Q = initial_Q * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
-        Q = max(2.1, min(Q, 4.3))
-        simulation_state["Q"] = Q
-
-        # Handle initial values for blade_angle and n
-        if frame == 0:
-            # Pass initial values for the first iteration
-            blade_angle = 16.2  # Initial blade angle
-            n = 113.5  # Initial RPM
-        else:
-            # Use the outputs from the previous control step for subsequent iterations
-            output = self.perform_control_step(target_head, head_control_active)
-            blade_angle = output["blade_angle"]
-            n = output["n"]
-
-        # Update simulation inputs
-        self.update_inputs(
-            Q=simulation_state["Q"],
-            blade_angle=blade_angle,
-            n=n,
-            D=1.65  # Runner diameter remains unchanged
-        )
-
-        # Compute outputs and update plots
-        self.compute_outputs(time_scale_factor)
-        self.update_plot(axs)
-
 
 def main():
     # Initialize processor and load data
@@ -251,40 +239,35 @@ def main():
     initial_n = 113.5
     D = 1.65
 
-    processor.update_inputs(
-        Q=initial_Q,  # Flow rate
-        blade_angle=initial_blade_angle,  # Blade angle
-        n=initial_n,  # Rotational speed
-        D=D  # Runner diameter
-    )
-    target_head = 2.15  # Desired head
+    processor.simulator.set_operation_attribute("Q", initial_Q)
+    processor.simulator.set_operation_attribute("blade_angle", initial_blade_angle)
+    processor.simulator.set_operation_attribute("n", initial_n)
+    processor.simulator.set_operation_attribute("D", D)
+    
+    H_t = 2.15  # Desired head
     head_control_active = True  # Enable head control
 
     # Initialize plots
-    fig, axs = processor.initialize_plot()
+    fig, axs = processor.initialize_plot()    
 
-    # Initialize simulation state
-    simulation_state = {
-        "Q": initial_Q,  # Track the current flow rate
-        "start_time": time.time(),
-        "last_update_time": time.time()  # To calculate scaled time deltas
-    }
+    # Simulation loop
+    frame = 0
+    try:
+        while True:
+            # Call the update_simulation method for each frame
+            processor.update_simulation(frame, H_t, head_control_active, axs)
 
-    # Set time scaling factor (e.g., 1 hour of real time = 1 minute of simulation time)
-    time_scale_factor = 240  # Scale real time to simulation time by x60 (1 minutes = 1 second)
+            # Increment the frame counter
+            frame += 1
 
-    # Create live updating animation
-    ani = FuncAnimation(
-        fig,
-        lambda frame: processor.update_animation(frame, simulation_state, initial_Q, target_head, head_control_active, time_scale_factor, axs),
-        interval=500  # Update every 500ms
-    )
-
-    # Display the plots
-    plt.show()
-
-
-
+            # Pause for the specified interval (e.g., 500ms = 0.5s)
+            #time.sleep(0.5)
+            plt.pause(0.05)  # Allow the plot to refresh live
+    except KeyboardInterrupt:
+        print("Simulation stopped by user.")
+    finally:
+        # Ensure the plot is shown when the simulation ends
+        plt.show()
 
 if __name__ == "__main__":
     main()
