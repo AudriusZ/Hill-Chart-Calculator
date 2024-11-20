@@ -243,6 +243,7 @@ class TurbineControlProcessor:
         axs[4].legend()
         axs[4].set_xlabel(f"Physical Time [{time_unit}]")  # Dynamically update x-axis label
 
+
 def main():
     # Initialize processor and load data
     processor = TurbineControlProcessor()
@@ -283,7 +284,48 @@ def main():
     finally:
         # Ensure the plot is shown when the simulation ends        
         plt.show()
-        
+
+def main():
+    controller = TurbineControlPID(Kp=1.2, Ki=0.1, Kd=0.05)  # Tune these values as needed
+    H_t = 2.15
+    delta_time = 0.1  # Time step in seconds
+
+    def calc_H(n_in, blade_angle_in):
+        return H_t * (115 / n_in) * (16 / blade_angle_in)
+
+    n_start = (50, 150, 50, 150, 115 / 1.2)
+    blade_angle_start = (21, 21, 7, 7, 16 * 1.2)
+
+    for n, blade_angle in zip(n_start, blade_angle_start):
+        print(f"\nCase: n = {n:.1f}, blade_angle = {blade_angle:.1f}")
+
+        n_prev = None
+        blade_angle_prev = None
+
+        # Initialize counter
+        iteration_count = 0
+        max_iterations = 50
+
+        while (n_prev != n or blade_angle_prev != blade_angle) and iteration_count < max_iterations:
+            # Calculate new head value
+            H = calc_H(n, blade_angle)
+            print(f"{H:.2f}, {n:.1f}, {blade_angle:.1f}")
+
+            # Update previous values
+            n_prev = n
+            blade_angle_prev = blade_angle
+
+            # Perform PID control step
+            output = controller.control_step(H, H_t, delta_time, n, blade_angle)
+            n = output["n"]
+            blade_angle = output["blade_angle"]
+
+            # Increment the counter
+            iteration_count += 1
+
+        if iteration_count == max_iterations:
+            print("Stopped after reaching the maximum of", max_iterations, "iterations.")
+
 
 if __name__ == "__main__":
     main()
