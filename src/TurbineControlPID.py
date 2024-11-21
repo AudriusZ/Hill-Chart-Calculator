@@ -48,7 +48,9 @@ class TurbineControlPID:
         # Use PID output to adjust blade angle or n
         if pid_output > self.H_tolerance:
             # Head too high: Increase blade angle or increase n
-            if blade_angle < self.blade_angle_max:
+            if n < n_t:
+                n = min(n + pid_output, self.n_max)
+            elif blade_angle < self.blade_angle_max:
                 blade_angle = min(blade_angle + pid_output, self.blade_angle_max)
             elif n < self.n_max:
                 n = min(n + pid_output, self.n_max)
@@ -56,18 +58,23 @@ class TurbineControlPID:
                 self.handle_overflow()
         elif pid_output < -self.H_tolerance:
             # Head too low: Decrease blade angle or decrease n
-            if blade_angle > self.blade_angle_min:
+            if n>n_t:
+                n = max(n + pid_output, self.n_min)  # Note: + since pid_output is negative
+            elif blade_angle > self.blade_angle_min:
                 blade_angle = max(blade_angle + pid_output, self.blade_angle_min)  # Note: + since pid_output is negative
             elif n > self.n_min:
                 n = max(n + pid_output, self.n_min)  # Note: + since pid_output is negative
             else:
                 self.handle_no_flow()
+        """
         else:
-            # Within tolerance; fine-tune `n` towards `n_t`
-            if n < n_t:
-                n = min(n + abs(pid_output), self.n_max)
-            elif n > n_t:
-                n = max(n - abs(pid_output), self.n_min)
+            # Within tolerance; fine-tune `n` towards `n_t` based on n error
+            n_error = n_t - n
+            if n_error > 0:  # Current n is less than target n
+                n = min(n + 1*delta_time, n_t)
+            elif n_error < 0:  # Current n is greater than target n
+                n = max(n - 1*delta_time, n_t)
+        """
 
         # Enforce strict limits
         blade_angle = max(self.blade_angle_min, min(blade_angle, self.blade_angle_max))

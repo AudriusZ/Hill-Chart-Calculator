@@ -11,7 +11,7 @@ class TurbineControlProcessor:
     def __init__(self):
         # Initialize simulator
         self.time_scale_factor = 60  # Scale real time to simulation time
-        self.refresh_rate_physical = 10  # seconds
+        self.refresh_rate_physical = 1  # seconds
 
         self.simulator = TurbineControlSimulator()
 
@@ -19,13 +19,13 @@ class TurbineControlProcessor:
         self.controller = TurbineControlPID(
             Kp=1.2, Ki=0.1, Kd=0.05,  # PID coefficients
             H_tolerance=0.05,         # Head tolerance
-            n_min=70, n_max=150,      # Rotational speed limits
+            n_min=80, n_max=150,      # Rotational speed limits
             blade_angle_min=8, blade_angle_max=21  # Blade angle limits
         )
 
         # Initialize live data storage for plotting
-        max_duration = 4 * 3600  # 4 hours
-        maxlen = int(max_duration / self.refresh_rate_physical)
+        self.max_duration = 4 * 3600  # 4 hours
+        maxlen = int(self.max_duration / self.refresh_rate_physical)
 
         self.time_data = deque(maxlen=maxlen)
         self.H = deque(maxlen=maxlen)
@@ -35,8 +35,8 @@ class TurbineControlProcessor:
         self.power = deque(maxlen=maxlen)
 
         self.start_time = 0
-        self.elapsed_physical_time = 0
-        self.previous_time = 0  # For delta_time calculation
+        self.elapsed_physical_time = self.start_time
+        self.previous_time = self.start_time  # For delta_time calculation
 
 
     def Q_function(self, elapsed_physical_time):
@@ -44,7 +44,7 @@ class TurbineControlProcessor:
         frequency = 0.25 / 3600  # 0.25 cycles per hour of physical time
         Q_rate = 0.625  # 50% per hour of physical time
         Q = 3.375*0.8 * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
-        #Q = max(2.1, min(Q, 4.3))
+        Q = max(1.25, min(Q, 5))
         return Q  
 
     def load_data(self, file_name):
@@ -140,12 +140,11 @@ class TurbineControlProcessor:
             "power": operation_point.power
         }    
     
-    def update_simulation(self, frame, H_t, head_control_active, axs):
+    def update_simulation(self, H_t, head_control_active, axs):
         """
         Update the simulation and plots for each frame.
 
-        Args:
-            frame (int): The current animation frame.
+        Args:            
             H_t (float): Desired head for control.
             head_control_active (bool): Whether head control is active.
             axs (list): List of axes for updating plots.
@@ -237,12 +236,21 @@ def main():
     processor = TurbineControlProcessor()
     processor.load_data("Mogu_D1.65m.csv")
 
+    D = 1.65
+
+    
+    processor.start_time = 0
+    processor.max_duration = processor.start_time + 4*3600  # 4 hours
+    processor.elapsed_physical_time = processor.start_time
+    processor.previous_time = processor.start_time  # For delta_time calculation
+
+    initial_blade_angle = 11.7
+    initial_n = 113.5
+
     # Define initial simulation inputs
     initial_Q = processor.Q_function(processor.elapsed_physical_time)
 
-    initial_blade_angle = 11.6
-    initial_n = 113.5
-    D = 1.65
+    
 
     processor.simulator.set_operation_attribute("Q", initial_Q)
     processor.simulator.set_operation_attribute("blade_angle", initial_blade_angle)
@@ -257,18 +265,14 @@ def main():
     fig, axs = processor.initialize_plot()
 
     # Simulation loop
-    frame = 0
     
     try:
         while True:
             # Call the update_simulation method for each frame
-            processor.update_simulation(frame, H_t, head_control_active, axs)
+            processor.update_simulation(H_t, head_control_active, axs)
 
-            # Increment the frame counter
-            frame += 1
-
-            processor.elapsed_physical_time = frame * processor.refresh_rate_physical
-            if processor.elapsed_physical_time > 4 * 3600:
+            processor.elapsed_physical_time += processor.refresh_rate_physical
+            if processor.elapsed_physical_time > processor.max_duration:
                 pass
             
             plt.pause(processor.refresh_rate_physical / processor.time_scale_factor)
