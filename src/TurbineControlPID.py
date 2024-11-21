@@ -1,7 +1,7 @@
 from simple_pid import PID
 
 class TurbineControlPID:
-    def __init__(self, Kp, Ki, Kd, H_tolerance=0.1, n_min=20, n_max=150, blade_angle_min=8, blade_angle_max=21):
+    def __init__(self, Kp, Ki, Kd, H_tolerance=0.1, n_min=20.0, n_max=150.0, blade_angle_min=8.0, blade_angle_max=21.0):
         """
         Initialize the TurbineControlPID controller with PID coefficients and rule-based constraints.
 
@@ -21,7 +21,7 @@ class TurbineControlPID:
         self.pid = PID(Kp, Ki, Kd, setpoint=0)  # The setpoint will be set dynamically
         self.pid.output_limits = (-1, 1)  # Output range maps to the direction and strength of control
 
-    def control_step(self, H, H_t, n, n_t, blade_angle):
+    def control_step(self, H, H_t, n, n_t, blade_angle, delta_time):
         """
         Perform a single control step using PID and rule-based logic.
 
@@ -31,6 +31,7 @@ class TurbineControlPID:
             n (float): Current rotational speed.
             n_t (float): Target rotational speed.
             blade_angle (float): Current blade angle.
+            delta_time (float): Time step for PID calculations.
 
         Returns:
             dict: Updated values for n and blade_angle.
@@ -38,12 +39,15 @@ class TurbineControlPID:
         # Update the PID controller's setpoint (target head)
         self.pid.setpoint = H_t
 
-        # Compute PID output based on current head (H)
-        pid_output = self.pid(H)
+        # Compute PID output based on current head (H) and delta_time
+        pid_output = self.pid(H, dt=delta_time)
+
+        # Reverse the PID output to account for the inverse relationship
+        pid_output = -pid_output
 
         # Use PID output to adjust blade angle or n
         if pid_output > self.H_tolerance:
-            # Head too high
+            # Head too high: Increase blade angle or increase n
             if blade_angle < self.blade_angle_max:
                 blade_angle = min(blade_angle + pid_output, self.blade_angle_max)
             elif n < self.n_max:
@@ -51,25 +55,35 @@ class TurbineControlPID:
             else:
                 self.handle_overflow()
         elif pid_output < -self.H_tolerance:
-            # Head too low
+            # Head too low: Decrease blade angle or decrease n
             if blade_angle > self.blade_angle_min:
-                blade_angle = max(blade_angle + pid_output, self.blade_angle_min)
+                blade_angle = max(blade_angle + pid_output, self.blade_angle_min)  # Note: + since pid_output is negative
             elif n > self.n_min:
-                n = max(n + pid_output, self.n_min)
+                n = max(n + pid_output, self.n_min)  # Note: + since pid_output is negative
             else:
                 self.handle_no_flow()
         else:
             # Within tolerance; fine-tune `n` towards `n_t`
             if n < n_t:
-                n = min(n + pid_output, self.n_max)
+                n = min(n + abs(pid_output), self.n_max)
             elif n > n_t:
-                n = max(n + pid_output, self.n_min)
+                n = max(n - abs(pid_output), self.n_min)
 
+        # Enforce strict limits
+        blade_angle = max(self.blade_angle_min, min(blade_angle, self.blade_angle_max))
+        n = max(self.n_min, min(n, self.n_max))
+
+        # Log the PID adjustment
+        print(f"PID Output: {pid_output:.2f}, Blade Angle: {blade_angle:.2f}, n: {n:.2f}")
+        
         # Return the updated parameters
         return {
             "n": n,
             "blade_angle": blade_angle
         }
+
+
+
 
     def handle_overflow(self):
         """Handle overflow condition."""
