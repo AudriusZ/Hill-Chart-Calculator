@@ -15,27 +15,37 @@ class TurbineControlProcessor:
 
     def __init__(self):
         # Initialize simulator and controller
+        self.time_scale_factor = 10 # Scale real time to simulation time
+        self.refresh_rate_physical = 10 #s
+        
         self.simulator = TurbineControlSimulator()
-        self.controller = TurbineControl(H_tolerance=0.05, n_step=2, blade_angle_step=0.2)
+        self.controller = TurbineControl(
+            H_tolerance=0.05,
+            n_step=2*self.refresh_rate_physical, #2rpm degrees /s
+            blade_angle_step= 0.1*self.refresh_rate_physical #0.1 degrees /s
+            )
 
         # Initialize live data storage for plotting
-        self.time_data = deque(maxlen=240)  # Store time points up to 120s
-        self.H = deque(maxlen=240)
-        self.Q = deque(maxlen=240)
-        self.blade_angle = deque(maxlen=240)
-        self.n = deque(maxlen=240)
-        self.power = deque(maxlen=240)
-        self.time_scale_factor = 60 # Scale real time to simulation time by x60 (1 minutes = 1 second)
+        max_duration = 4 *3600 #s
+        maxlen = int(max_duration/self.refresh_rate_physical)
 
-        self.start_time = time.time()  # Track start time for elapsed time on x-axis
+        self.time_data = deque(maxlen=maxlen)  # Store time points up to 120s
+        self.H = deque(maxlen=maxlen)
+        self.Q = deque(maxlen=maxlen)
+        self.blade_angle = deque(maxlen=maxlen)
+        self.n = deque(maxlen=maxlen)
+        self.power = deque(maxlen=maxlen)
+
+        self.start_time = 0
+        self.elapsed_physical_time = 0
 
     def Q_function(self, elapsed_physical_time):
         # Introduce sinusoidal fluctuation for Q
         frequency = 0.25 / 3600  # 0.25 cycles per hour of physical time
-        Q_rate = 0.5  # 50% per hour of physical time
-        Q = 3.375 * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
-        Q = max(2.1, min(Q, 4.3))
-        return Q
+        Q_rate = 0.625  # 50% per hour of physical time
+        Q = 3.375*0.8 * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
+        #Q = max(2.1, min(Q, 4.3))
+        return Q  
 
     def load_data(self, file_name):
         """
@@ -106,8 +116,9 @@ class TurbineControlProcessor:
         operation_point = self.simulator.compute_with_slicing()
 
         # Calculate elapsed physical time
-        computation_time = time.time() - self.start_time
-        elapsed_physical_time = computation_time * self.time_scale_factor
+        #computation_time = time.time() - self.start_time
+        #elapsed_physical_time = computation_time * self.time_scale_factor
+        elapsed_physical_time = self.elapsed_physical_time
 
         # Append physical time to time_data for plotting
         self.time_data.append(elapsed_physical_time)
@@ -138,10 +149,11 @@ class TurbineControlProcessor:
             axs (list): List of axes for updating plots.
         """
         # Calculate elapsed real-world computation time
-        current_time = time.time()        
+        #current_time = time.time()        
 
         # Scale computation time to physical time        
-        elapsed_physical_time = (current_time - self.start_time) * self.time_scale_factor
+        #elapsed_physical_time = (current_time - self.start_time) * self.time_scale_factor
+        elapsed_physical_time = self.elapsed_physical_time
 
         
         
@@ -151,7 +163,7 @@ class TurbineControlProcessor:
         # Handle initial values for blade_angle and n
         if frame == 0:
             # Pass initial values for the first iteration
-            blade_angle = 16.2  # Initial blade angle
+            blade_angle = 11.5  # Initial blade angle
             n = 113.5  # Initial RPM
         else:
             # Use the outputs from the previous control step for subsequent iterations
@@ -166,11 +178,11 @@ class TurbineControlProcessor:
 
         # Compute outputs and update plots
         self.compute_outputs()
-        if axs.any() != None:
-            self.update_plot(axs)
-            #plt.show(block=False)
+        refresh_rate = self.time_scale_factor
+        if self.elapsed_physical_time % refresh_rate == 0 and axs.any() != None:
+            self.update_plot(axs)  
 
-        print(f"  H: {self.simulator.operation_point.H:.2f}")
+        print(f"Physical time = {elapsed_physical_time:.1f}  Q= {Q:.2f}  H= {self.simulator.operation_point.H:.2f}  n= {n:.1f}  blade angle= {blade_angle:.1f}")
 
     def initialize_plot(self):
         """
@@ -235,8 +247,8 @@ def main():
     processor.load_data("Mogu_D1.65m.csv")
 
     # Define initial simulation inputs
-    initial_Q = 3.375  
-    initial_blade_angle = 16.2
+    initial_Q = 3.375*0.8  
+    initial_blade_angle = 11.5
     initial_n = 113.5
     D = 1.65
 
@@ -249,10 +261,11 @@ def main():
     head_control_active = True  # Enable head control
 
     # Initialize plots
-    fig, axs = processor.initialize_plot()    
+    fig, axs = processor.initialize_plot()
 
     # Simulation loop
     frame = 0
+    
     try:
         while True:
             # Call the update_simulation method for each frame
@@ -261,13 +274,14 @@ def main():
             # Increment the frame counter
             frame += 1
 
-            # Pause for the specified interval (e.g., 500ms = 0.5s)
-            #time.sleep(0.5)
-            plt.pause(0.05)  # Allow the plot to refresh live
+            processor.elapsed_physical_time = frame * processor.refresh_rate_physical
+            
+            plt.pause(processor.refresh_rate_physical / processor.time_scale_factor)
+
     except KeyboardInterrupt:
         print("Simulation stopped by user.")
     finally:
-        # Ensure the plot is shown when the simulation ends
+        # Ensure the plot is shown when the simulation ends      
         plt.show()
 
 if __name__ == "__main__":
