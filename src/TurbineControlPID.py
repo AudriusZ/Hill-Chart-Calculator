@@ -99,3 +99,9 @@ class TurbineControlPID:
     def handle_no_flow(self):
         """Handle low-flow condition."""
         print("Too little flow detected: taking appropriate action.")
+
+
+
+if __name__ == "__main__":
+    turbine = TurbineControlPID()
+    turbine.control_step(2.2, 2.15, 113.5, 113.5, 17, 0.1)
