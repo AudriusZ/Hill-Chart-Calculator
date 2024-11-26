@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1280</width>
+    <height>720</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTreeWidget" name="treeWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>221</width>
+      <height>651</height>
+     </rect>
+    </property>
+    <column>
+     <property name="text">
+      <string>Project</string>
+     </property>
+    </column>
+    <item>
+     <property name="text">
+      <string>Case</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>Turbine Hydraulics</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>Load Data</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Sizing</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Surface Fit Settings</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Output Options</string>
+       </property>
+      </item>
+     </item>
+     <item>
+      <property name="text">
+       <string>Performance Simulator</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>Maximised Output</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Manual/Automatic Control</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Output Options</string>
+       </property>
+      </item>
+     </item>
+     <item>
+      <property name="text">
+       <string>Turbine Loads</string>
+      </property>
+     </item>
+    </item>
+   </widget>
+   <widget class="QPlainTextEdit" name="plainTextEdit">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>590</y>
+      <width>1031</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <property name="plainText">
+     <string>Status updates here</string>
+    </property>
+   </widget>
+   <widget class="QTabWidget" name="tabWidget">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>10</y>
+      <width>1031</width>
+      <height>571</height>
+     </rect>
+    </property>
+    <property name="currentIndex">
+     <number>0</number>
+    </property>
+    <widget class="QWidget" name="tab">
+     <attribute name="title">
+      <string>Tab 1</string>
+     </attribute>
+    </widget>
+    <widget class="QWidget" name="tab_2">
+     <attribute name="title">
+      <string>Tab 2</string>
+     </attribute>
+    </widget>
+   </widget>
+   <widget class="QPushButton" name="ButtonDev">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>0</y>
+      <width>75</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>ButtonDev</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1280</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
