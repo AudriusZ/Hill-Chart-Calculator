@@ -11,7 +11,7 @@ class TurbineControlProcessor:
     def __init__(self):
         # Initialize simulator
         self.time_scale_factor = 60  # Scale real time to simulation time
-        self.refresh_rate_physical = 1  # seconds
+        self.refresh_rate_physical = 10  # seconds
 
         self.simulator = TurbineControlSimulator()
 
@@ -19,8 +19,8 @@ class TurbineControlProcessor:
         self.controller = TurbineControlPID(
             Kp=1.2, Ki=0.1, Kd=0.05,  # PID coefficients
             H_tolerance=0.05,         # Head tolerance
-            n_min=80, n_max=150,      # Rotational speed limits
-            blade_angle_min=8, blade_angle_max=21  # Blade angle limits
+            n_min=30, n_max=150,      # Rotational speed limits
+            blade_angle_min=3, blade_angle_max=26  # Blade angle limits
         )
 
         # Initialize live data storage for plotting
@@ -44,7 +44,7 @@ class TurbineControlProcessor:
         frequency = 0.25 / 3600  # 0.25 cycles per hour of physical time
         Q_rate = 0.625  # 50% per hour of physical time
         Q = 3.375*0.8 * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
-        Q = max(1.25, min(Q, 5))
+        #Q = max(1.25, min(Q, 5))
         return Q  
 
     def load_data(self, file_name):
