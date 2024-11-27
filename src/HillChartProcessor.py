@@ -39,7 +39,7 @@ class HillChartProcessor:
     def get_output_parameters(self, output_options, output_suboptions, settings_options):        
         self.output_options = output_options   
         self.output_suboptions = output_suboptions
-        self.settings_options = settings_options   
+        self.settings_options = settings_options
 
     def prepare_core_data(self):
         
@@ -100,7 +100,9 @@ class HillChartProcessor:
                 self.plot_blade_slices_const_n(hill_values, BEP_data, normalize = normalize, save_data = save_data)
 
             if suboptions.get("Const. efficiency"): 
-                self.plot_blade_slices_const_efficiency(raw_data, BEP_data, normalize = normalize, save_data = save_data)                
+                self.plot_blade_slices_const_efficiency(raw_data, BEP_data, normalize = normalize, save_data = save_data)        
+
+        return BEP_data, hill_values, raw_data        
 
         
     
