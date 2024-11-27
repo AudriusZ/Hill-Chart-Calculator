@@ -37,6 +37,9 @@ class HillChart:
         except Exception as e:
             print(f"Error reading BEP values from CSV: {e}")
             raise       
+    def get_data(self, data):
+        self.data = data    
+
     def extrapolate_along_n11(self, min_n11 = None, max_n11 = None, n_n11 = 10):
         # Convert lists to numpy arrays for easier manipulation
         blade_angles = np.array(self.data.blade_angle)
