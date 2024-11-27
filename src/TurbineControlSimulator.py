@@ -36,6 +36,15 @@ class TurbineControlSimulator(HillChart):
             attribute_name (str): Name of the attribute to set.
             value (any): The value to assign to the specified attribute.
         """
+
+        # If value is a single-element list, extract the value
+        if isinstance(value, list) and len(value) == 1:
+            value = value[0]
+        elif isinstance(value, list):
+            raise ValueError(f"Invalid value for D: Expected a float or a single-element list, got {value}")
+        elif not isinstance(value, (float, int)):
+            raise TypeError(f"Invalid type for D: Expected float, got {type(value).__name__}")
+
         setattr(self.operation_point, attribute_name, value)
 
     def set_ranges(self, Q_range=None, H_range=None, n_range=None, blade_angle_range=None):
