@@ -1,9 +1,11 @@
+from PyQt6 import QtWidgets
 from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QFileDialog, QMessageBox
 from turbine_simulator_gui import Ui_MainWindow  # Generated GUI file
 from HillChartProcessor import HillChartProcessor  # Processing logic
 from TurbineControlProcessor import TurbineControlProcessor
 import os
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 
 
@@ -28,8 +30,15 @@ class MainWindow(QMainWindow):
     def tree_item_double_clicked(self, item: QTreeWidgetItem, column: int):
         """Handle tree item double-click actions."""
         action = item.text(0)  # Get the text of the clicked item
-        if action == "Load Data":
+        
+        if action == "Turbine Hydraulics":
+            self.update_status(f"***Developer mode: Set default turbine hydraulics after double-clicking '{action}'.")
+            self.turbine_hydraulics_action()
+        elif action == "Load Data":
             self.load_data_action()
+        elif action == "Manual/Automatic Control":
+            self.update_status(f"***Developer mode: Run control in defaukt after double-clicking '{action}'.")
+            self.control_processor()            
         else:
             self.update_status(f"No action defined for '{action}'.")
 
@@ -40,9 +49,24 @@ class MainWindow(QMainWindow):
             self.processor.get_file_path(file_path)
             self.update_status(f"Loaded data from: {file_path}")
         else:
-            QMessageBox.warning(self, "No File Selected", "Please select a valid file.")
+            QMessageBox.warning(self, "No File Selected", "Please select a valid file.")    
 
-    
+
+
+
+    """Development mode methods start here"""
+
+    def turbine_hydraulics_action(self):
+        """Run the same steps as in testHillChartProcessor when ButtonDev is clicked."""
+        try:
+            self.default_turbine_parameters()
+            self.default_plot_parameters()
+            self.default_output_parameters()
+            self.BEP_data, self.hill_values, _ = self.processor.generate_outputs()                        
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+            self.update_status(f"Error during test steps: {str(e)}")        
 
     def default_turbine_parameters(self):
         """Set default turbine parameters as in the test."""
@@ -69,7 +93,7 @@ class MainWindow(QMainWindow):
         """Set default output parameters as in the test."""
         output_options = {
             '3D Hill Chart': 1,
-            'Hill Chart Contour': 1,
+            'Hill Chart Contour': 0,
             '2D Curve Slices': 0,
             '2D Curve Slices - const.blade': 0,
             'Best efficiency point summary': 0
@@ -90,52 +114,65 @@ class MainWindow(QMainWindow):
         self.ui.plainTextEdit.appendPlainText(message)
 
     def control_processor(self):
-        # Initialize processor and load data
-        processor = TurbineControlProcessor()
-        processor.load_data("Mogu_D1.65m.csv")        
-        processor.simulator.get_data(self.hill_values.data)
-        #processor.simulator.get_BEP_data(self.BEP_data)
-
-        D = self.BEP_data.D
-
+        #Parameters
         
-        processor.start_time = 0
-        processor.max_duration = processor.start_time + 4*3600  # 4 hours
-        processor.elapsed_physical_time = processor.start_time
-        processor.previous_time = processor.start_time  # For delta_time calculation
-
         initial_blade_angle = 11.7
         initial_n = 113.5
-
-        # Define initial simulation inputs
-        initial_Q = processor.Q_function(processor.elapsed_physical_time)
-
-        
-
-        processor.simulator.set_operation_attribute("Q", initial_Q)
-        processor.simulator.set_operation_attribute("blade_angle", initial_blade_angle)
-        processor.simulator.set_operation_attribute("n", initial_n)
-        processor.simulator.set_operation_attribute("D", D)
-        processor.compute_outputs()
-        
         H_t = 2.15  # Desired head
         head_control_active = True  # Enable head control
 
-        # Initialize plots
-        fig, axs = processor.initialize_plot()
 
+        
+        # Initialize processor and load data        
+        
+        self.turbine_processor.simulator.get_data(self.hill_values.data)
+        self.turbine_processor.simulator.get_BEP_data(self.BEP_data)
+
+        D = self.BEP_data.D
+        
+        self.turbine_processor.start_time = 0
+        self.turbine_processor.max_duration = self.turbine_processor.start_time + 4*3600  # 4 hours
+        self.turbine_processor.elapsed_physical_time = self.turbine_processor.start_time
+        self.turbine_processor.previous_time = self.turbine_processor.start_time  # For delta_time calculation        
+
+        # Define initial simulation inputs
+        initial_Q = self.turbine_processor.Q_function(self.turbine_processor.elapsed_physical_time)        
+
+        self.turbine_processor.simulator.set_operation_attribute("Q", initial_Q)
+        self.turbine_processor.simulator.set_operation_attribute("blade_angle", initial_blade_angle)
+        self.turbine_processor.simulator.set_operation_attribute("n", initial_n)
+        self.turbine_processor.simulator.set_operation_attribute("D", D)
+        self.turbine_processor.compute_outputs()
+        
+        
+
+        # Initialize plots
+        fig, axs = self.turbine_processor.initialize_plot()
+
+        # Embed the figure into a new tab
+        canvas = FigureCanvas(fig)
+        new_tab = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(new_tab)
+        layout.addWidget(canvas)
+        self.ui.tabWidget.addTab(new_tab, "Simulation Results")
+
+        # Activate the new tab
+        self.ui.tabWidget.setCurrentIndex(self.ui.tabWidget.count() - 1)
+        
         # Simulation loop
         
         try:
             while True:
                 # Call the update_simulation method for each frame
-                processor.update_simulation(H_t, head_control_active, axs)
+                self.turbine_processor.update_simulation(H_t, head_control_active, axs)
 
-                processor.elapsed_physical_time += processor.refresh_rate_physical
-                if processor.elapsed_physical_time > processor.max_duration:
+                self.turbine_processor.elapsed_physical_time += self.turbine_processor.refresh_rate_physical
+                if self.turbine_processor.elapsed_physical_time > self.turbine_processor.max_duration:
                     pass
                 
-                plt.pause(processor.refresh_rate_physical / processor.time_scale_factor)
+                canvas.draw()  # Redraw the embedded canvas
+                QtWidgets.QApplication.processEvents()  # Process PyQt events
+
 
         except KeyboardInterrupt:
             print("Simulation stopped by user.")
@@ -169,7 +206,7 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     window = MainWindow()
-    window.run_test_steps()
-    #window.update_status("Program Started.")
-    #window.show()
+    #window.run_test_steps()
+    window.update_status("Program has started successfylly.")
+    window.show()
     sys.exit(app.exec())

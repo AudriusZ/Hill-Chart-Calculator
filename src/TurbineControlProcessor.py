@@ -43,7 +43,7 @@ class TurbineControlProcessor:
         # Introduce sinusoidal fluctuation for Q
         frequency = 0.25 / 3600  # 0.25 cycles per hour of physical time
         Q_rate = 0.625  # 50% per hour of physical time
-        Q = 3.375*0.8 * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
+        Q = 6*0.8 * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
         #Q = max(1.25, min(Q, 5))
         return Q  
 
