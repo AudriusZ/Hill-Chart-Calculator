@@ -23,6 +23,9 @@
       <height>651</height>
      </rect>
     </property>
+    <property name="expandsOnDoubleClick">
+     <bool>false</bool>
+    </property>
     <column>
      <property name="text">
       <string>Project</string>
@@ -98,6 +101,9 @@
     </property>
    </widget>
    <widget class="QTabWidget" name="tabWidget">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>240</x>
@@ -111,27 +117,19 @@
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
-      <string>Tab 1</string>
+      <string/>
      </attribute>
+     <widget class="QGraphicsView" name="graphicsView">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>50</y>
+        <width>911</width>
+        <height>421</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
-    <widget class="QWidget" name="tab_2">
-     <attribute name="title">
-      <string>Tab 2</string>
-     </attribute>
-    </widget>
-   </widget>
-   <widget class="QPushButton" name="ButtonDev">
-    <property name="geometry">
-     <rect>
-      <x>640</x>
-      <y>0</y>
-      <width>75</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>ButtonDev</string>
-    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

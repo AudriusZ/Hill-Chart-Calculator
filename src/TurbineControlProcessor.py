@@ -11,7 +11,7 @@ class TurbineControlProcessor:
     def __init__(self):
         # Initialize simulator
         self.time_scale_factor = 60  # Scale real time to simulation time
-        self.refresh_rate_physical = 10  # seconds
+        self.refresh_rate_physical = 60  # seconds
 
         self.simulator = TurbineControlSimulator()
 
@@ -43,8 +43,9 @@ class TurbineControlProcessor:
         # Introduce sinusoidal fluctuation for Q
         frequency = 0.25 / 3600  # 0.25 cycles per hour of physical time
         Q_rate = 0.625  # 50% per hour of physical time
-        Q = 6*0.8 * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
+        #Q = 6*0.8 * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
         #Q = max(1.25, min(Q, 5))
+        Q = 3.375
         return Q  
 
     def load_data(self, file_name):
