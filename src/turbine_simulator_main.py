@@ -49,18 +49,51 @@ class ManualAutomaticControlWidget(QWidget):
         self.ui.lineEdit_blade_angle.setText(f"{blade_angle:.1f}")
         self.ui.lineEdit_blade_angle_rate.setText(f"{blade_angle_rate:.1f}")
         self.ui.lineEdit_n.setText(f"{n:.1f}")
-        self.ui.lineEdit_n_rate.setText(f"{n_rate:.1f}")
-
-    def get_h_target(self):
+        self.ui.lineEdit_n_rate.setText(f"{n_rate:.1f}")    
+        
+    def get_input_value(self, field_name):
         """
-        Get the head target (H_t) value entered in the lineEdit_H_t.
+        Get the value from a specified input field dynamically.
+
+        Args:
+            field_name (str): The name of the variable to fetch (e.g., 'H_t', 'Q').
+
         Returns:
-            float: The entered value, or None if invalid.
+            float: The entered value if valid, otherwise None.
         """
         try:
-            return float(self.ui.lineEdit_H_t.text())
-        except ValueError:
+            # Dynamically get the corresponding QLineEdit widget
+            field = getattr(self.ui, f"lineEdit_{field_name}")
+            return float(field.text())
+        except (AttributeError, ValueError):
+            # Return None for invalid input or missing fields
             return None
+        
+    def get_all_input_values(self):
+        """
+        Get all input values from the form dynamically.
+
+        Returns:
+            dict: A dictionary containing all the input field values.
+        """
+        # Define the list of field names corresponding to the lineEdit widgets
+        fields = [
+            "H_t", "H_t_rate", "Q", "Q_rate", 
+            "blade_angle", "blade_angle_rate", 
+            "n", "n_rate"
+        ]
+
+        # Dynamically fetch and validate values for all fields
+        values = {}
+        for field in fields:
+            value = self.get_input_value(field)
+            if value is None:
+                raise ValueError(f"Invalid value entered for {field}. Please enter a numeric value.")
+            values[field] = value
+
+        return values
+
+
 
         
 """
@@ -108,6 +141,9 @@ class PlotManager:
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.current_Q = None  # Current value of Q
+        self.target_Q = None   # Target value of Q
+        self.Q_rate = None     # Rate of change for Q
 
         # Load the GUI design
         self.ui = Ui_MainWindow()
@@ -157,9 +193,167 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "No File Selected", "Please select a valid file.")    
 
 
+    def update_status(self, message):
+        """Update the status box in the GUI."""
+        self.ui.plainTextEdit.appendPlainText(message)
+
+    def open_control_widget(self):
+        """
+        Open the Manual/Automatic Control widget.
+        """
+        if not hasattr(self, "control_widget"):
+            # Create the widget with a default H_t value
+            self.control_widget = ManualAutomaticControlWidget()
+            
+            # Connect the lineEdit_H_t text change to dynamically update H_t in control_processor
+            #self.control_widget.ui.lineEdit_H_t.textChanged.connect(self.update_h_target)
+
+            # Connect the "Apply" button to fetch values only when clicked
+            self.control_widget.ui.pushButtonApply.clicked.connect(self.apply_changes)
+
+        self.control_widget.show()
+
+    def apply_changes(self):
+        """
+        Apply the changes when the 'Apply' button is clicked.
+        """
+        try:
+            # Fetch the value of H_t entered in the GUI
+            #H_t = self.control_widget.get_h_target()
+            H_t = self.control_widget.get_input_value("H_t")
+            Q = self.control_widget.get_input_value("Q")
+            Q_rate = self.control_widget.get_input_value("Q_rate")
+            blade_angle = self.control_widget.get_input_value("blade_angle")
+
+            # Set the target Q and Q_rate
+            self.target_Q = Q
+            self.Q_rate = Q_rate
 
 
-    """Development mode methods start here"""
+            if H_t is None:
+                raise ValueError("Invalid H_t value entered. Please enter a numeric value.")
+            
+            # Process the H_t value (e.g., update control logic)
+            self.control_processor(H_t=H_t, Q=Q)
+
+            # Optionally, update the GUI status
+            self.update_status(f"Applied changes: H_t={H_t}, Q target={Q}, Q_rate={Q_rate}")
+        except Exception as e:
+            QMessageBox.warning(self, "Invalid Input", str(e))
+            self.update_status(f"Error applying changes: {str(e)}")
+
+    
+    def update_h_target(self, value):
+        """
+        Update the H_t value in the control_processor dynamically.
+        Args:
+            value (str): The new H_t value entered in the widget.
+        """
+        try:
+            H_t = float(value)
+            self.control_processor(H_t=H_t)
+        except ValueError:
+            # Ignore invalid input (e.g., empty or non-numeric)
+            print(f"Invalid H_t value: {value}")
+
+    
+
+    
+    def control_processor(self, H_t=None, Q=None, blade_angle=None):
+        """
+        Run the simulation loop, dynamically adapting to live updates of H_t.
+        Args:
+            H_t (float): The head target value. If None, the current value is fetched.
+        """
+        # Ensure the simulation is initialized
+        if not self.simulation_initialized:
+            print("Initializing simulation...")
+            self.simulation_initialized = True
+
+            # Set up the simulation
+            fig, axs = self.turbine_processor.initialize_plot()
+            canvas = self.plot_manager.embed_plot(fig, "Simulation Results")
+
+            # Save axs and canvas as instance attributes
+            self.plot_axs = axs
+            self.plot_canvas = canvas
+
+            # Set up initial simulation state
+            self.turbine_processor.simulator.get_data(self.hill_values.data)
+            self.turbine_processor.simulator.get_BEP_data(self.BEP_data)
+            D = self.BEP_data.D
+            self.turbine_processor.start_time = 0
+            self.turbine_processor.max_duration = self.turbine_processor.start_time + 4 * 3600  # 4 hours
+            self.turbine_processor.elapsed_physical_time = self.turbine_processor.start_time
+
+            initial_blade_angle = 16.2
+            initial_n = 113.5
+            initial_Q = self.turbine_processor.Q_function(self.turbine_processor.elapsed_physical_time)
+
+            self.turbine_processor.simulator.set_operation_attribute("Q", initial_Q)
+            self.turbine_processor.simulator.set_operation_attribute("blade_angle", initial_blade_angle)
+            self.turbine_processor.simulator.set_operation_attribute("n", initial_n)
+            self.turbine_processor.simulator.set_operation_attribute("D", D)
+            self.turbine_processor.compute_outputs()
+
+        print("Starting simulation loop...")        
+
+        # Use the stored axs and canvas
+        axs = getattr(self, "plot_axs", None)
+        canvas = getattr(self, "plot_canvas", None)
+
+        if axs is None or canvas is None:
+            raise RuntimeError("Simulation plots are not properly initialized.")
+
+        # Continuous simulation loop
+        while True:
+            # Fetch the latest H_t value
+            
+            if H_t is None:
+                H_t = self.control_widget.get_input_value("H_t")
+                self.current_Q = self.control_widget.get_input_value("Q")
+                
+
+            if H_t is None:
+                print("Invalid H_t value. Using default.")
+                H_t = 2.15
+            
+            
+            # Gradually adjust Q toward the target Q
+            if self.current_Q is None:
+                self.current_Q = self.target_Q  # Initialize current_Q
+
+            if self.target_Q is not None and self.current_Q != self.target_Q:
+                # Compute the incremental change
+                delta_Q = self.Q_rate * self.turbine_processor.refresh_rate_physical
+                if self.current_Q < self.target_Q:
+                    self.current_Q = min(self.current_Q + delta_Q, self.target_Q)
+                elif self.current_Q > self.target_Q:
+                    self.current_Q = max(self.current_Q - delta_Q, self.target_Q)
+            
+            # Call the update_simulation method
+            #self.turbine_processor.update_simulation(H_t, Q, axs, log_callback=self.update_status)
+            self.turbine_processor.update_simulation(H_t, self.current_Q, self.plot_axs, log_callback=self.update_status)
+            
+            # Increment the simulation time
+            self.turbine_processor.elapsed_physical_time += self.turbine_processor.refresh_rate_physical
+            if self.turbine_processor.elapsed_physical_time > self.turbine_processor.max_duration:
+                print("Simulation complete.")
+                break
+
+            # Redraw the canvas and process UI events
+            canvas.draw()
+            QtWidgets.QApplication.processEvents()
+
+            # Optional: Control loop speed (adjust for smoothness)
+            #QtCore.QThread.msleep(100)
+
+
+
+
+    """
+    Development mode methods start here
+    """
 
     def turbine_hydraulics_action(self):
         """Run the same steps as in testHillChartProcessor when ButtonDev is clicked."""
@@ -214,108 +408,7 @@ class MainWindow(QMainWindow):
 
         self.processor.get_output_parameters(output_options, output_suboptions, settings_options)
 
-    def update_status(self, message):
-        """Update the status box in the GUI."""
-        self.ui.plainTextEdit.appendPlainText(message)
-
-    def open_control_widget(self):
-        """
-        Open the Manual/Automatic Control widget.
-        """
-        if not hasattr(self, "control_widget"):
-            # Create the widget with a default H_t value
-            self.control_widget = ManualAutomaticControlWidget()
-            
-            # Connect the lineEdit_H_t text change to dynamically update H_t in control_processor
-            self.control_widget.ui.lineEdit_H_t.textChanged.connect(self.update_h_target)
-
-        self.control_widget.show()
-
-    def update_h_target(self, value):
-        """
-        Update the H_t value in the control_processor dynamically.
-        Args:
-            value (str): The new H_t value entered in the widget.
-        """
-        try:
-            H_t = float(value)
-            self.control_processor(H_t=H_t)
-        except ValueError:
-            # Ignore invalid input (e.g., empty or non-numeric)
-            print(f"Invalid H_t value: {value}")
-
     
-    def control_processor(self, H_t=None):
-        """
-        Run the simulation loop, dynamically adapting to live updates of H_t.
-        Args:
-            H_t (float): The head target value. If None, the current value is fetched.
-        """
-        # Ensure the simulation is initialized
-        if not self.simulation_initialized:
-            print("Initializing simulation...")
-            self.simulation_initialized = True
-
-            # Set up the simulation
-            fig, axs = self.turbine_processor.initialize_plot()
-            canvas = self.plot_manager.embed_plot(fig, "Simulation Results")
-
-            # Save axs and canvas as instance attributes
-            self.plot_axs = axs
-            self.plot_canvas = canvas
-
-            # Set up initial simulation state
-            self.turbine_processor.simulator.get_data(self.hill_values.data)
-            self.turbine_processor.simulator.get_BEP_data(self.BEP_data)
-            D = self.BEP_data.D
-            self.turbine_processor.start_time = 0
-            self.turbine_processor.max_duration = self.turbine_processor.start_time + 4 * 3600  # 4 hours
-            self.turbine_processor.elapsed_physical_time = self.turbine_processor.start_time
-
-            initial_blade_angle = 11.7
-            initial_n = 113.5
-            initial_Q = self.turbine_processor.Q_function(self.turbine_processor.elapsed_physical_time)
-
-            self.turbine_processor.simulator.set_operation_attribute("Q", initial_Q)
-            self.turbine_processor.simulator.set_operation_attribute("blade_angle", initial_blade_angle)
-            self.turbine_processor.simulator.set_operation_attribute("n", initial_n)
-            self.turbine_processor.simulator.set_operation_attribute("D", D)
-            self.turbine_processor.compute_outputs()
-
-        print("Starting simulation loop...")
-        head_control_active = True
-
-        # Use the stored axs and canvas
-        axs = getattr(self, "plot_axs", None)
-        canvas = getattr(self, "plot_canvas", None)
-
-        if axs is None or canvas is None:
-            raise RuntimeError("Simulation plots are not properly initialized.")
-
-        # Continuous simulation loop
-        while True:
-            # Fetch the latest H_t value
-            if H_t is None:
-                H_t = self.control_widget.get_h_target() if hasattr(self, "control_widget") else 2.15
-            if H_t is None:
-                print("Invalid H_t value. Using default.")
-                H_t = 2.15
-
-            # Call the update_simulation method
-            self.turbine_processor.update_simulation(H_t, axs, log_callback=self.update_status)
-            
-            # Increment the simulation time
-            self.turbine_processor.elapsed_physical_time += self.turbine_processor.refresh_rate_physical
-            if self.turbine_processor.elapsed_physical_time > self.turbine_processor.max_duration:
-                print("Simulation complete.")
-                break
-
-            # Redraw the canvas and process UI events
-            canvas.draw()
-            QtWidgets.QApplication.processEvents()
-
-            # Optional: Control loop speed (adjust for smoothness)
-            #QtCore.QThread.msleep(100)
 
 
 
@@ -330,6 +423,10 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
             self.update_status(f"Error during test steps: {str(e)}")
+
+    """
+    Development mode methods end here
+    """
 
 
 if __name__ == "__main__":

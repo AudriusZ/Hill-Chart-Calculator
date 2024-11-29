@@ -146,7 +146,7 @@ class TurbineControlProcessor:
             "power": operation_point.power
         }    
     
-    def update_simulation(self, H_t, axs, log_callback = None):
+    def update_simulation(self, H_t, Q, axs, log_callback = None):
         """
         Update the simulation and plots for each frame.
 
@@ -160,7 +160,7 @@ class TurbineControlProcessor:
         delta_time = self.refresh_rate_physical
 
         # Simulate flow rate
-        Q = self.Q_function(self.elapsed_physical_time)
+        #Q = self.Q_function(self.elapsed_physical_time)
 
         # Update simulator state
         self.simulator.set_operation_attribute("Q", Q)
