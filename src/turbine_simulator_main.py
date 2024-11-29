@@ -41,6 +41,10 @@ class ManualAutomaticControlWidget(QWidget):
         self.ui = Ui_FormManualAutomaticControl()  # Use the generated UI
         self.ui.setupUi(self)  # Set up the UI on this QWidget
 
+        # Connect the activate checkbox to toggle input fields
+        self.ui.checkBox.stateChanged.connect(self.toggle_inputs)
+
+
         # Set default value for H_t
         self.ui.lineEdit_H_t.setText(f"{H_t:.2f}")
         self.ui.lineEdit_H_t_rate.setText(f"{H_t_rate:.4f}")
@@ -50,6 +54,22 @@ class ManualAutomaticControlWidget(QWidget):
         self.ui.lineEdit_blade_angle_rate.setText(f"{blade_angle_rate:.1f}")
         self.ui.lineEdit_n.setText(f"{n:.1f}")
         self.ui.lineEdit_n_rate.setText(f"{n_rate:.1f}")    
+
+    def toggle_inputs(self, checked):
+        """
+        Enable or disable blade_angle, blade_angle_rate, n, and n_rate inputs
+        based on the state of the 'Activate' checkbox.
+
+        Args:
+            checked (bool): The state of the checkbox (True if checked, False otherwise).
+        """
+        # Disable or enable inputs based on the checkbox state
+        self.ui.lineEdit_blade_angle.setDisabled(checked)
+        self.ui.lineEdit_blade_angle_rate.setDisabled(checked)
+        self.ui.lineEdit_n.setDisabled(checked)
+        self.ui.lineEdit_n_rate.setDisabled(checked)
+        print(f"Checkbox state changed. Checked: {checked}")
+
         
     def get_input_value(self, field_name):
         """
@@ -145,6 +165,19 @@ class MainWindow(QMainWindow):
         self.target_Q = None   # Target value of Q
         self.Q_rate = None     # Rate of change for Q
 
+        self.current_H_t = None  # Current value of H_t
+        self.target_H_t = None   # Target value of H_t
+        self.H_t_rate = None     # Rate of change for H_t
+
+        self.current_blade_angle = None  # Current blade angle
+        self.target_blade_angle = None   # Target blade angle
+        self.blade_angle_rate = None     # Rate of change for blade angle
+
+        self.current_n = None  # Current rotational speed
+        self.target_n = None   # Target rotational speed
+        self.n_rate = None     # Rate of change for rotational speed
+
+
         # Load the GUI design
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -221,6 +254,7 @@ class MainWindow(QMainWindow):
             # Fetch the value of H_t entered in the GUI
             #H_t = self.control_widget.get_h_target()
             H_t = self.control_widget.get_input_value("H_t")
+            H_t_rate = self.control_widget.get_input_value("H_t_rate")
             Q = self.control_widget.get_input_value("Q")
             Q_rate = self.control_widget.get_input_value("Q_rate")
             blade_angle = self.control_widget.get_input_value("blade_angle")
@@ -228,7 +262,9 @@ class MainWindow(QMainWindow):
             # Set the target Q and Q_rate
             self.target_Q = Q
             self.Q_rate = Q_rate
-
+            
+            self.target_H_t = H_t   # Target value of H_t
+            self.H_t_rate = H_t_rate     # Rate of change for H_t        
 
             if H_t is None:
                 raise ValueError("Invalid H_t value entered. Please enter a numeric value.")
@@ -310,7 +346,8 @@ class MainWindow(QMainWindow):
             # Fetch the latest H_t value
             
             if H_t is None:
-                H_t = self.control_widget.get_input_value("H_t")
+                #H_t = self.control_widget.get_input_value("H_t")
+                self.current_H_t = self.control_widget.get_input_value("H_t")
                 self.current_Q = self.control_widget.get_input_value("Q")
                 
 
@@ -322,6 +359,7 @@ class MainWindow(QMainWindow):
             # Gradually adjust Q toward the target Q
             if self.current_Q is None:
                 self.current_Q = self.target_Q  # Initialize current_Q
+                self.current_H_t = self.target_H_t
 
             if self.target_Q is not None and self.current_Q != self.target_Q:
                 # Compute the incremental change
@@ -330,10 +368,18 @@ class MainWindow(QMainWindow):
                     self.current_Q = min(self.current_Q + delta_Q, self.target_Q)
                 elif self.current_Q > self.target_Q:
                     self.current_Q = max(self.current_Q - delta_Q, self.target_Q)
+
+            if self.target_H_t is not None and self.current_H_t != self.target_H_t:
+                # Compute the incremental change
+                delta_H_t = self.H_t_rate * self.turbine_processor.refresh_rate_physical
+                if self.current_H_t < self.target_H_t:
+                    self.current_H_t = min(self.current_H_t + delta_H_t, self.target_H_t)
+                elif self.current_Q > self.target_Q:
+                    self.current_H_t = max(self.current_H_t - delta_H_t, self.target_H_t)
             
             # Call the update_simulation method
             #self.turbine_processor.update_simulation(H_t, Q, axs, log_callback=self.update_status)
-            self.turbine_processor.update_simulation(H_t, self.current_Q, self.plot_axs, log_callback=self.update_status)
+            self.turbine_processor.update_simulation(self.current_H_t, self.current_Q, self.plot_axs, log_callback=self.update_status)
             
             # Increment the simulation time
             self.turbine_processor.elapsed_physical_time += self.turbine_processor.refresh_rate_physical
@@ -356,16 +402,30 @@ class MainWindow(QMainWindow):
     """
 
     def turbine_hydraulics_action(self):
-        """Run the same steps as in testHillChartProcessor when ButtonDev is clicked."""
+        """
+        Generate and embed the 3D Hill Chart into a new tab.
+        """
         try:
+            # Set default turbine and plot parameters
             self.default_turbine_parameters()
             self.default_plot_parameters()
             self.default_output_parameters()
-            self.BEP_data, self.hill_values, _ = self.processor.generate_outputs()                        
 
+            # Generate the outputs and get the processed data
+            result = self.processor.generate_outputs(show_standalone=False)
+
+            # Unpack the result (includes fig if embedded)
+            self.BEP_data, self.hill_values, _, fig = result            
+
+            # Embed the plot in a new tab using PlotManager
+            self.plot_manager.embed_plot(fig, "3D Hill Chart")
+
+            # Update status
+            # self.update_status("3D Hill Chart embedded in a new tab.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
-            self.update_status(f"Error during test steps: {str(e)}")        
+            self.update_status(f"Error during Turbine Hydraulics action: {str(e)}")
+      
 
     def default_turbine_parameters(self):
         """Set default turbine parameters as in the test."""

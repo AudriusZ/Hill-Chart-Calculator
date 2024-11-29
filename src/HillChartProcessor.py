@@ -64,7 +64,16 @@ class HillChartProcessor:
 
         return BEP_data, hill_values, Raw_data
     
-    def generate_outputs(self):        
+    def generate_outputs(self, show_standalone=True):        
+        """
+        Generate the outputs based on the user's selection.
+
+        Args:
+            show_standalone (bool): Whether to display the 3D Hill Chart as a standalone plot or return for embedding.
+        
+        Returns:
+            tuple: (BEP_data, hill_values, raw_data)
+        """
         BEP_data, hill_values, raw_data = self.prepare_core_data()
 
         if self.output_options.get("Best efficiency point summary"):
@@ -72,48 +81,78 @@ class HillChartProcessor:
         
         # Generate the outputs based on user selection
         if self.output_options.get("3D Hill Chart"):
-            self.plot_3d_hill_chart(hill_values)
-        
+            # Handle 3D Hill Chart separately
+            if show_standalone:
+                self.plot_3d_hill_chart(hill_values)
+            else:
+                # Return the figure for embedding
+                fig = self.plot_3d_hill_chart(hill_values, show_standalone=False)
+                return BEP_data, hill_values, raw_data, fig  # Include the figure in the return
+
         # Check if normalize setting is enabled
         normalize = self.settings_options.get("Normalize")                    
         save_data = self.settings_options.get("Save Chart Data")                    
-        
+
         if self.output_options.get("Hill Chart Contour"):            
             suboptions = self.output_suboptions.get("Hill Chart Contour", {})
             plot_blade_angles = not suboptions.get("Hide Blade Angle Lines")  
             if normalize:              
-                self.plot_normalized_hill_chart_contour(hill_values, BEP_data, plot_blade_angles = plot_blade_angles)
+                self.plot_normalized_hill_chart_contour(hill_values, BEP_data, plot_blade_angles=plot_blade_angles)
             else:
                 self.plot_hill_chart_contour(hill_values, BEP_data, plot_blade_angles=plot_blade_angles)            
 
         if self.output_options.get("2D Curve Slices"):
-            self.plot_curve_slices(hill_values, BEP_data, normalize = normalize, save_data = save_data)        
+            self.plot_curve_slices(hill_values, BEP_data, normalize=normalize, save_data=save_data)        
 
         if self.output_options.get("2D Curve Slices - const.blade"):
             suboptions = self.output_suboptions.get("2D Curve Slices - const.blade", {})
 
             # Now check the sub-options within "2D Curve Slices - const.blade"
             if suboptions.get("Const. Head"):                
-                self.plot_blade_slices(hill_values, BEP_data, normalize = normalize, save_data = save_data)
+                self.plot_blade_slices(hill_values, BEP_data, normalize=normalize, save_data=save_data)
 
             if suboptions.get("Const. n"):
-                self.plot_blade_slices_const_n(hill_values, BEP_data, normalize = normalize, save_data = save_data)
+                self.plot_blade_slices_const_n(hill_values, BEP_data, normalize=normalize, save_data=save_data)
 
             if suboptions.get("Const. efficiency"): 
-                self.plot_blade_slices_const_efficiency(raw_data, BEP_data, normalize = normalize, save_data = save_data)        
+                self.plot_blade_slices_const_efficiency(raw_data, BEP_data, normalize=normalize, save_data=save_data)        
 
-        return BEP_data, hill_values, raw_data        
+        return BEP_data, hill_values, raw_data
+      
 
         
     
-    def plot_3d_hill_chart(self, hill_values):
+    def plot_3d_hill_chart(self, hill_values, show_standalone=True):
+        """
+        Plot a 3D Hill Chart using the given hill_values.
+
+        Args:
+            hill_values: An object containing data for the 3D Hill Chart.
+            show_standalone (bool): Whether to display the chart as a standalone window.
+        
+        Returns:
+            matplotlib.figure.Figure: The created Matplotlib figure (if show_standalone=False).
+        """
+        import matplotlib.pyplot as plt
+
+        # Create the figure and axis
         fig = plt.figure()
-        ax1 = fig.add_subplot(111, projection='3d')        
+        ax1 = fig.add_subplot(111, projection='3d')
+
+        # Plot the hill chart
         hill_values.plot_hill_chart(ax=ax1)
+
+        # Read and overlay raw data as a scatter plot
         raw_data = HillChart()
-        raw_data.read_hill_chart_values(self.datapath)                
+        raw_data.read_hill_chart_values(self.datapath)
         raw_data.plot_3d_scatter(ax=ax1)
-        plt.show(block=False)
+
+        # Show standalone if requested, otherwise return the figure
+        if show_standalone:
+            plt.show(block=False)
+        else:
+            return fig
+
     
     def plot_hill_chart_contour(self, hill_values, BEP_data, plot_blade_angles = True):
         # Create a deep copy of hill_values

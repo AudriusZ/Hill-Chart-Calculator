@@ -10,8 +10,8 @@ from TurbineControlPID import TurbineControlPID  # Import the PID controller
 class TurbineControlProcessor:
     def __init__(self):
         # Initialize simulator
-        self.time_scale_factor = 10  # Scale real time to simulation time
-        self.refresh_rate_physical = 1  # seconds
+        self.time_scale_factor = 60  # Scale real time to simulation time
+        self.refresh_rate_physical = 10  # seconds
 
         self.simulator = TurbineControlSimulator()
 
