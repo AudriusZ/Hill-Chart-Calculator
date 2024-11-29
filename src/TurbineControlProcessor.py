@@ -43,9 +43,9 @@ class TurbineControlProcessor:
         # Introduce sinusoidal fluctuation for Q
         frequency = 0.25 / 3600  # 0.25 cycles per hour of physical time
         Q_rate = 0.625  # 50% per hour of physical time
-        #Q = 6*0.8 * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
-        #Q = max(1.25, min(Q, 5))
-        Q = 3.375
+        #Q = 3.375*0.8 * (1 + Q_rate * np.sin(2 * np.pi * frequency * elapsed_physical_time))
+        #Q = max(1.25, min(Q, 5))        
+        Q = 3.375    
         return Q  
 
     def load_data(self, file_name):
@@ -66,7 +66,7 @@ class TurbineControlProcessor:
         self.simulator.prepare_hill_chart_data(min_efficiency_limit=0.1)
         print(f"Data successfully loaded from {filepath}")    
 
-    def perform_control_step(self, H_t, head_control_active, delta_time):
+    def perform_control_step(self, H_t = None, delta_time = 1):
         """
         Perform a single control step to adjust turbine parameters.
 
@@ -78,10 +78,15 @@ class TurbineControlProcessor:
         Returns:
             dict: Updated state of the turbine (n, blade_angle, H).
         """
-        n_t = 113.5  # Target rotational speed
+        
 
-        if head_control_active:
+        if H_t: # change logic - if H_t is not none, then run this
             # Extract current state
+            n_t = 113.5  # Target rotational speed
+            best_n11 = self.simulator.BEP_data.n11[0]
+            D = self.simulator.BEP_data.D[0]
+            n_t = best_n11 * (H_t ** 0.5) / D
+
             H = self.simulator.operation_point.H
             n = self.simulator.operation_point.n
             blade_angle = self.simulator.operation_point.blade_angle
@@ -141,7 +146,7 @@ class TurbineControlProcessor:
             "power": operation_point.power
         }    
     
-    def update_simulation(self, H_t, head_control_active, axs):
+    def update_simulation(self, H_t, axs, log_callback = None):
         """
         Update the simulation and plots for each frame.
 
@@ -161,7 +166,7 @@ class TurbineControlProcessor:
         self.simulator.set_operation_attribute("Q", Q)
 
         # Perform control step
-        output = self.perform_control_step(H_t, head_control_active, delta_time)
+        output = self.perform_control_step(H_t = H_t, delta_time = delta_time)
         blade_angle = output["blade_angle"]
         n = output["n"]
 
@@ -172,7 +177,15 @@ class TurbineControlProcessor:
             self.update_plot(axs)
 
         # Log current state
-        print(f"Physical time = {self.elapsed_physical_time:.1f}  Q= {Q:.2f}  H= {self.simulator.operation_point.H:.2f}  n= {n:.2f}  blade angle= {blade_angle:.2f}")
+        status = f"Physical time = {self.elapsed_physical_time:.1f}  Q= {Q:.2f}  H= {self.simulator.operation_point.H:.2f}  n= {n:.2f}  blade angle= {blade_angle:.2f}"
+
+        # If a log callback is provided, use it to log the output
+        if log_callback:
+            log_callback(status)
+        else:
+            # Default behavior: print to console
+            print(status)
+        
 
 
     def initialize_plot(self):

@@ -1,41 +1,260 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>FormManualAutomaticControl</class>
+ <widget class="QWidget" name="FormManualAutomaticControl">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>300</height>
+    <height>340</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QLineEdit" name="lineEdit">
+  <widget class="QLineEdit" name="lineEdit_H_t">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>80</y>
+     <x>40</x>
+     <y>120</y>
      <width>113</width>
      <height>22</height>
     </rect>
    </property>
   </widget>
-  <widget class="QLabel" name="label">
+  <widget class="QLabel" name="label_H_t">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>50</y>
+     <x>40</x>
+     <y>90</y>
      <width>101</width>
      <height>31</height>
     </rect>
    </property>
    <property name="text">
-    <string>H Control</string>
+    <string>Target H [m]</string>
    </property>
   </widget>
+  <widget class="QLabel" name="label_T_t_rate">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>90</y>
+     <width>111</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Rate of Change [1/s]</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_H_t_rate">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>120</y>
+     <width>113</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_Q">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>30</y>
+     <width>101</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Q [m³/s]</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_Q_rate">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>60</y>
+     <width>113</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_Q">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>60</y>
+     <width>113</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_Q_rate">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>30</y>
+     <width>111</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Rate of Change [1/s]</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_blade_angle">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>150</y>
+     <width>101</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Blade Angle [°]</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_blade_angle">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>180</y>
+     <width>113</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_n">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>210</y>
+     <width>101</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>n [rpm]</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_n">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>240</y>
+     <width>113</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_blade_angle_rate">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>180</y>
+     <width>113</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_blade_angle_rate">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>150</y>
+     <width>111</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Rate of Change [1/s]</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_n_rate">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>240</y>
+     <width>113</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_n_rate">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>210</y>
+     <width>111</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Rate of Change [1/s]</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkBox">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>120</y>
+     <width>75</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Activate</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>10</y>
+     <width>361</width>
+     <height>271</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Input Parameters</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonApply">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>290</y>
+     <width>81</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Apply</string>
+   </property>
+  </widget>
+  <zorder>groupBox</zorder>
+  <zorder>lineEdit_H_t</zorder>
+  <zorder>label_H_t</zorder>
+  <zorder>label_T_t_rate</zorder>
+  <zorder>lineEdit_H_t_rate</zorder>
+  <zorder>label_Q</zorder>
+  <zorder>lineEdit_Q_rate</zorder>
+  <zorder>lineEdit_Q</zorder>
+  <zorder>label_Q_rate</zorder>
+  <zorder>label_blade_angle</zorder>
+  <zorder>lineEdit_blade_angle</zorder>
+  <zorder>label_n</zorder>
+  <zorder>lineEdit_n</zorder>
+  <zorder>lineEdit_blade_angle_rate</zorder>
+  <zorder>label_blade_angle_rate</zorder>
+  <zorder>lineEdit_n_rate</zorder>
+  <zorder>label_n_rate</zorder>
+  <zorder>checkBox</zorder>
+  <zorder>pushButtonApply</zorder>
  </widget>
  <resources/>
  <connections/>

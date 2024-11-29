@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
     )
 from turbine_simulator_gui import ( # Generated GUI files
     Ui_MainWindow,  
-    Ui_Form
+    Ui_FormManualAutomaticControl
     )
 from HillChartProcessor import HillChartProcessor  # Processing logic
 from TurbineControlProcessor import TurbineControlProcessor
@@ -25,22 +25,40 @@ class ManualAutomaticControlWidget(QWidget):
     """
     Wrapper class for the Manual/Automatic Control widget.
     """
-    def __init__(self, parent=None, default_h_target=2.15):
+    def __init__(
+            self,
+            parent=None,
+            H_t=2.15,
+            H_t_rate = 1/600,
+            Q = 3.375,
+            Q_rate = 0.5*3.375 /3600,
+            blade_angle = 16.2,
+            blade_angle_rate = 0.5,
+            n = 113.5,
+            n_rate = 1
+            ):
         super().__init__(parent)
-        self.ui = Ui_Form()  # Use the generated UI
+        self.ui = Ui_FormManualAutomaticControl()  # Use the generated UI
         self.ui.setupUi(self)  # Set up the UI on this QWidget
 
         # Set default value for H_t
-        self.ui.lineEdit.setText(str(default_h_target))
+        self.ui.lineEdit_H_t.setText(f"{H_t:.2f}")
+        self.ui.lineEdit_H_t_rate.setText(f"{H_t_rate:.4f}")
+        self.ui.lineEdit_Q.setText(f"{Q:.3f}")
+        self.ui.lineEdit_Q_rate.setText(f"{Q_rate:.4f}")
+        self.ui.lineEdit_blade_angle.setText(f"{blade_angle:.1f}")
+        self.ui.lineEdit_blade_angle_rate.setText(f"{blade_angle_rate:.1f}")
+        self.ui.lineEdit_n.setText(f"{n:.1f}")
+        self.ui.lineEdit_n_rate.setText(f"{n_rate:.1f}")
 
     def get_h_target(self):
         """
-        Get the head target (H_t) value entered in the lineEdit.
+        Get the head target (H_t) value entered in the lineEdit_H_t.
         Returns:
             float: The entered value, or None if invalid.
         """
         try:
-            return float(self.ui.lineEdit.text())
+            return float(self.ui.lineEdit_H_t.text())
         except ValueError:
             return None
 
@@ -123,7 +141,7 @@ class MainWindow(QMainWindow):
         elif action == "Load Data":
             self.load_data_action()
         elif action == "Manual/Automatic Control":
-            self.update_status(f"***Developer mode: Run control in defaukt after double-clicking '{action}'.")            
+            self.update_status(f"***Developer mode: Run control in default after double-clicking '{action}'.")            
             self.open_control_widget()  # Open the widget            
             self.control_processor()
         else:
@@ -206,10 +224,10 @@ class MainWindow(QMainWindow):
         """
         if not hasattr(self, "control_widget"):
             # Create the widget with a default H_t value
-            self.control_widget = ManualAutomaticControlWidget(default_h_target=2.15)
+            self.control_widget = ManualAutomaticControlWidget()
             
-            # Connect the lineEdit text change to dynamically update H_t in control_processor
-            self.control_widget.ui.lineEdit.textChanged.connect(self.update_h_target)
+            # Connect the lineEdit_H_t text change to dynamically update H_t in control_processor
+            self.control_widget.ui.lineEdit_H_t.textChanged.connect(self.update_h_target)
 
         self.control_widget.show()
 
@@ -284,8 +302,8 @@ class MainWindow(QMainWindow):
                 H_t = 2.15
 
             # Call the update_simulation method
-            self.turbine_processor.update_simulation(H_t, head_control_active, axs)
-
+            self.turbine_processor.update_simulation(H_t, axs, log_callback=self.update_status)
+            
             # Increment the simulation time
             self.turbine_processor.elapsed_physical_time += self.turbine_processor.refresh_rate_physical
             if self.turbine_processor.elapsed_physical_time > self.turbine_processor.max_duration:
