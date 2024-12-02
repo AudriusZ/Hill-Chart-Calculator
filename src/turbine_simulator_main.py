@@ -374,7 +374,7 @@ class MainWindow(QMainWindow):
                 delta_H_t = self.H_t_rate * self.turbine_processor.refresh_rate_physical
                 if self.current_H_t < self.target_H_t:
                     self.current_H_t = min(self.current_H_t + delta_H_t, self.target_H_t)
-                elif self.current_Q > self.target_Q:
+                elif self.current_H_t > self.target_H_t:
                     self.current_H_t = max(self.current_H_t - delta_H_t, self.target_H_t)
             
             # Call the update_simulation method
