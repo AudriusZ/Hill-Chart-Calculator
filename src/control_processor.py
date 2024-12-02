@@ -1,21 +1,19 @@
-from TurbineControlSimulator import TurbineControlSimulator
+from control_simulator import ControlSimulator
 from collections import deque
 import os
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-import numpy as np
-from TurbineControlPID import TurbineControlPID  # Import the PID controller
+from control_PID import ControlPID  # Import the PID controller
 
-class TurbineControlProcessor:
+class ControlProcessor:
     def __init__(self):
         # Initialize simulator
         self.time_scale_factor = 10  # Scale real time to simulation time
         self.refresh_rate_physical = 1  # seconds
 
-        self.simulator = TurbineControlSimulator()
+        self.simulator = ControlSimulator()
 
         # Initialize PID controller
-        self.controller = TurbineControlPID(
+        self.controller = ControlPID(
             Kp=1.2, Ki=0.1, Kd=0.05,  # PID coefficients
             H_tolerance=0.05,         # Head tolerance
             n_min=30, n_max=150,      # Rotational speed limits
@@ -246,7 +244,7 @@ class TurbineControlProcessor:
 
 def main():
     # Initialize processor and load data
-    processor = TurbineControlProcessor()
+    processor = ControlProcessor()
     processor.load_data("Mogu_D1.65m.csv")
 
     D = 1.65

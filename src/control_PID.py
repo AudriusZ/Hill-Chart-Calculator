@@ -1,10 +1,10 @@
 from simple_pid import PID
 
 
-class TurbineControlPID:
+class ControlPID:
     def __init__(self, Kp, Ki, Kd, H_tolerance=0.1, n_min=20.0, n_max=150.0, blade_angle_min=8.0, blade_angle_max=21.0):
         """
-        Initialize the TurbineControlPID controller with PID coefficients and rule-based constraints.
+        Initialize the ControlPID controller with PID coefficients and rule-based constraints.
 
         Parameters:
             Kp, Ki, Kd (float): PID coefficients.

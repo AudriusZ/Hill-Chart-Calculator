@@ -1,7 +1,7 @@
-class TurbineControl:
+class ControlRuleBased:
     def __init__(self, H_tolerance = 0.00, n_step=5, blade_angle_step=1, n_min = 20, n_max=150, blade_angle_min=8, blade_angle_max=21):
         """
-        Initialize TurbineControl with configurable parameters.
+        Initialize ControlRuleBased with configurable parameters.
 
         Parameters:
             H_tolerance (float): Tolerance range for the target head (H_t), allowing acceptable deviation before adjustments are made.
@@ -106,7 +106,7 @@ class TurbineControl:
         }
     
 def main():
-    controller = TurbineControl()
+    controller = ControlRuleBased()
     H_t = 2.15
     n_t = 115
 

@@ -1,21 +1,21 @@
 # Application packaging command:
-# pyinstaller --onefile --name Turbine_Control_Simulator_0.3.0 --icon=icon.ico TurbineControlSimulatorGUI.py
+# pyinstaller --onefile --name Turbine_Control_Simulator_0.3.0 --icon=icon.ico ControlSimulatorGUI.py
 
 import tkinter as tk
 from tkinter import filedialog, BooleanVar
 from tkinter import ttk
 import os
 import numpy as np
-from TurbineControlSimulator import TurbineControlSimulator
-from TurbineData import TurbineData
+from control_simulator import ControlSimulator
+from turbine_data import TurbineData
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import time
 from collections import deque
 from matplotlib.animation import FuncAnimation
-import TurbineControl
+import control_rule_based
 
-class TurbineControlSimulatorGUI:
+class ControlSimulatorGUI:
     """GUI class for the Turbine Control Simulator application, built with tkinter."""
 
     def __init__(self, master, simulator):
@@ -469,7 +469,7 @@ class TurbineControlSimulatorGUI:
                 self.prev_n = n 
                 self.prev_H_target = H_target
 
-                controller = TurbineControl.TurbineControl(H_tolerance=0.05, blade_angle_step=0.5, n_step=1)
+                controller = control_rule_based.ControlRuleBased(H_tolerance=0.05, blade_angle_step=0.5, n_step=1)
 
                 n_t = 113.5
                 output = controller.control_step(H, H_target, n, n_t, blade_angle)
@@ -558,9 +558,9 @@ class TurbineControlSimulatorGUI:
         self.sub_plot_canvas.draw()
 
 def main():
-    simulator = TurbineControlSimulator()
+    simulator = ControlSimulator()
     root = tk.Tk()
-    app = TurbineControlSimulatorGUI(root, simulator)
+    app = ControlSimulatorGUI(root, simulator)
     root.mainloop()
 
 if __name__ == "__main__":

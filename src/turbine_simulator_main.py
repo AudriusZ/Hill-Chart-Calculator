@@ -9,7 +9,7 @@ from turbine_simulator_gui import ( # Generated GUI files
     Ui_FormManualAutomaticControl
     )
 from HillChartProcessor import HillChartProcessor  # Processing logic
-from TurbineControlProcessor import TurbineControlProcessor
+from control_processor import ControlProcessor
 import os
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -184,7 +184,7 @@ class MainWindow(QMainWindow):
 
         # Initialize the processor
         self.processor = HillChartProcessor()
-        self.turbine_processor = TurbineControlProcessor()
+        self.turbine_processor = ControlProcessor()
 
         # Initialize the PlotManager with the QTabWidget
         self.plot_manager = PlotManager(self.ui.tabWidget)

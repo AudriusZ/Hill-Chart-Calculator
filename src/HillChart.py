@@ -1,4 +1,4 @@
-from TurbineData import TurbineData
+from turbine_data import TurbineData
 import csv
 import numpy as np
 import matplotlib

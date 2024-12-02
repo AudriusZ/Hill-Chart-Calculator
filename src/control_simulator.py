@@ -3,23 +3,23 @@ from scipy.interpolate import PchipInterpolator
 from HillChart import HillChart
 from PerformanceCurve import PerformanceCurve
 import copy
-from TurbineData import TurbineData
+from turbine_data import TurbineData
 import pandas as pd
 import copy
 import time
 import matplotlib.pyplot as plt
-from TurbineControl import TurbineControl
+from control_rule_based import ControlRuleBased
 
-class TurbineControlSimulator(HillChart):
+class ControlSimulator(HillChart):
     """Class for simulating turbine control."""    
     def __init__(self):        
         """
-        Initialize the TurbineControlSimulator without range values, 
+        Initialize the ControlSimulator without range values, 
         allowing them to be set later.
         """
         super().__init__()
         self.data = TurbineData()   
-        self.control = TurbineControl(H_tolerance=0.1, n_step=1, blade_angle_step=0.5)
+        self.control = ControlRuleBased(H_tolerance=0.1, n_step=1, blade_angle_step=0.5)
         self.operation_point = TurbineData()
 
         # Initialize range attributes as None (they will be set later)
