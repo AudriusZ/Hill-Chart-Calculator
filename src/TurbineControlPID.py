@@ -1,5 +1,6 @@
 from simple_pid import PID
 
+
 class TurbineControlPID:
     def __init__(self, Kp, Ki, Kd, H_tolerance=0.1, n_min=20.0, n_max=150.0, blade_angle_min=8.0, blade_angle_max=21.0):
         """
@@ -20,6 +21,43 @@ class TurbineControlPID:
         # Initialize the PID controller from `simple-pid`
         self.pid = PID(Kp, Ki, Kd, setpoint=0)  # The setpoint will be set dynamically
         self.pid.output_limits = (-1, 1)  # Output range maps to the direction and strength of control
+
+    def set_constraints(self, n_min=None, n_max=None, blade_angle_min=None, blade_angle_max=None):
+        """
+        Dynamically update the operational constraints.
+
+        Parameters:
+            n_min (float): Minimum rotational speed. Must be positive and less than `n_max`.
+            n_max (float): Maximum rotational speed. Must be greater than `n_min`.
+            blade_angle_min (float): Minimum blade angle. Must be positive and less than `blade_angle_max`.
+            blade_angle_max (float): Maximum blade angle. Must be greater than `blade_angle_min`.
+
+        Raises:
+            ValueError: If any constraints are invalid.
+        """
+        if n_min is not None:
+            if n_max is not None and n_min >= n_max:
+                raise ValueError("n_min must be less than n_max.")
+            self.n_min = n_min
+
+        if n_max is not None:
+            if n_min is not None and n_max <= n_min:
+                raise ValueError("n_max must be greater than n_min.")
+            self.n_max = n_max
+
+        if blade_angle_min is not None:
+            if blade_angle_max is not None and blade_angle_min >= blade_angle_max:
+                raise ValueError("blade_angle_min must be less than blade_angle_max.")
+            self.blade_angle_min = blade_angle_min
+
+        if blade_angle_max is not None:
+            if blade_angle_min is not None and blade_angle_max <= blade_angle_min:
+                raise ValueError("blade_angle_max must be greater than blade_angle_min.")
+            self.blade_angle_max = blade_angle_max
+
+        print(f"Constraints updated: n_min={self.n_min}, n_max={self.n_max}, "
+            f"blade_angle_min={self.blade_angle_min}, blade_angle_max={self.blade_angle_max}")
+
 
     def control_step(self, H, H_t, n, n_t, blade_angle, delta_time):
         """
@@ -81,7 +119,7 @@ class TurbineControlPID:
         n = max(self.n_min, min(n, self.n_max))
 
         # Log the PID adjustment
-        print(f"PID Output: {pid_output:.2f}, Blade Angle: {blade_angle:.2f}, n: {n:.2f}")
+        # print(f"PID Output: {pid_output:.2f}, Blade Angle: {blade_angle:.2f}, n: {n:.2f}")
         
         # Return the updated parameters
         return {
@@ -101,7 +139,3 @@ class TurbineControlPID:
         print("Too little flow detected: taking appropriate action.")
 
 
-
-if __name__ == "__main__":
-    turbine = TurbineControlPID()
-    turbine.control_step(2.2, 2.15, 113.5, 113.5, 17, 0.1)
