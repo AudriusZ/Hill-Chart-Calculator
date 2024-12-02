@@ -161,21 +161,7 @@ class PlotManager:
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.current_Q = None  # Current value of Q
-        self.target_Q = None   # Target value of Q
-        self.Q_rate = None     # Rate of change for Q
-
-        self.current_H_t = None  # Current value of H_t
-        self.target_H_t = None   # Target value of H_t
-        self.H_t_rate = None     # Rate of change for H_t
-
-        self.current_blade_angle = None  # Current blade angle
-        self.target_blade_angle = None   # Target blade angle
-        self.blade_angle_rate = None     # Rate of change for blade angle
-
-        self.current_n = None  # Current rotational speed
-        self.target_n = None   # Target rotational speed
-        self.n_rate = None     # Rate of change for rotational speed
+        
 
 
         # Load the GUI design
@@ -184,7 +170,7 @@ class MainWindow(QMainWindow):
 
         # Initialize the processor
         self.processor = HillChartProcessor()
-        self.turbine_processor = ControlProcessor()
+        self.control_processor = ControlProcessor()
 
         # Initialize the PlotManager with the QTabWidget
         self.plot_manager = PlotManager(self.ui.tabWidget)
@@ -212,7 +198,7 @@ class MainWindow(QMainWindow):
         elif action == "Manual/Automatic Control":
             self.update_status(f"***Developer mode: Run control in default after double-clicking '{action}'.")            
             self.open_control_widget()  # Open the widget            
-            self.control_processor()
+            self.manage_simulation()
         else:
             self.update_status(f"No action defined for '{action}'.")
 
@@ -236,11 +222,8 @@ class MainWindow(QMainWindow):
         """
         if not hasattr(self, "control_widget"):
             # Create the widget with a default H_t value
-            self.control_widget = ManualAutomaticControlWidget()
+            self.control_widget = ManualAutomaticControlWidget()            
             
-            # Connect the lineEdit_H_t text change to dynamically update H_t in control_processor
-            #self.control_widget.ui.lineEdit_H_t.textChanged.connect(self.update_h_target)
-
             # Connect the "Apply" button to fetch values only when clicked
             self.control_widget.ui.pushButtonApply.clicked.connect(self.apply_changes)
 
@@ -251,8 +234,7 @@ class MainWindow(QMainWindow):
         Apply the changes when the 'Apply' button is clicked.
         """
         try:
-            # Fetch the value of H_t entered in the GUI
-            #H_t = self.control_widget.get_h_target()
+            # Fetch the values entered in the GUI            
             H_t = self.control_widget.get_input_value("H_t")
             H_t_rate = self.control_widget.get_input_value("H_t_rate")
             Q = self.control_widget.get_input_value("Q")
@@ -270,7 +252,7 @@ class MainWindow(QMainWindow):
                 raise ValueError("Invalid H_t value entered. Please enter a numeric value.")
             
             # Process the H_t value (e.g., update control logic)
-            self.control_processor(H_t=H_t, Q=Q)
+            self.manage_simulation(H_t=H_t, Q=Q)
 
             # Optionally, update the GUI status
             self.update_status(f"Applied changes: H_t={H_t}, Q target={Q}, Q_rate={Q_rate}")
@@ -278,24 +260,8 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Invalid Input", str(e))
             self.update_status(f"Error applying changes: {str(e)}")
 
-    
-    def update_h_target(self, value):
-        """
-        Update the H_t value in the control_processor dynamically.
-        Args:
-            value (str): The new H_t value entered in the widget.
-        """
-        try:
-            H_t = float(value)
-            self.control_processor(H_t=H_t)
-        except ValueError:
-            # Ignore invalid input (e.g., empty or non-numeric)
-            print(f"Invalid H_t value: {value}")
-
-    
-
-    
-    def control_processor(self, H_t=None, Q=None, blade_angle=None):
+        
+    def manage_simulation(self, H_t=None, Q=None, blade_angle=None):
         """
         Run the simulation loop, dynamically adapting to live updates of H_t.
         Args:
@@ -303,96 +269,45 @@ class MainWindow(QMainWindow):
         """
         # Ensure the simulation is initialized
         if not self.simulation_initialized:
-            print("Initializing simulation...")
-            self.simulation_initialized = True
+            initial_conditions = {
+                "blade_angle": self.BEP_data.blade_angle,
+                "n": self.BEP_data.n,
+                "Q": self.BEP_data.Q,
+                "D": self.BEP_data.D
+            }
 
-            # Set up the simulation
-            fig, axs = self.turbine_processor.initialize_plot()
-            canvas = self.plot_manager.embed_plot(fig, "Simulation Results")
+            # Initialize simulation
+            self.control_processor.initialize_simulation(self.hill_values.data, self.BEP_data, initial_conditions)
 
-            # Save axs and canvas as instance attributes
+            # Initialize the plots
+            fig, axs = self.control_processor.initialize_plot()
             self.plot_axs = axs
+            canvas = self.plot_manager.embed_plot(fig, "Simulation Results")
             self.plot_canvas = canvas
 
-            # Set up initial simulation state
-            self.turbine_processor.simulator.get_data(self.hill_values.data)
-            self.turbine_processor.simulator.get_BEP_data(self.BEP_data)
-            D = self.BEP_data.D
-            self.turbine_processor.start_time = 0
-            self.turbine_processor.max_duration = self.turbine_processor.start_time + 4 * 3600  # 4 hours
-            self.turbine_processor.elapsed_physical_time = self.turbine_processor.start_time
+            self.simulation_initialized = True
 
-            initial_blade_angle = 16.2
-            initial_n = 113.5
-            initial_Q = self.turbine_processor.Q_function(self.turbine_processor.elapsed_physical_time)
+        print("Starting simulation loop...")
 
-            self.turbine_processor.simulator.set_operation_attribute("Q", initial_Q)
-            self.turbine_processor.simulator.set_operation_attribute("blade_angle", initial_blade_angle)
-            self.turbine_processor.simulator.set_operation_attribute("n", initial_n)
-            self.turbine_processor.simulator.set_operation_attribute("D", D)
-            self.turbine_processor.compute_outputs()
+        # Use ControlProcessor to run the simulation
+        H_t = self.control_widget.get_input_value("H_t")            
+        Q = self.control_widget.get_input_value("Q")
+        try:
+            self.control_processor.run_simulation(
+                H_t=H_t,
+                Q=Q,
+                axs=self.plot_axs,  # Pass the plot axes
+                log_callback=self.update_status
+            )
+        except RuntimeError as e:
+            self.update_status(f"Error: {e}")
+            print(f"Error: {e}")
 
-        print("Starting simulation loop...")        
+        # Finalize
+        self.update_status("Simulation complete.")
+        print("Simulation complete.")
 
-        # Use the stored axs and canvas
-        axs = getattr(self, "plot_axs", None)
-        canvas = getattr(self, "plot_canvas", None)
 
-        if axs is None or canvas is None:
-            raise RuntimeError("Simulation plots are not properly initialized.")
-
-        # Continuous simulation loop
-        while True:
-            # Fetch the latest H_t value
-            
-            if H_t is None:
-                #H_t = self.control_widget.get_input_value("H_t")
-                self.current_H_t = self.control_widget.get_input_value("H_t")
-                self.current_Q = self.control_widget.get_input_value("Q")
-                
-
-            if H_t is None:
-                print("Invalid H_t value. Using default.")
-                H_t = 2.15
-            
-            
-            # Gradually adjust Q toward the target Q
-            if self.current_Q is None:
-                self.current_Q = self.target_Q  # Initialize current_Q
-                self.current_H_t = self.target_H_t
-
-            if self.target_Q is not None and self.current_Q != self.target_Q:
-                # Compute the incremental change
-                delta_Q = self.Q_rate * self.turbine_processor.refresh_rate_physical
-                if self.current_Q < self.target_Q:
-                    self.current_Q = min(self.current_Q + delta_Q, self.target_Q)
-                elif self.current_Q > self.target_Q:
-                    self.current_Q = max(self.current_Q - delta_Q, self.target_Q)
-
-            if self.target_H_t is not None and self.current_H_t != self.target_H_t:
-                # Compute the incremental change
-                delta_H_t = self.H_t_rate * self.turbine_processor.refresh_rate_physical
-                if self.current_H_t < self.target_H_t:
-                    self.current_H_t = min(self.current_H_t + delta_H_t, self.target_H_t)
-                elif self.current_H_t > self.target_H_t:
-                    self.current_H_t = max(self.current_H_t - delta_H_t, self.target_H_t)
-            
-            # Call the update_simulation method
-            #self.turbine_processor.update_simulation(H_t, Q, axs, log_callback=self.update_status)
-            self.turbine_processor.update_simulation(self.current_H_t, self.current_Q, self.plot_axs, log_callback=self.update_status)
-            
-            # Increment the simulation time
-            self.turbine_processor.elapsed_physical_time += self.turbine_processor.refresh_rate_physical
-            if self.turbine_processor.elapsed_physical_time > self.turbine_processor.max_duration:
-                print("Simulation complete.")
-                break
-
-            # Redraw the canvas and process UI events
-            canvas.draw()
-            QtWidgets.QApplication.processEvents()
-
-            # Optional: Control loop speed (adjust for smoothness)
-            #QtCore.QThread.msleep(100)
 
 
 
@@ -478,7 +393,7 @@ class MainWindow(QMainWindow):
         """Run the same steps as in testHillChartProcessor when ButtonDev is clicked."""
         try:
             self.turbine_hydraulics_action()
-            self.control_processor()
+            self.manage_simulation()
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")

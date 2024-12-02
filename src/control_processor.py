@@ -37,6 +37,94 @@ class ControlProcessor:
         self.cached_H_t = None
         self.cached_n_t = None
 
+    def initialize_simulation(self, hill_data, BEP_data, initial_conditions=None, max_duration=14400):
+        """
+        Initialize the simulation with default or user-specified conditions.
+
+        Args:
+            hill_data: Processed hill chart data for simulation.
+            BEP_data: Best efficiency point data for simulation.
+            initial_conditions (dict): Initial turbine parameters (e.g., blade_angle, n, Q, D).
+            max_duration (int): Maximum simulation duration in seconds. Defaults to 4 hours.
+        """
+        self.current_Q = None  # Current value of Q
+        self.target_Q = None   # Target value of Q
+        self.Q_rate = None     # Rate of change for Q
+
+        self.current_H_t = None  # Current value of H_t
+        self.target_H_t = None   # Target value of H_t
+        self.H_t_rate = None     # Rate of change for H_t
+
+        self.current_blade_angle = None  # Current blade angle
+        self.target_blade_angle = None   # Target blade angle
+        self.blade_angle_rate = None     # Rate of change for blade angle
+
+        self.current_n = None  # Current rotational speed
+        self.target_n = None   # Target rotational speed
+        self.n_rate = None     # Rate of change for rotational speed
+
+        # Set simulation data
+        self.simulator.get_data(hill_data)
+        self.simulator.get_BEP_data(BEP_data)
+
+        # Set timing and duration
+        self.start_time = 0
+        self.elapsed_physical_time = self.start_time
+        self.max_duration = max_duration
+
+        # Set initial conditions
+        if initial_conditions:
+            for attribute, value in initial_conditions.items():
+                self.simulator.set_operation_attribute(attribute, value)
+
+        # Precompute initial outputs
+        self.compute_outputs()
+
+    def run_simulation(self, H_t=None, Q=None, axs=None, log_callback=None):
+        """
+        Run the simulation loop, dynamically adapting to live updates of H_t.
+
+        Args:
+            H_t (float): The head target value. If None, the current value is fetched.
+            Q (float): The flow rate target value. If None, the current value is fetched.
+            axs (list): List of matplotlib axes for updating plots.
+            log_callback (callable): Optional logging callback for status updates.
+        """
+        if axs is None:
+            raise ValueError("axs parameter is required for plotting.")
+
+        while self.elapsed_physical_time <= self.max_duration:
+            # Adjust H_t and Q
+            if H_t is not None:
+                delta_H_t = self.H_t_rate * self.refresh_rate_physical
+                if self.current_H_t < H_t:
+                    self.current_H_t = min(self.current_H_t + delta_H_t, H_t)
+                elif self.current_H_t > H_t:
+                    self.current_H_t = max(self.current_H_t - delta_H_t, H_t)
+
+            if Q is not None:
+                delta_Q = self.Q_rate * self.refresh_rate_physical
+                if self.current_Q < Q:
+                    self.current_Q = min(self.current_Q + delta_Q, Q)
+                elif self.current_Q > Q:
+                    self.current_Q = max(self.current_Q - delta_Q, Q)
+
+            # Update simulation state
+            self.update_simulation(self.current_H_t, self.current_Q, axs, log_callback=log_callback)
+
+            # Log status
+            if log_callback:
+                log_callback(f"Time: {self.elapsed_physical_time}, H_t: {self.current_H_t}, Q: {self.current_Q}")
+
+            # Increment time
+            self.elapsed_physical_time += self.refresh_rate_physical
+
+        if log_callback:
+            log_callback("Simulation complete.")
+
+
+
+
 
     def Q_function(self, elapsed_physical_time):
         # Introduce sinusoidal fluctuation for Q

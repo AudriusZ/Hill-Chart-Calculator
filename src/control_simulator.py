@@ -41,9 +41,9 @@ class ControlSimulator(HillChart):
         if isinstance(value, list) and len(value) == 1:
             value = value[0]
         elif isinstance(value, list):
-            raise ValueError(f"Invalid value for D: Expected a float or a single-element list, got {value}")
+            raise ValueError(f"Invalid value for attribute: Expected a float or a single-element list, got {value}")
         elif not isinstance(value, (float, int)):
-            raise TypeError(f"Invalid type for D: Expected float, got {type(value).__name__}")
+            raise TypeError(f"Invalid type for attribute: Expected float, got {type(value).__name__}")
 
         setattr(self.operation_point, attribute_name, value)
 
