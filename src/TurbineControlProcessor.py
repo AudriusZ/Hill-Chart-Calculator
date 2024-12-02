@@ -1,5 +1,4 @@
 from TurbineControlSimulator import TurbineControlSimulator
-from TurbineControl import TurbineControl
 from collections import deque
 import os
 import matplotlib.pyplot as plt
