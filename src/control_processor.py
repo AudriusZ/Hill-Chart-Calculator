@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 from control_PID import ControlPID  # Import the PID controller
 
 class ControlProcessor:
-    def __init__(self):
+    def __init__(self, refresh_rate_physical = 1, time_scale_factor = 10, max_duration = 14400):
         # Initialize simulator
-        self.time_scale_factor = 10  # Scale real time to simulation time
-        self.refresh_rate_physical = 1  # seconds
+        self.time_scale_factor = time_scale_factor  # Scale real time to simulation time
+        self.refresh_rate_physical = refresh_rate_physical  # seconds
 
         self.simulator = ControlSimulator()
 
@@ -20,9 +20,8 @@ class ControlProcessor:
             blade_angle_min=3, blade_angle_max=26  # Blade angle limits
         )
 
-        # Initialize live data storage for plotting
-        self.max_duration = 4 * 3600  # 4 hours
-        maxlen = int(self.max_duration / self.refresh_rate_physical)
+        # Initialize live data storage for plotting        
+        maxlen = int(max_duration / self.refresh_rate_physical)
 
         self.time_data = deque(maxlen=maxlen)
         self.H = deque(maxlen=maxlen)
@@ -34,6 +33,9 @@ class ControlProcessor:
         self.start_time = 0
         self.elapsed_physical_time = self.start_time
         self.previous_time = self.start_time  # For delta_time calculation
+        
+        self.cached_H_t = None
+        self.cached_n_t = None
 
 
     def Q_function(self, elapsed_physical_time):
@@ -77,12 +79,16 @@ class ControlProcessor:
         """
         
 
-        if H_t: # change logic - if H_t is not none, then run this
-            # Extract current state
-            n_t = 113.5  # Target rotational speed
-            best_n11 = self.simulator.BEP_data.n11[0]
-            D = self.simulator.BEP_data.D[0]
-            n_t = best_n11 * (H_t ** 0.5) / D
+        if H_t: # change logic - if H_t is not none, then run this           
+
+            # Recompute n_t only if H_t has changed
+            if H_t != self.cached_H_t:
+                self.cached_H_t = H_t
+                best_n11 = self.simulator.BEP_data.n11[0]
+                D = self.simulator.BEP_data.D[0]
+                self.cached_n_t = best_n11 * (H_t ** 0.5) / D
+
+            n_t = self.cached_n_t
 
             H = self.simulator.operation_point.H
             n = self.simulator.operation_point.n
@@ -241,58 +247,3 @@ class ControlProcessor:
         axs[4].legend()
         axs[4].set_xlabel(f"Physical Time [{time_unit}]")  # Dynamically update x-axis label
 
-
-def main():
-    # Initialize processor and load data
-    processor = ControlProcessor()
-    processor.load_data("Mogu_D1.65m.csv")
-
-    D = 1.65
-
-    
-    processor.start_time = 0
-    processor.max_duration = processor.start_time + 4*3600  # 4 hours
-    processor.elapsed_physical_time = processor.start_time
-    processor.previous_time = processor.start_time  # For delta_time calculation
-
-    initial_blade_angle = 11.7
-    initial_n = 113.5
-
-    # Define initial simulation inputs
-    initial_Q = processor.Q_function(processor.elapsed_physical_time)
-
-    
-
-    processor.simulator.set_operation_attribute("Q", initial_Q)
-    processor.simulator.set_operation_attribute("blade_angle", initial_blade_angle)
-    processor.simulator.set_operation_attribute("n", initial_n)
-    processor.simulator.set_operation_attribute("D", D)
-    processor.compute_outputs()
-    
-    H_t = 2.15  # Desired head
-    head_control_active = True  # Enable head control
-
-    # Initialize plots
-    fig, axs = processor.initialize_plot()
-
-    # Simulation loop
-    
-    try:
-        while True:
-            # Call the update_simulation method for each frame
-            processor.update_simulation(H_t, head_control_active, axs)
-
-            processor.elapsed_physical_time += processor.refresh_rate_physical
-            if processor.elapsed_physical_time > processor.max_duration:
-                pass
-            
-            plt.pause(processor.refresh_rate_physical / processor.time_scale_factor)
-
-    except KeyboardInterrupt:
-        print("Simulation stopped by user.")
-    finally:
-        # Ensure the plot is shown when the simulation ends      
-        plt.show()
-
-if __name__ == "__main__":
-    main()
