@@ -300,27 +300,7 @@ class MainWindow(QMainWindow):
         """
         try:
             # Fetch the values entered in the GUI  
-            control_parameters = self.control_widget.get_all_input_values()
-            """
-            H_t = self.control_widget.get_input_value("H_t")
-            H_t_rate = self.control_widget.get_input_value("H_t_rate")
-            Q = self.control_widget.get_input_value("Q")
-            Q_rate = self.control_widget.get_input_value("Q_rate")
-            blade_angle = self.control_widget.get_input_value("blade_angle")
-            """          
-
-            """
-            # Set the target Q and Q_rate
-            self.target_Q = Q
-            self.Q_rate = Q_rate
-            
-            self.target_H_t = H_t   # Target value of H_t
-            self.H_t_rate = H_t_rate     # Rate of change for H_t        
-            
-
-            if H_t is None:
-                raise ValueError("Invalid H_t value entered. Please enter a numeric value.")
-            """
+            control_parameters = self.control_widget.get_all_input_values()            
             
             # Process the H_t value (e.g., update control logic)
             self.manage_simulation(control_parameters)
@@ -340,23 +320,10 @@ class MainWindow(QMainWindow):
         """
         # Ensure the simulation is initialized
 
-        """
-        H_t = self.control_widget.get_input_value("H_t")            
-        Q = self.control_widget.get_input_value("Q")
-        n = self.control_widget.get_input_value("n")
-        D = self.control_widget.get_input_value("D")
-        """
+        
 
         if not control_parameters:        
-            """
-            initial_conditions = {
-                "blade_angle": self.BEP_data.blade_angle,
-                "n": self.BEP_data.n,
-                "Q": self.BEP_data.Q,
-                "D": self.BEP_data.D
-            }
-            """
-
+            
             control_parameters = self.control_widget.get_all_input_values()
 
             # Initialize simulation

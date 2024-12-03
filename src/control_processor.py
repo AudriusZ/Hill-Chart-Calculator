@@ -269,14 +269,22 @@ class ControlProcessor:
         # Calculate delta time based on refresh rate
         delta_time = self.refresh_rate_physical
 
-        # Simulate flow rate
-        #Q = self.Q_function(self.elapsed_physical_time)
+        
+        head_control = True
 
         # Update simulator state
         self.simulator.set_operation_attribute("Q", control_parameters['Q'])
+        
+        if head_control:
+            self.perform_control_step(H_t = control_parameters['H_t'], delta_time = delta_time)
+        else:
+            self.simulator.set_operation_attribute("n", control_parameters['n'])
+            self.simulator.set_operation_attribute("blade_angle", control_parameters['blade_angle'])
+        
+        
 
         # Perform control step
-        output = self.perform_control_step(H_t = control_parameters['H_t'], delta_time = delta_time)
+        
         
         # Compute outputs and update plots
         self.compute_outputs()
@@ -285,10 +293,11 @@ class ControlProcessor:
             self.update_plot(axs)
 
         # Log current state
-        blade_angle = output["blade_angle"]
-        n = output["n"]
-        Q = control_parameters['Q']
-        status = f"Physical time = {self.elapsed_physical_time:.1f}  Q= {Q:.2f}  H= {self.simulator.operation_point.H:.2f}  n= {n:.2f}  blade angle= {blade_angle:.2f}"
+        blade_angle = self.simulator.operation_point.blade_angle
+        n = self.simulator.operation_point.n
+        Q = self.simulator.operation_point.Q
+        H = self.simulator.operation_point.H
+        status = f"Physical time = {self.elapsed_physical_time:.1f}  Q= {Q:.2f}  H= {H:.2f}  n= {n:.2f}  blade angle= {blade_angle:.2f}"
 
         # If a log callback is provided, use it to log the output
         if log_callback:
