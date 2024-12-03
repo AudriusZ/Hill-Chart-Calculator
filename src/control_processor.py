@@ -47,7 +47,15 @@ class ControlProcessor:
             initial_conditions (dict): Initial turbine parameters (e.g., blade_angle, n, Q, D).
             max_duration (int): Maximum simulation duration in seconds. Defaults to 4 hours.
         """
-        self.current_Q = None
+        
+        self.current_values = {
+            'Q': None,
+            'H_t': None,
+            'blade_angle': None,
+            'n': None
+            }
+
+
 
         # Set simulation data
         self.simulator.get_data(hill_data)
@@ -91,36 +99,33 @@ class ControlProcessor:
         if axs is None:
             raise ValueError("axs parameter is required for plotting.")
 
-        while self.elapsed_physical_time <= self.max_duration:
-            # Adjust H_t and Q
-            
-            """
-            if H_t is not None and self.H_t_rate is not None:
-                delta_H_t = self.H_t_rate * self.refresh_rate_physical
-                if self.current_H_t < H_t:
-                    self.current_H_t = min(self.current_H_t + delta_H_t, H_t)
-                elif self.current_H_t > H_t:
-                    self.current_H_t = max(self.current_H_t - delta_H_t, H_t)
-            """
+        while True: #self.elapsed_physical_time <= self.max_duration:
+            # Adjust all parameters dynamically
+            for param, value in control_parameters.items():
+                if not param.endswith("_rate"):  # Skip rate parameters for now
+                    rate_param = f"{param}_rate"
+                    target_value = value
+                    rate_value = control_parameters.get(rate_param)
 
-            Q = control_parameters['Q']
-            Q_rate = control_parameters['Q_rate']
-            if self.current_Q:
-                delta_Q = Q_rate * self.refresh_rate_physical
-                if self.current_Q < Q:
-                    self.current_Q = min(self.current_Q + delta_Q, Q)
-                elif self.current_Q > Q:
-                    self.current_Q = max(self.current_Q - delta_Q, Q)
-            else:
-                self.current_Q = Q
+                    if target_value is not None and rate_value is not None:
+                        # Initialize current value if it's None
+                        if self.current_values[param] is None:
+                            self.current_values[param] = target_value
 
-            # Update simulation state
-            
-            #self.update_simulation(self.current_H_t, self.current_Q, axs, log_callback=log_callback)
-            
+                        # Calculate delta
+                        delta = rate_value * self.refresh_rate_physical
 
+                        # Adjust the current value towards the target
+                        if self.current_values[param] < target_value:
+                            self.current_values[param] = min(self.current_values[param] + delta, target_value)
+                        elif self.current_values[param] > target_value:
+                            self.current_values[param] = max(self.current_values[param] - delta, target_value)
+            
+            # Update simulation state with the adjusted values
             current_control_parameters = control_parameters.copy()
-            current_control_parameters['Q'] = self.current_Q
+            current_control_parameters.update(self.current_values)
+            #current_control_parameters = control_parameters.copy()
+            #current_control_parameters['Q'] = self.current_Q
             self.update_simulation(current_control_parameters, axs, log_callback=log_callback)
 
             # Log status
