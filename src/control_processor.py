@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from control_PID import ControlPID  # Import the PID controller
 
 class ControlProcessor:
-    def __init__(self, refresh_rate_physical = 1, time_scale_factor = 10, max_duration = 14400):
+    def __init__(self, refresh_rate_physical = 1, time_scale_factor = 1, max_duration = 14400):
         # Initialize simulator
         self.time_scale_factor = time_scale_factor  # Scale real time to simulation time
         self.refresh_rate_physical = refresh_rate_physical  # seconds
@@ -47,21 +47,7 @@ class ControlProcessor:
             initial_conditions (dict): Initial turbine parameters (e.g., blade_angle, n, Q, D).
             max_duration (int): Maximum simulation duration in seconds. Defaults to 4 hours.
         """
-        self.current_Q = None  # Current value of Q
-        self.target_Q = None   # Target value of Q
-        self.Q_rate = None     # Rate of change for Q
-
-        self.current_H_t = None  # Current value of H_t
-        self.target_H_t = None   # Target value of H_t
-        self.H_t_rate = None     # Rate of change for H_t
-
-        self.current_blade_angle = None  # Current blade angle
-        self.target_blade_angle = None   # Target blade angle
-        self.blade_angle_rate = None     # Rate of change for blade angle
-
-        self.current_n = None  # Current rotational speed
-        self.target_n = None   # Target rotational speed
-        self.n_rate = None     # Rate of change for rotational speed
+        self.current_Q = None
 
         # Set simulation data
         self.simulator.get_data(hill_data)
@@ -73,14 +59,26 @@ class ControlProcessor:
         self.max_duration = max_duration
 
         # Set initial conditions
-        if initial_conditions:
-            for attribute, value in initial_conditions.items():
-                self.simulator.set_operation_attribute(attribute, value)
+                       
+
+        if not initial_conditions:
+            initial_conditions = {
+            "blade_angle": BEP_data.blade_angle,
+            "n": BEP_data.n,
+            "Q": BEP_data.Q,
+            "D": BEP_data.D
+            }
+
+
+        
+
+        for attribute, value in initial_conditions.items():
+            self.simulator.set_operation_attribute(attribute, value)
 
         # Precompute initial outputs
         self.compute_outputs()
 
-    def run_simulation(self, H_t=None, Q=None, axs=None, log_callback=None):
+    def run_simulation(self, control_parameters = {}, axs=None, log_callback=None):
         """
         Run the simulation loop, dynamically adapting to live updates of H_t.
 
@@ -95,26 +93,42 @@ class ControlProcessor:
 
         while self.elapsed_physical_time <= self.max_duration:
             # Adjust H_t and Q
-            if H_t is not None:
+            
+            """
+            if H_t is not None and self.H_t_rate is not None:
                 delta_H_t = self.H_t_rate * self.refresh_rate_physical
                 if self.current_H_t < H_t:
                     self.current_H_t = min(self.current_H_t + delta_H_t, H_t)
                 elif self.current_H_t > H_t:
                     self.current_H_t = max(self.current_H_t - delta_H_t, H_t)
+            """
 
-            if Q is not None:
-                delta_Q = self.Q_rate * self.refresh_rate_physical
+            Q = control_parameters['Q']
+            Q_rate = control_parameters['Q_rate']
+            if self.current_Q:
+                delta_Q = Q_rate * self.refresh_rate_physical
                 if self.current_Q < Q:
                     self.current_Q = min(self.current_Q + delta_Q, Q)
                 elif self.current_Q > Q:
                     self.current_Q = max(self.current_Q - delta_Q, Q)
+            else:
+                self.current_Q = Q
 
             # Update simulation state
-            self.update_simulation(self.current_H_t, self.current_Q, axs, log_callback=log_callback)
+            
+            #self.update_simulation(self.current_H_t, self.current_Q, axs, log_callback=log_callback)
+            
+
+            current_control_parameters = control_parameters.copy()
+            current_control_parameters['Q'] = self.current_Q
+            self.update_simulation(current_control_parameters, axs, log_callback=log_callback)
 
             # Log status
-            if log_callback:
-                log_callback(f"Time: {self.elapsed_physical_time}, H_t: {self.current_H_t}, Q: {self.current_Q}")
+            
+            #if log_callback:
+                #log_callback(f"Time: {self.elapsed_physical_time}, H_t: {self.current_H_t}, Q: {self.current_Q}")
+                
+            
 
             # Increment time
             self.elapsed_physical_time += self.refresh_rate_physical
@@ -237,7 +251,7 @@ class ControlProcessor:
             "power": operation_point.power
         }    
     
-    def update_simulation(self, H_t, Q, axs, log_callback = None):
+    def update_simulation(self, control_parameters, axs, log_callback = None):
         """
         Update the simulation and plots for each frame.
 
@@ -254,13 +268,11 @@ class ControlProcessor:
         #Q = self.Q_function(self.elapsed_physical_time)
 
         # Update simulator state
-        self.simulator.set_operation_attribute("Q", Q)
+        self.simulator.set_operation_attribute("Q", control_parameters['Q'])
 
         # Perform control step
-        output = self.perform_control_step(H_t = H_t, delta_time = delta_time)
-        blade_angle = output["blade_angle"]
-        n = output["n"]
-
+        output = self.perform_control_step(H_t = control_parameters['H_t'], delta_time = delta_time)
+        
         # Compute outputs and update plots
         self.compute_outputs()
         refresh_rate = self.time_scale_factor
@@ -268,6 +280,9 @@ class ControlProcessor:
             self.update_plot(axs)
 
         # Log current state
+        blade_angle = output["blade_angle"]
+        n = output["n"]
+        Q = control_parameters['Q']
         status = f"Physical time = {self.elapsed_physical_time:.1f}  Q= {Q:.2f}  H= {self.simulator.operation_point.H:.2f}  n= {n:.2f}  blade angle= {blade_angle:.2f}"
 
         # If a log callback is provided, use it to log the output
@@ -334,4 +349,8 @@ class ControlProcessor:
         axs[4].set_ylabel("Power [W]")
         axs[4].legend()
         axs[4].set_xlabel(f"Physical Time [{time_unit}]")  # Dynamically update x-axis label
+
+        # Refresh the figure
+        axs[0].figure.canvas.draw()
+        axs[0].figure.canvas.flush_events()
 

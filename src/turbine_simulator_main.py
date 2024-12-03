@@ -16,6 +16,33 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTabWidget
 
 
+class AppState:
+    def __init__(self, actions_list=None):
+        """
+        Initialize the actions with default states.
+        
+        Args:
+            actions_list (list): A list of action names to initialize (default is an empty list).
+        """
+        # Initialize actions as False (not initiated)
+        self.actions = {action: False for action in (actions_list or [])}
+        
+        # Track if the simulation has been initialized
+        self.simulation_initialized = False
+
+    def update_actions(self, action, state=False):
+        """
+        Update the state of a specific action.
+
+        Args:
+            action (str): The name of the action to update.
+            state (bool): The state to set for the action (True for initiated).
+        """
+        if action in self.actions:
+            self.actions[action] = state
+        else:
+            print(f"Warning: Action '{action}' not defined in AppState.")
+
 
 """
 Widget Classes Start here
@@ -43,7 +70,6 @@ class ManualAutomaticControlWidget(QWidget):
 
         # Connect the activate checkbox to toggle input fields
         self.ui.checkBox.stateChanged.connect(self.toggle_inputs)
-
 
         # Set default value for H_t
         self.ui.lineEdit_H_t.setText(f"{H_t:.2f}")
@@ -162,7 +188,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         
-
+        
 
         # Load the GUI design
         self.ui = Ui_MainWindow()
@@ -175,6 +201,9 @@ class MainWindow(QMainWindow):
         # Initialize the PlotManager with the QTabWidget
         self.plot_manager = PlotManager(self.ui.tabWidget)
 
+        actions = self.get_tree_widget_actions()
+        self.app_state = AppState(actions)
+        
         # Expand the tree widget using PlotManager
         self.plot_manager.expand_tree(self.ui.treeWidget)
 
@@ -184,23 +213,58 @@ class MainWindow(QMainWindow):
         # Initialize simulation state
         self.simulation_initialized = False
 
+    def get_tree_widget_actions(self):
+        """
+        Extract all actions from the QTreeWidget.
+
+        Returns:
+            list: A list of action names (text of tree items).
+        """
+        actions = []
+
+        def traverse_tree(item):
+            # Add the item's text to actions
+            actions.append(item.text(0))
+            # Recursively traverse child items
+            for i in range(item.childCount()):
+                traverse_tree(item.child(i))
+
+        # Traverse top-level items in the QTreeWidget
+        tree_widget = self.ui.treeWidget
+        for i in range(tree_widget.topLevelItemCount()):
+            traverse_tree(tree_widget.topLevelItem(i))
+
+        return actions
+
         
 
     def tree_item_double_clicked(self, item: QTreeWidgetItem, column: int):
         """Handle tree item double-click actions."""
         action = item.text(0)  # Get the text of the clicked item
         
-        if action == "Turbine Hydraulics":
-            self.update_status(f"***Developer mode: Set default turbine hydraulics after double-clicking '{action}'.")
-            self.turbine_hydraulics_action()
-        elif action == "Load Data":
-            self.load_data_action()
-        elif action == "Manual/Automatic Control":
-            self.update_status(f"***Developer mode: Run control in default after double-clicking '{action}'.")            
-            self.open_control_widget()  # Open the widget            
-            self.manage_simulation()
-        else:
-            self.update_status(f"No action defined for '{action}'.")
+        try:
+            if action == "Turbine Hydraulics":
+                self.update_status(f"***Developer mode: Set default turbine hydraulics after double-clicking '{action}'.")
+                self.turbine_hydraulics_action()
+            elif action == "Load Data":
+                self.load_data_action()
+            elif action == "Manual/Automatic Control":
+                if self.app_state.actions.get("Turbine Hydraulics", False):
+                    self.open_control_widget()  # Open the widget
+                    self.manage_simulation()
+                else:
+                    self.update_status(f"Must set 'Turbine Hydraulics' first.")
+            else:
+                self.update_status(f"No action defined for '{action}'.")
+            
+            # If no exception occurred, mark the action as successful
+            self.app_state.update_actions(action, True)
+
+        except Exception as e:
+            # Log the error and mark the action as failed
+            self.update_status(f"Error handling action '{action}': {str(e)}")
+            self.app_state.update_actions(action, False)
+
 
     def load_data_action(self):
         """Handle the 'Load Data' action."""
@@ -222,7 +286,8 @@ class MainWindow(QMainWindow):
         """
         if not hasattr(self, "control_widget"):
             # Create the widget with a default H_t value
-            self.control_widget = ManualAutomaticControlWidget()            
+            data = self.BEP_data
+            self.control_widget = ManualAutomaticControlWidget(H_t= data.H[0], Q=data.Q[0], n = data.n[0], blade_angle= data.blade_angle[0])            
             
             # Connect the "Apply" button to fetch values only when clicked
             self.control_widget.ui.pushButtonApply.clicked.connect(self.apply_changes)
@@ -234,50 +299,68 @@ class MainWindow(QMainWindow):
         Apply the changes when the 'Apply' button is clicked.
         """
         try:
-            # Fetch the values entered in the GUI            
+            # Fetch the values entered in the GUI  
+            control_parameters = self.control_widget.get_all_input_values()
+            """
             H_t = self.control_widget.get_input_value("H_t")
             H_t_rate = self.control_widget.get_input_value("H_t_rate")
             Q = self.control_widget.get_input_value("Q")
             Q_rate = self.control_widget.get_input_value("Q_rate")
             blade_angle = self.control_widget.get_input_value("blade_angle")
+            """          
 
+            """
             # Set the target Q and Q_rate
             self.target_Q = Q
             self.Q_rate = Q_rate
             
             self.target_H_t = H_t   # Target value of H_t
             self.H_t_rate = H_t_rate     # Rate of change for H_t        
+            
 
             if H_t is None:
                 raise ValueError("Invalid H_t value entered. Please enter a numeric value.")
+            """
             
             # Process the H_t value (e.g., update control logic)
-            self.manage_simulation(H_t=H_t, Q=Q)
+            self.manage_simulation(control_parameters)
 
             # Optionally, update the GUI status
-            self.update_status(f"Applied changes: H_t={H_t}, Q target={Q}, Q_rate={Q_rate}")
+            self.update_status(f"Applied changes: H_t={control_parameters['H_t']}, Q target={control_parameters['Q']}, Q_rate={control_parameters['Q_rate']}")
         except Exception as e:
             QMessageBox.warning(self, "Invalid Input", str(e))
             self.update_status(f"Error applying changes: {str(e)}")
 
         
-    def manage_simulation(self, H_t=None, Q=None, blade_angle=None):
+    def manage_simulation(self, control_parameters = {}):
         """
         Run the simulation loop, dynamically adapting to live updates of H_t.
         Args:
             H_t (float): The head target value. If None, the current value is fetched.
         """
         # Ensure the simulation is initialized
-        if not self.simulation_initialized:
+
+        """
+        H_t = self.control_widget.get_input_value("H_t")            
+        Q = self.control_widget.get_input_value("Q")
+        n = self.control_widget.get_input_value("n")
+        D = self.control_widget.get_input_value("D")
+        """
+
+        if not control_parameters:        
+            """
             initial_conditions = {
                 "blade_angle": self.BEP_data.blade_angle,
                 "n": self.BEP_data.n,
                 "Q": self.BEP_data.Q,
                 "D": self.BEP_data.D
             }
+            """
+
+            control_parameters = self.control_widget.get_all_input_values()
 
             # Initialize simulation
-            self.control_processor.initialize_simulation(self.hill_values.data, self.BEP_data, initial_conditions)
+            self.control_processor.initialize_simulation(self.hill_values.data, self.BEP_data)
 
             # Initialize the plots
             fig, axs = self.control_processor.initialize_plot()
@@ -285,17 +368,15 @@ class MainWindow(QMainWindow):
             canvas = self.plot_manager.embed_plot(fig, "Simulation Results")
             self.plot_canvas = canvas
 
-            self.simulation_initialized = True
+            self.app_state.simulation_initialized = True
 
         print("Starting simulation loop...")
 
         # Use ControlProcessor to run the simulation
-        H_t = self.control_widget.get_input_value("H_t")            
-        Q = self.control_widget.get_input_value("Q")
+        
         try:
             self.control_processor.run_simulation(
-                H_t=H_t,
-                Q=Q,
+                control_parameters,
                 axs=self.plot_axs,  # Pass the plot axes
                 log_callback=self.update_status
             )
