@@ -448,11 +448,7 @@ class ControlSimulatorGUI:
                 return  # Skip update if values haven't changed
             """                      
 
-            # Set simulator attributes with user inputs
-            self.simulator.set_operation_attribute("Q", Q)
-            self.simulator.set_operation_attribute("blade_angle", blade_angle)
-            self.simulator.set_operation_attribute("n", n)
-            self.simulator.set_operation_attribute("D", D)
+            
 
             if head_control:                
                 if (

@@ -302,6 +302,23 @@ class MainWindow(QMainWindow):
                 self.turbine_hydraulics_action()
             elif action == "Load Data":
                 self.load_data_action()
+            elif action == "Maximised Output":
+                if self.app_state.actions.get("Turbine Hydraulics", False):
+
+                    from maximised_output_processor import MaximisedOutputProcessor
+                    maximised_output_processor = MaximisedOutputProcessor()
+                    maximised_output_processor.maximised_output(self.hill_values.data, self.BEP_data)
+                    # Add plots to tabs
+                    plots = maximised_output_processor.generate_plots()
+
+                    # Embed each plot in a new tab
+                    for title, fig in plots.items():
+                        self.plot_manager.embed_plot(fig, title)
+                    
+                    
+                else:
+                    self.update_status(f"Must set 'Turbine Hydraulics' first.")
+
             elif action == "Manual/Automatic Control":
                 if self.app_state.actions.get("Turbine Hydraulics", False):
                     self.open_control_widget()  # Open the widget
@@ -470,7 +487,7 @@ class MainWindow(QMainWindow):
         min_efficiency_limit = 0.1
         n_contours = 25        
         extrapolation_options_vars = [1, 1]
-        extrapolation_values_n11 = [10, 170, 10]
+        extrapolation_values_n11 = [10, 200, 10]
         extrapolation_values_blade_angles = [2, 26.1, 10]
 
         self.processor.get_plot_parameters(n_contours, extrapolation_options_vars, extrapolation_values_n11, extrapolation_values_blade_angles, min_efficiency_limit=min_efficiency_limit)
@@ -521,8 +538,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()    
     window.update_status("Program has started successfylly.")
-    window.show()
-    #window.run_test_steps()
+    window.show()    
     sys.exit(app.exec())
 
 
