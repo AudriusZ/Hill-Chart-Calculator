@@ -58,7 +58,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Turbine Simulator"))
         self.treeWidget.headerItem().setText(0, _translate("MainWindow", "Project"))
         __sortingEnabled = self.treeWidget.isSortingEnabled()
         self.treeWidget.setSortingEnabled(False)
@@ -101,7 +101,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 class Ui_FormManualAutomaticControl(object):
     def setupUi(self, FormManualAutomaticControl):
         FormManualAutomaticControl.setObjectName("FormManualAutomaticControl")
-        FormManualAutomaticControl.resize(400, 340)
+        FormManualAutomaticControl.resize(400, 560)
         self.lineEdit_H_t = QtWidgets.QLineEdit(parent=FormManualAutomaticControl)
         self.lineEdit_H_t.setGeometry(QtCore.QRect(40, 120, 113, 22))
         self.lineEdit_H_t.setObjectName("lineEdit_H_t")
@@ -159,6 +159,21 @@ class Ui_FormManualAutomaticControl(object):
         self.pushButtonApply = QtWidgets.QPushButton(parent=FormManualAutomaticControl)
         self.pushButtonApply.setGeometry(QtCore.QRect(300, 290, 81, 31))
         self.pushButtonApply.setObjectName("pushButtonApply")
+        self.groupBox_2 = QtWidgets.QGroupBox(parent=FormManualAutomaticControl)
+        self.groupBox_2.setGeometry(QtCore.QRect(20, 350, 361, 81))
+        self.groupBox_2.setObjectName("groupBox_2")
+        self.label_n_2 = QtWidgets.QLabel(parent=self.groupBox_2)
+        self.label_n_2.setGeometry(QtCore.QRect(20, 20, 101, 31))
+        self.label_n_2.setObjectName("label_n_2")
+        self.pushButtonApply_2 = QtWidgets.QPushButton(parent=FormManualAutomaticControl)
+        self.pushButtonApply_2.setGeometry(QtCore.QRect(300, 440, 81, 31))
+        self.pushButtonApply_2.setObjectName("pushButtonApply_2")
+        self.pushButtonStop = QtWidgets.QPushButton(parent=FormManualAutomaticControl)
+        self.pushButtonStop.setGeometry(QtCore.QRect(300, 510, 81, 31))
+        self.pushButtonStop.setObjectName("pushButtonStop")
+        self.pushButtonStart = QtWidgets.QPushButton(parent=FormManualAutomaticControl)
+        self.pushButtonStart.setGeometry(QtCore.QRect(200, 510, 81, 31))
+        self.pushButtonStart.setObjectName("pushButtonStart")
         self.groupBox.raise_()
         self.lineEdit_H_t.raise_()
         self.label_H_t.raise_()
@@ -178,6 +193,10 @@ class Ui_FormManualAutomaticControl(object):
         self.label_n_rate.raise_()
         self.checkBox.raise_()
         self.pushButtonApply.raise_()
+        self.groupBox_2.raise_()
+        self.pushButtonApply_2.raise_()
+        self.pushButtonStop.raise_()
+        self.pushButtonStart.raise_()
 
         self.retranslateUi(FormManualAutomaticControl)
         QtCore.QMetaObject.connectSlotsByName(FormManualAutomaticControl)
@@ -196,6 +215,11 @@ class Ui_FormManualAutomaticControl(object):
         self.checkBox.setText(_translate("FormManualAutomaticControl", "Activate"))
         self.groupBox.setTitle(_translate("FormManualAutomaticControl", "Input Parameters"))
         self.pushButtonApply.setText(_translate("FormManualAutomaticControl", "Apply"))
+        self.groupBox_2.setTitle(_translate("FormManualAutomaticControl", "Expert Parameters"))
+        self.label_n_2.setText(_translate("FormManualAutomaticControl", "placeholder"))
+        self.pushButtonApply_2.setText(_translate("FormManualAutomaticControl", "Apply"))
+        self.pushButtonStop.setText(_translate("FormManualAutomaticControl", "Stop"))
+        self.pushButtonStart.setText(_translate("FormManualAutomaticControl", "Start"))
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>340</height>
+    <height>560</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -236,6 +236,71 @@
     <string>Apply</string>
    </property>
   </widget>
+  <widget class="QGroupBox" name="groupBox_2">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>350</y>
+     <width>361</width>
+     <height>81</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Expert Parameters</string>
+   </property>
+   <widget class="QLabel" name="label_n_2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>20</y>
+      <width>101</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>placeholder</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QPushButton" name="pushButtonApply_2">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>440</y>
+     <width>81</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Apply</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonStop">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>510</y>
+     <width>81</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonStart">
+   <property name="geometry">
+    <rect>
+     <x>200</x>
+     <y>510</y>
+     <width>81</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Start</string>
+   </property>
+  </widget>
   <zorder>groupBox</zorder>
   <zorder>lineEdit_H_t</zorder>
   <zorder>label_H_t</zorder>
@@ -255,6 +320,10 @@
   <zorder>label_n_rate</zorder>
   <zorder>checkBox</zorder>
   <zorder>pushButtonApply</zorder>
+  <zorder>groupBox_2</zorder>
+  <zorder>pushButtonApply_2</zorder>
+  <zorder>pushButtonStop</zorder>
+  <zorder>pushButtonStart</zorder>
  </widget>
  <resources/>
  <connections/>
