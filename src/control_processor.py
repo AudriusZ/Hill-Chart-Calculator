@@ -46,6 +46,8 @@ class ControlProcessor:
         self.cached_H_t = None
         self.cached_n_t = None
 
+        self.head_control = False
+
     def initialize_simulation(self, hill_data, BEP_data, initial_conditions=None, max_duration=14400):
         """
         Initialize the simulation with hill chart and best efficiency point (BEP) data.
@@ -88,6 +90,16 @@ class ControlProcessor:
 
         # Precompute initial outputs to ensure readiness for simulation
         self.compute_outputs()
+
+    def toggle_head_control(self, state):
+        """
+        Toggle head control mode based on the input state.
+
+        Args:
+            state (bool): New state for head control (True or False).
+        """
+        self.head_control = state
+        print(f"Head control toggled to: {self.head_control}")
 
     def run_simulation(self, control_parameters={}, axs=None, log_callback=None):
         """
@@ -259,13 +271,11 @@ class ControlProcessor:
             log_callback (callable): Optional callback for logging the state.
         """
         # Determine the delta time for simulation updates
-        delta_time = self.refresh_rate_physical
-
-        # Control head (H) or directly set operational parameters
-        head_control = True
+        delta_time = self.refresh_rate_physical        
+        
         self.simulator.set_operation_attribute("Q", control_parameters['Q'])
-
-        if head_control:
+        # Control head (H) or directly set operational parameters
+        if self.head_control:
             self.perform_control_step(H_t=control_parameters['H_t'], delta_time=delta_time)
         else:
             self.simulator.set_operation_attribute("n", control_parameters['n'])

@@ -55,6 +55,7 @@ class ManualAutomaticControlWidget(QWidget):
     def __init__(
             self,
             parent=None,
+            control_processor=None,
             H_t=2.15,
             H_t_rate = 1/600,
             Q = 3.375,
@@ -64,12 +65,31 @@ class ManualAutomaticControlWidget(QWidget):
             n = 113.5,
             n_rate = 1
             ):
-        super().__init__(parent)
+        super().__init__(parent)        
         self.ui = Ui_FormManualAutomaticControl()  # Use the generated UI
         self.ui.setupUi(self)  # Set up the UI on this QWidget
 
+        self.setWindowTitle("Manual/Automatic Control")
+
         # Connect the activate checkbox to toggle input fields
         self.ui.checkBox.stateChanged.connect(self.toggle_inputs)
+
+        # Store initial checkbox state for comparison later
+        self._checkbox_state = self.ui.checkBox.isChecked()
+
+        checked = self._checkbox_state
+
+        self.ui.lineEdit_H_t.setEnabled(checked)
+        self.ui.lineEdit_H_t_rate.setEnabled(checked)
+
+        # Define styles for enabled and disabled labels
+        gray_style = "color: gray;"
+        normal_style = "color: black;"
+
+        self.ui.lineEdit_H_t.setStyleSheet(normal_style if checked else gray_style)
+        self.ui.lineEdit_H_t_rate.setStyleSheet(normal_style if checked else gray_style)
+
+        self.control_processor = control_processor  # Pass ControlProcessor instance
 
         # Set default value for H_t
         self.ui.lineEdit_H_t.setText(f"{H_t:.2f}")
@@ -80,6 +100,8 @@ class ManualAutomaticControlWidget(QWidget):
         self.ui.lineEdit_blade_angle_rate.setText(f"{blade_angle_rate:.1f}")
         self.ui.lineEdit_n.setText(f"{n:.1f}")
         self.ui.lineEdit_n_rate.setText(f"{n_rate:.1f}")    
+
+    
 
     def toggle_inputs(self, checked):
         """
@@ -94,7 +116,38 @@ class ManualAutomaticControlWidget(QWidget):
         self.ui.lineEdit_blade_angle_rate.setDisabled(checked)
         self.ui.lineEdit_n.setDisabled(checked)
         self.ui.lineEdit_n_rate.setDisabled(checked)
-        print(f"Checkbox state changed. Checked: {checked}")
+
+        self.ui.lineEdit_H_t.setEnabled(checked)
+        self.ui.lineEdit_H_t_rate.setEnabled(checked)      
+        
+        # Define styles for enabled and disabled labels
+        gray_style = "color: gray;"
+        normal_style = "color: black;"
+
+        # Update QLabel styles based on the checkbox state
+        self.ui.lineEdit_blade_angle.setStyleSheet(gray_style if checked else normal_style) 
+        self.ui.lineEdit_blade_angle_rate.setStyleSheet(gray_style if checked else normal_style)
+        self.ui.lineEdit_n.setStyleSheet(gray_style if checked else normal_style)
+        self.ui.lineEdit_n_rate.setStyleSheet(gray_style if checked else normal_style)
+
+        self.ui.lineEdit_H_t.setStyleSheet(normal_style if checked else gray_style)
+        self.ui.lineEdit_H_t_rate.setStyleSheet(normal_style if checked else gray_style)
+        
+
+    def check_and_apply_checkbox(self):
+        """
+        Check if the checkbox state has changed, and if so, apply the changes.
+        """
+        current_state = self.ui.checkBox.isChecked()
+        if current_state != self._checkbox_state:
+            # Update stored checkbox state
+            self._checkbox_state = current_state            
+
+            # Update head control in the ControlProcessor
+            if self.control_processor:
+                self.control_processor.toggle_head_control(current_state)
+
+            print(f"Checkbox state changed. Checked: {current_state}")
 
         
     def get_input_value(self, field_name):
@@ -187,12 +240,13 @@ class PlotManager:
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        
-        
 
         # Load the GUI design
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        self.setWindowTitle("Turbine Simulator")
+
 
         # Initialize the processor
         self.processor = HillChartProcessor()
@@ -287,7 +341,13 @@ class MainWindow(QMainWindow):
         if not hasattr(self, "control_widget"):
             # Create the widget with a default H_t value
             data = self.BEP_data
-            self.control_widget = ManualAutomaticControlWidget(H_t= data.H[0], Q=data.Q[0], n = data.n[0], blade_angle= data.blade_angle[0])            
+            self.control_widget = ManualAutomaticControlWidget(
+                control_processor=self.control_processor,
+                H_t= data.H[0],
+                Q=data.Q[0],
+                n = data.n[0],
+                blade_angle= data.blade_angle[0]
+                )            
             
             # Connect the "Apply" button to fetch values only when clicked
             self.control_widget.ui.pushButtonApply.clicked.connect(self.apply_changes)
@@ -296,17 +356,18 @@ class MainWindow(QMainWindow):
 
     def apply_changes(self):
         """
-        Apply the changes when the 'Apply' button is clicked.
+        Apply changes when the 'Apply' button is pressed.
         """
         try:
-            # Fetch the values entered in the GUI  
-            control_parameters = self.control_widget.get_all_input_values()            
-            
-            # Process the H_t value (e.g., update control logic)
-            self.manage_simulation(control_parameters)
+            # Check and apply the checkbox state
+            self.control_widget.check_and_apply_checkbox()
 
-            # Optionally, update the GUI status
-            self.update_status(f"Applied changes: H_t={control_parameters['H_t']}, Q target={control_parameters['Q']}, Q_rate={control_parameters['Q_rate']}")
+            # Fetch other input values from the GUI
+            control_parameters = self.control_widget.get_all_input_values()
+
+            # Apply the control parameters to the simulation
+            self.manage_simulation(control_parameters)
+            
         except Exception as e:
             QMessageBox.warning(self, "Invalid Input", str(e))
             self.update_status(f"Error applying changes: {str(e)}")
@@ -337,7 +398,10 @@ class MainWindow(QMainWindow):
 
             self.app_state.simulation_initialized = True
 
-        print("Starting simulation loop...")
+            self.update_status(f"Starting simulation loop.")
+
+        
+        
 
         # Use ControlProcessor to run the simulation
         
