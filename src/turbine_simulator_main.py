@@ -1,7 +1,3 @@
-from HillChartProcessor import HillChartProcessor  # Processing logic
-from control_processor import ControlProcessor
-
-
 
 from main_processor import MainProcessor
 from PyQt6.QtWidgets import (
@@ -16,7 +12,7 @@ from turbine_simulator_gui import ( # Generated GUI files
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTabWidget
-from PyQt6.QtCore import pyqtSignal
+
 
 
 class AppState:
@@ -53,8 +49,7 @@ Widget Classes Start here
 
 class ManualAutomaticControlWidget(QWidget):
     
-    # Signal to notify checkbox state change
-    checkbox_state_changed = pyqtSignal(bool)
+    
     def __init__(
             self,
             parent=None,            
@@ -131,43 +126,9 @@ class ManualAutomaticControlWidget(QWidget):
         self.ui.lineEdit_n_rate.setStyleSheet(gray_style if checked else normal_style)
 
         self.ui.lineEdit_H_t.setStyleSheet(normal_style if checked else gray_style)
-        self.ui.lineEdit_H_t_rate.setStyleSheet(normal_style if checked else gray_style)
-
-    def _on_checkbox_state_changed(self, state):
-        """
-        Internal handler for checkbox state changes.
-        Emits the signal to notify state changes.
-        """
-        current_state = bool(state)  # Convert to boolean
-        if current_state != self._checkbox_state:
-            self._checkbox_state = current_state
-            self.checkbox_state_changed.emit(current_state)  # Emit the signal
-            print(f"Checkbox state changed. Checked: {current_state}")
-
-    def _update_ui(self, checked):
-        """
-        Update UI elements based on the checkbox state.
-        """
-        gray_style = "color: gray;"
-        normal_style = "color: black;"
+        self.ui.lineEdit_H_t_rate.setStyleSheet(normal_style if checked else gray_style)     
         
-        self.ui.lineEdit_H_t.setEnabled(checked)
-        self.ui.lineEdit_H_t_rate.setEnabled(checked)
-        self.ui.lineEdit_H_t.setStyleSheet(normal_style if checked else gray_style)
-        self.ui.lineEdit_H_t_rate.setStyleSheet(normal_style if checked else gray_style)
-        
-
-    def check_and_apply_checkbox(self):
-        """
-        Check if the checkbox state has changed, and emit a signal.
-        """
-        current_state = self.ui.checkBox.isChecked()
-        if current_state != self._checkbox_state:
-            self._checkbox_state = current_state
-            self.checkbox_state_changed.emit(current_state)  # Notify via signal
-            print(f"Checkbox state changed. Checked: {current_state}")
-
-        
+    
     def get_input_value(self, field_name):
         """
         Get the value from a specified input field dynamically.
@@ -231,6 +192,8 @@ class PlotManager:
             tab_widget (QTabWidget): The QTabWidget to manage.
         """
         self.tab_widget = tab_widget
+        self.tab_widget.setTabsClosable(True)  # Enable the close button on tabs
+        self.tab_widget.tabCloseRequested.connect(self.close_tab)  # Connect to the tab close signal
 
     def embed_plot(self, fig, tab_name: str):
         """
@@ -248,6 +211,14 @@ class PlotManager:
         self.tab_widget.addTab(new_tab, tab_name)
         self.tab_widget.setCurrentIndex(self.tab_widget.count() - 1)
         return canvas  # Return the canvas for further updates
+    
+    def close_tab(self, index):
+        """
+        Handle closing of a tab.
+        Args:
+            index (int): The index of the tab to close.
+        """
+        self.tab_widget.removeTab(index)
     
     def expand_tree(self, tree_widget: QTreeWidget):
         """
@@ -268,15 +239,10 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Turbine Simulator")
 
+        # Initialize main processor
         self.main_processor = MainProcessor()
         self.main_processor.set_message_callback(self.update_status)  # Set the callback for messages
         self.main_processor.standalone_figures = False
-
-
-
-        # Initialize the processor
-        self.processor = HillChartProcessor()
-        self.control_processor = ControlProcessor()
 
         # Initialize the PlotManager with the QTabWidget
         self.plot_manager = PlotManager(self.ui.tabWidget)
@@ -344,6 +310,8 @@ class MainWindow(QMainWindow):
         """Handle the 'Load Data' action."""
         pass
         """
+        from HillChartProcessor import HillChartProcessor  # Processing logic
+        self.processor = HillChartProcessor()
         file_path, _ = QFileDialog.getOpenFileName(self, "Select Turbine Data File", "", "CSV Files (*.csv)")
         if file_path:
             self.processor.get_file_path(file_path)
@@ -364,7 +332,67 @@ class MainWindow(QMainWindow):
         Handle manual/automatic control by initializing and running the simulation.
         """
         self.open_control_widget()  # Open the widget
-        self.manage_simulation()
+        self.manage_control_simulation()    
+
+    def apply_control_changes(self):
+        """
+        Apply changes when the 'Apply' button is pressed.
+        """
+        try:
+            # Fetch other input values from the GUI
+            control_parameters = self.control_widget.get_all_input_values()
+
+            # Apply the control parameters to the simulation
+            self.manage_control_simulation(control_parameters)
+            
+        except Exception as e:
+            QMessageBox.warning(self, "Invalid Input", str(e))
+            self.update_status(f"Error applying changes: {str(e)}")
+    
+        
+    def manage_control_simulation(self, control_parameters = {}):
+        """
+        Run the simulation loop, dynamically adapting to live updates of H_t.
+        Args:
+            H_t (float): The head target value. If None, the current value is fetched.
+        """
+        # Ensure the simulation is initialized
+
+        
+
+        if not control_parameters:        
+            
+            control_parameters = self.control_widget.get_all_input_values()
+
+            # Initialize simulation
+            self.main_processor.initialize_simulation()
+
+            # Initialize the plots
+            fig, axs = self.main_processor.control_processor.initialize_plot()
+            self.plot_axs = axs
+            canvas = self.plot_manager.embed_plot(fig, "Simulation Results")
+            self.plot_canvas = canvas
+
+            self.app_state.simulation_initialized = True
+
+            self.update_status(f"Starting simulation loop.")
+
+
+        # Use ControlProcessor to run the simulation
+        
+        try:
+            self.main_processor.run_simulation(
+                control_parameters,
+                axs=self.plot_axs,  # Pass the plot axes
+                log_callback=self.update_status
+            )
+        except RuntimeError as e:
+            self.update_status(f"Error: {e}")
+            print(f"Error: {e}")
+
+        # Finalize
+        self.update_status("Simulation complete.")
+        print("Simulation complete.")
 
     
 
@@ -373,27 +401,20 @@ class MainWindow(QMainWindow):
         Open the Manual/Automatic Control widget.
         """
         if not hasattr(self, "control_widget"):
-            # Fetch BEP data from MainProcessor
-            data = self.main_processor.get_bep_data()
-            self.control_widget = ManualAutomaticControlWidget(
-                H_t=data["H_t"], Q=data["Q"], n=data["n"], blade_angle=data["blade_angle"]
-            )
-            # Connect signals to handlers
-            self.control_widget.checkbox_state_changed.connect(self.on_checkbox_state_changed)
-            self.control_widget.ui.pushButtonApply.clicked.connect(self.apply_changes)
+            # Create the widget with a default H_t value
+            data = self.main_processor.BEP_data            
+            self.control_widget = ManualAutomaticControlWidget(                
+                H_t= data.H[0],
+                Q=data.Q[0],
+                n = data.n[0],
+                blade_angle= data.blade_angle[0]
+                )            
+            
+            # Connect the "Apply" button to fetch values only when clicked
+            self.control_widget.ui.pushButtonApply.clicked.connect(self.apply_control_changes)
 
         self.control_widget.show()
 
-    def on_checkbox_state_changed(self, state):
-        """
-        Handle the checkbox state change and notify MainProcessor.
-        """
-        try:
-            self.main_processor.toggle_head_control(state)
-            self.update_status(f"Head control toggled to {'enabled' if state else 'disabled'}.")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error toggling head control: {str(e)}")
-            self.update_status(f"Error: {str(e)}")
 
     def get_tree_widget_actions(self):
         """
@@ -422,88 +443,7 @@ class MainWindow(QMainWindow):
         """Update the status box in the GUI."""
         self.ui.plainTextEdit.appendPlainText(message)
 
-    def apply_changes(self):
-        """
-        Apply changes when the 'Apply' button is pressed.
-        """
-        try:
-            # Check and apply the checkbox state
-            #self.control_widget.check_and_apply_checkbox()
-
-            # Fetch other input values from the GUI
-            control_parameters = self.control_widget.get_all_input_values()
-
-            # Apply the control parameters to the simulation
-            self.manage_simulation(control_parameters)
-            
-        except Exception as e:
-            QMessageBox.warning(self, "Invalid Input", str(e))
-            self.update_status(f"Error applying changes: {str(e)}")
-
-    def open_control_widget(self):
-        """
-        Open the Manual/Automatic Control widget.
-        """
-        if not hasattr(self, "control_widget"):
-            # Create the widget with a default H_t value
-            data = self.main_processor.BEP_data            
-            self.control_widget = ManualAutomaticControlWidget(                
-                H_t= data.H[0],
-                Q=data.Q[0],
-                n = data.n[0],
-                blade_angle= data.blade_angle[0]
-                )            
-            
-            # Connect the "Apply" button to fetch values only when clicked
-            self.control_widget.ui.pushButtonApply.clicked.connect(self.apply_changes)
-
-        self.control_widget.show()
-        
-    def manage_simulation(self, control_parameters = {}):
-        """
-        Run the simulation loop, dynamically adapting to live updates of H_t.
-        Args:
-            H_t (float): The head target value. If None, the current value is fetched.
-        """
-        # Ensure the simulation is initialized
-
-        
-
-        if not control_parameters:        
-            
-            control_parameters = self.control_widget.get_all_input_values()
-
-            # Initialize simulation
-            self.main_processor.initialize_simulation()
-
-            # Initialize the plots
-            fig, axs = self.control_processor.initialize_plot()
-            self.plot_axs = axs
-            canvas = self.plot_manager.embed_plot(fig, "Simulation Results")
-            self.plot_canvas = canvas
-
-            self.app_state.simulation_initialized = True
-
-            self.update_status(f"Starting simulation loop.")
-
-        
-        
-
-        # Use ControlProcessor to run the simulation
-        
-        try:
-            self.main_processor.run_simulation(
-                control_parameters,
-                axs=self.plot_axs,  # Pass the plot axes
-                log_callback=self.update_status
-            )
-        except RuntimeError as e:
-            self.update_status(f"Error: {e}")
-            print(f"Error: {e}")
-
-        # Finalize
-        self.update_status("Simulation complete.")
-        print("Simulation complete.")
+    
 
          
 
