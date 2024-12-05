@@ -4,10 +4,9 @@ from control_processor import ControlProcessor
 
 
 from main_processor import MainProcessor
-from PyQt6 import QtWidgets, QtCore
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QTreeWidgetItem,
-    QFileDialog, QMessageBox, QWidget, QVBoxLayout,
+    QMessageBox, QWidget, QVBoxLayout,
     QTabWidget, QTreeWidget
     )
 from turbine_simulator_gui import ( # Generated GUI files
@@ -15,10 +14,9 @@ from turbine_simulator_gui import ( # Generated GUI files
     Ui_FormManualAutomaticControl
     )
 
-import os
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTabWidget
+from PyQt6.QtCore import pyqtSignal
 
 
 class AppState:
@@ -54,13 +52,12 @@ Widget Classes Start here
 """
 
 class ManualAutomaticControlWidget(QWidget):
-    """
-    Wrapper class for the Manual/Automatic Control widget.
-    """
+    
+    # Signal to notify checkbox state change
+    checkbox_state_changed = pyqtSignal(bool)
     def __init__(
             self,
-            parent=None,
-            control_processor=None,
+            parent=None,            
             H_t=2.15,
             H_t_rate = 1/600,
             Q = 3.375,
@@ -92,9 +89,7 @@ class ManualAutomaticControlWidget(QWidget):
         normal_style = "color: black;"
 
         self.ui.lineEdit_H_t.setStyleSheet(normal_style if checked else gray_style)
-        self.ui.lineEdit_H_t_rate.setStyleSheet(normal_style if checked else gray_style)
-
-        self.control_processor = control_processor  # Pass ControlProcessor instance
+        self.ui.lineEdit_H_t_rate.setStyleSheet(normal_style if checked else gray_style)        
 
         # Set default value for H_t
         self.ui.lineEdit_H_t.setText(f"{H_t:.2f}")
@@ -137,21 +132,39 @@ class ManualAutomaticControlWidget(QWidget):
 
         self.ui.lineEdit_H_t.setStyleSheet(normal_style if checked else gray_style)
         self.ui.lineEdit_H_t_rate.setStyleSheet(normal_style if checked else gray_style)
+
+    def _on_checkbox_state_changed(self, state):
+        """
+        Internal handler for checkbox state changes.
+        Emits the signal to notify state changes.
+        """
+        current_state = bool(state)  # Convert to boolean
+        if current_state != self._checkbox_state:
+            self._checkbox_state = current_state
+            self.checkbox_state_changed.emit(current_state)  # Emit the signal
+            print(f"Checkbox state changed. Checked: {current_state}")
+
+    def _update_ui(self, checked):
+        """
+        Update UI elements based on the checkbox state.
+        """
+        gray_style = "color: gray;"
+        normal_style = "color: black;"
+        
+        self.ui.lineEdit_H_t.setEnabled(checked)
+        self.ui.lineEdit_H_t_rate.setEnabled(checked)
+        self.ui.lineEdit_H_t.setStyleSheet(normal_style if checked else gray_style)
+        self.ui.lineEdit_H_t_rate.setStyleSheet(normal_style if checked else gray_style)
         
 
     def check_and_apply_checkbox(self):
         """
-        Check if the checkbox state has changed, and if so, apply the changes.
+        Check if the checkbox state has changed, and emit a signal.
         """
         current_state = self.ui.checkBox.isChecked()
         if current_state != self._checkbox_state:
-            # Update stored checkbox state
-            self._checkbox_state = current_state            
-
-            # Update head control in the ControlProcessor
-            if self.control_processor:
-                self.control_processor.toggle_head_control(current_state)
-
+            self._checkbox_state = current_state
+            self.checkbox_state_changed.emit(current_state)  # Notify via signal
             print(f"Checkbox state changed. Checked: {current_state}")
 
         
@@ -175,10 +188,10 @@ class ManualAutomaticControlWidget(QWidget):
         
     def get_all_input_values(self):
         """
-        Get all input values from the form dynamically.
+        Get all input values from the form dynamically, including the checkbox state.
 
         Returns:
-            dict: A dictionary containing all the input field values.
+            dict: A dictionary containing all the input field values and the checkbox state.
         """
         # Define the list of field names corresponding to the lineEdit widgets
         fields = [
@@ -194,6 +207,9 @@ class ManualAutomaticControlWidget(QWidget):
             if value is None:
                 raise ValueError(f"Invalid value entered for {field}. Please enter a numeric value.")
             values[field] = value
+
+        # Add the checkbox state to the dictionary
+        values["head_control"] = self.ui.checkBox.isChecked()
 
         return values
 
@@ -344,11 +360,40 @@ class MainWindow(QMainWindow):
             self.plot_manager.embed_plot(fig, title)
     
     def manual_automatic_control_action(self):
-        
+        """
+        Handle manual/automatic control by initializing and running the simulation.
+        """
         self.open_control_widget()  # Open the widget
         self.manage_simulation()
 
     
+
+    def open_control_widget(self):
+        """
+        Open the Manual/Automatic Control widget.
+        """
+        if not hasattr(self, "control_widget"):
+            # Fetch BEP data from MainProcessor
+            data = self.main_processor.get_bep_data()
+            self.control_widget = ManualAutomaticControlWidget(
+                H_t=data["H_t"], Q=data["Q"], n=data["n"], blade_angle=data["blade_angle"]
+            )
+            # Connect signals to handlers
+            self.control_widget.checkbox_state_changed.connect(self.on_checkbox_state_changed)
+            self.control_widget.ui.pushButtonApply.clicked.connect(self.apply_changes)
+
+        self.control_widget.show()
+
+    def on_checkbox_state_changed(self, state):
+        """
+        Handle the checkbox state change and notify MainProcessor.
+        """
+        try:
+            self.main_processor.toggle_head_control(state)
+            self.update_status(f"Head control toggled to {'enabled' if state else 'disabled'}.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error toggling head control: {str(e)}")
+            self.update_status(f"Error: {str(e)}")
 
     def get_tree_widget_actions(self):
         """
@@ -383,7 +428,7 @@ class MainWindow(QMainWindow):
         """
         try:
             # Check and apply the checkbox state
-            self.control_widget.check_and_apply_checkbox()
+            #self.control_widget.check_and_apply_checkbox()
 
             # Fetch other input values from the GUI
             control_parameters = self.control_widget.get_all_input_values()
@@ -401,9 +446,8 @@ class MainWindow(QMainWindow):
         """
         if not hasattr(self, "control_widget"):
             # Create the widget with a default H_t value
-            data = self.BEP_data
-            self.control_widget = ManualAutomaticControlWidget(
-                control_processor=self.control_processor,
+            data = self.main_processor.BEP_data            
+            self.control_widget = ManualAutomaticControlWidget(                
                 H_t= data.H[0],
                 Q=data.Q[0],
                 n = data.n[0],
@@ -430,7 +474,7 @@ class MainWindow(QMainWindow):
             control_parameters = self.control_widget.get_all_input_values()
 
             # Initialize simulation
-            self.control_processor.initialize_simulation(self.hill_values.data, self.BEP_data)
+            self.main_processor.initialize_simulation()
 
             # Initialize the plots
             fig, axs = self.control_processor.initialize_plot()
@@ -448,7 +492,7 @@ class MainWindow(QMainWindow):
         # Use ControlProcessor to run the simulation
         
         try:
-            self.control_processor.run_simulation(
+            self.main_processor.run_simulation(
                 control_parameters,
                 axs=self.plot_axs,  # Pass the plot axes
                 log_callback=self.update_status
@@ -461,7 +505,7 @@ class MainWindow(QMainWindow):
         self.update_status("Simulation complete.")
         print("Simulation complete.")
 
-
+         
 
 
 

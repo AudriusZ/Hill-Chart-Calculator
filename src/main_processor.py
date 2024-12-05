@@ -1,24 +1,3 @@
-"""
-from PyQt6 import QtWidgets, QtCore
-
-
-from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QTreeWidgetItem,
-    QFileDialog, QMessageBox, QWidget, QVBoxLayout,
-    QTabWidget, QTreeWidget
-    )
-from turbine_simulator_gui import ( # Generated GUI files
-    Ui_MainWindow,  
-    Ui_FormManualAutomaticControl
-    )
-
-
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTabWidget
-"""
-
-
 from PyQt6.QtWidgets import (QFileDialog, QMessageBox)
 
 from HillChartProcessor import HillChartProcessor  # Processing logic
@@ -60,6 +39,32 @@ class MainProcessor():
         else:
             print(message)  # Default behavior for standalone mode
 
+    def get_bep_data(self):
+        """
+        Retrieve BEP data for initializing the control widget.
+        Returns:
+            BEP data
+        """
+        if not self.BEP_data:
+            raise ValueError("BEP data is not initialized. Run 'default_turbine_hydraulics_action' first.")
+        
+        # Return the relevant BEP data
+        return self.BEP_data
+    
+    def toggle_head_control(self, state):
+        """
+        Toggle the head control state in the simulation.
+        Args:
+            state (bool): The new state of head control.
+        """
+        try:
+            self.control_processor.toggle_head_control(state)
+            self.emit_message(f"Head control {'enabled' if state else 'disabled'}.")
+        except Exception as e:
+            self.emit_message(f"Error toggling head control: {str(e)}")
+            raise
+
+
     def maximise_output_action(self):        
         
         self.maximised_output_processor.maximised_output(self.hill_values.data, self.BEP_data)                
@@ -67,6 +72,46 @@ class MainProcessor():
 
         return plots
 
+    def initialize_simulation(self):
+        """
+        Initialize the simulation and return the figure and axes for plotting.
+        Returns:
+            tuple: (fig, axs) for embedding in the GUI.
+        """
+        try:
+            if not self.simulation_initialized:
+                # Initialize the simulation with BEP data
+                self.control_processor.initialize_simulation(self.hill_values.data, self.BEP_data)
+
+                # Initialize the plots
+                fig, axs = self.control_processor.initialize_plot()
+                self.simulation_initialized = True
+                self.emit_message("Simulation initialized successfully.")
+                return fig, axs  # Return the figure and axes for embedding
+            else:
+                raise RuntimeError("Simulation is already initialized.")
+        except Exception as e:
+            self.emit_message(f"Error during simulation initialization: {str(e)}")
+            raise
+
+    def run_simulation(self, control_parameters, axs, log_callback=None):
+        """
+        Run the simulation loop with live plot updates.
+        Args:
+            control_parameters (dict): Parameters for the simulation.
+            axs: Plot axes for updating live plots.
+            log_callback (callable, optional): Callback for logging status messages.
+        """
+        try:
+            self.control_processor.run_simulation(
+                control_parameters,
+                axs=axs,  # Pass the plot axes for updates
+                log_callback=log_callback
+            )
+            self.emit_message("Simulation completed successfully.")
+        except RuntimeError as e:
+            self.emit_message(f"Error during simulation: {str(e)}")
+            raise
     
     """
     Development mode methods start here

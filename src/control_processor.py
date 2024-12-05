@@ -275,6 +275,7 @@ class ControlProcessor:
         
         self.simulator.set_operation_attribute("Q", control_parameters['Q'])
         # Control head (H) or directly set operational parameters
+        self.head_control = control_parameters['head_control']
         if self.head_control:
             self.perform_control_step(H_t=control_parameters['H_t'], delta_time=delta_time)
         else:
