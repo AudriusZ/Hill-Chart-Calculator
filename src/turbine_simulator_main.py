@@ -1,3 +1,9 @@
+from HillChartProcessor import HillChartProcessor  # Processing logic
+from control_processor import ControlProcessor
+
+
+
+from main_processor import MainProcessor
 from PyQt6 import QtWidgets, QtCore
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QTreeWidgetItem,
@@ -8,8 +14,7 @@ from turbine_simulator_gui import ( # Generated GUI files
     Ui_MainWindow,  
     Ui_FormManualAutomaticControl
     )
-from HillChartProcessor import HillChartProcessor  # Processing logic
-from control_processor import ControlProcessor
+
 import os
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -247,6 +252,11 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Turbine Simulator")
 
+        self.main_processor = MainProcessor()
+        self.main_processor.set_message_callback(self.update_status)  # Set the callback for messages
+        self.main_processor.standalone_figures = False
+
+
 
         # Initialize the processor
         self.processor = HillChartProcessor()
@@ -266,6 +276,79 @@ class MainWindow(QMainWindow):
 
         # Initialize simulation state
         self.simulation_initialized = False
+
+    def tree_item_double_clicked(self, item: QTreeWidgetItem, column: int):
+        """Handle tree item double-click actions."""
+        action = item.text(0)  # Get the text of the clicked item
+        
+        try:
+            if action == "Turbine Hydraulics":
+                self.update_status(f"***Developer mode: Set default turbine hydraulics after double-clicking '{action}'.")
+                self.turbine_hydraulics_action()
+
+            elif action == "Load Data":
+                self.load_data_action()
+
+            elif action == "Maximised Output":
+                if self.app_state.actions.get("Turbine Hydraulics", False):
+                    self.maximise_output_action()                   
+                else:
+                    self.update_status(f"Must set 'Turbine Hydraulics' first.")
+
+            elif action == "Manual/Automatic Control":
+                if self.app_state.actions.get("Turbine Hydraulics", False):
+                    self.manual_automatic_control_action()                    
+                else:
+                    self.update_status(f"Must set 'Turbine Hydraulics' first.")
+            else:
+                self.update_status(f"No action defined for '{action}'.")
+            
+            # If no exception occurred, mark the action as successful
+            self.app_state.update_actions(action, True)
+
+        except Exception as e:
+            # Log the error and mark the action as failed
+            self.update_status(f"Error handling action '{action}': {str(e)}")
+            self.app_state.update_actions(action, False)
+
+
+    def turbine_hydraulics_action(self):
+        """
+        Generate and embed the 3D Hill Chart into a new tab.
+        """
+        try:
+            fig = self.main_processor.default_turbine_hydraulics_action()            
+            self.plot_manager.embed_plot(fig, "3D Hill Chart")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+            self.update_status(f"Error during Turbine Hydraulics action: {str(e)}")
+    
+    def load_data_action(self):
+        """Handle the 'Load Data' action."""
+        pass
+        """
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select Turbine Data File", "", "CSV Files (*.csv)")
+        if file_path:
+            self.processor.get_file_path(file_path)
+            self.update_status(f"Loaded data from: {file_path}")
+        else:
+            QMessageBox.warning(self, "No File Selected", "Please select a valid file.")    
+        """
+
+    def maximise_output_action(self):
+        plots = self.main_processor.maximise_output_action()
+
+        # Embed each plot in a new tab
+        for title, fig in plots.items():
+            self.plot_manager.embed_plot(fig, title)
+    
+    def manual_automatic_control_action(self):
+        
+        self.open_control_widget()  # Open the widget
+        self.manage_simulation()
+
+    
 
     def get_tree_widget_actions(self):
         """
@@ -290,66 +373,27 @@ class MainWindow(QMainWindow):
 
         return actions
 
-        
-
-    def tree_item_double_clicked(self, item: QTreeWidgetItem, column: int):
-        """Handle tree item double-click actions."""
-        action = item.text(0)  # Get the text of the clicked item
-        
-        try:
-            if action == "Turbine Hydraulics":
-                self.update_status(f"***Developer mode: Set default turbine hydraulics after double-clicking '{action}'.")
-                self.turbine_hydraulics_action()
-            elif action == "Load Data":
-                self.load_data_action()
-            elif action == "Maximised Output":
-                if self.app_state.actions.get("Turbine Hydraulics", False):
-
-                    from maximised_output_processor import MaximisedOutputProcessor
-                    maximised_output_processor = MaximisedOutputProcessor()
-                    maximised_output_processor.maximised_output(self.hill_values.data, self.BEP_data)
-                    # Add plots to tabs
-                    plots = maximised_output_processor.generate_plots()
-
-                    # Embed each plot in a new tab
-                    for title, fig in plots.items():
-                        self.plot_manager.embed_plot(fig, title)
-                    
-                    
-                else:
-                    self.update_status(f"Must set 'Turbine Hydraulics' first.")
-
-            elif action == "Manual/Automatic Control":
-                if self.app_state.actions.get("Turbine Hydraulics", False):
-                    self.open_control_widget()  # Open the widget
-                    self.manage_simulation()
-                else:
-                    self.update_status(f"Must set 'Turbine Hydraulics' first.")
-            else:
-                self.update_status(f"No action defined for '{action}'.")
-            
-            # If no exception occurred, mark the action as successful
-            self.app_state.update_actions(action, True)
-
-        except Exception as e:
-            # Log the error and mark the action as failed
-            self.update_status(f"Error handling action '{action}': {str(e)}")
-            self.app_state.update_actions(action, False)
-
-
-    def load_data_action(self):
-        """Handle the 'Load Data' action."""
-        file_path, _ = QFileDialog.getOpenFileName(self, "Select Turbine Data File", "", "CSV Files (*.csv)")
-        if file_path:
-            self.processor.get_file_path(file_path)
-            self.update_status(f"Loaded data from: {file_path}")
-        else:
-            QMessageBox.warning(self, "No File Selected", "Please select a valid file.")    
-
-
     def update_status(self, message):
         """Update the status box in the GUI."""
         self.ui.plainTextEdit.appendPlainText(message)
+
+    def apply_changes(self):
+        """
+        Apply changes when the 'Apply' button is pressed.
+        """
+        try:
+            # Check and apply the checkbox state
+            self.control_widget.check_and_apply_checkbox()
+
+            # Fetch other input values from the GUI
+            control_parameters = self.control_widget.get_all_input_values()
+
+            # Apply the control parameters to the simulation
+            self.manage_simulation(control_parameters)
+            
+        except Exception as e:
+            QMessageBox.warning(self, "Invalid Input", str(e))
+            self.update_status(f"Error applying changes: {str(e)}")
 
     def open_control_widget(self):
         """
@@ -370,25 +414,6 @@ class MainWindow(QMainWindow):
             self.control_widget.ui.pushButtonApply.clicked.connect(self.apply_changes)
 
         self.control_widget.show()
-
-    def apply_changes(self):
-        """
-        Apply changes when the 'Apply' button is pressed.
-        """
-        try:
-            # Check and apply the checkbox state
-            self.control_widget.check_and_apply_checkbox()
-
-            # Fetch other input values from the GUI
-            control_parameters = self.control_widget.get_all_input_values()
-
-            # Apply the control parameters to the simulation
-            self.manage_simulation(control_parameters)
-            
-        except Exception as e:
-            QMessageBox.warning(self, "Invalid Input", str(e))
-            self.update_status(f"Error applying changes: {str(e)}")
-
         
     def manage_simulation(self, control_parameters = {}):
         """
@@ -441,96 +466,7 @@ class MainWindow(QMainWindow):
 
 
 
-    """
-    Development mode methods start here
-    """
-
-    def turbine_hydraulics_action(self):
-        """
-        Generate and embed the 3D Hill Chart into a new tab.
-        """
-        try:
-            # Set default turbine and plot parameters
-            self.default_turbine_parameters()
-            self.default_plot_parameters()
-            self.default_output_parameters()
-
-            # Generate the outputs and get the processed data
-            result = self.processor.generate_outputs(show_standalone=False)
-
-            # Unpack the result (includes fig if embedded)
-            self.BEP_data, self.hill_values, _, fig = result            
-
-            # Embed the plot in a new tab using PlotManager
-            self.plot_manager.embed_plot(fig, "3D Hill Chart")
-
-            # Update status
-            # self.update_status("3D Hill Chart embedded in a new tab.")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
-            self.update_status(f"Error during Turbine Hydraulics action: {str(e)}")
-      
-
-    def default_turbine_parameters(self):
-        """Set default turbine parameters as in the test."""
-        datapath = os.path.join(os.path.dirname(__file__), 'Mogu_D1.65m.csv')  # Adjust path as needed
-        selected_values = [1, 4]  # 1 - H, 2 - Q, 3 - n, 4 - D
-        var1 = 2.15
-        var2 = 1.65
-
-        self.processor.get_file_path(datapath)
-        self.processor.get_turbine_parameters(selected_values, var1, var2)
-
-    def default_plot_parameters(self):
-        """Set default plot parameters as in the test."""
-        
-        min_efficiency_limit = 0.1
-        n_contours = 25        
-        extrapolation_options_vars = [1, 1]
-        extrapolation_values_n11 = [10, 200, 10]
-        extrapolation_values_blade_angles = [2, 26.1, 10]
-
-        self.processor.get_plot_parameters(n_contours, extrapolation_options_vars, extrapolation_values_n11, extrapolation_values_blade_angles, min_efficiency_limit=min_efficiency_limit)
-
-    def default_output_parameters(self):
-        """Set default output parameters as in the test."""
-        output_options = {
-            '3D Hill Chart': 1,
-            'Hill Chart Contour': 0,
-            '2D Curve Slices': 0,
-            '2D Curve Slices - const.blade': 0,
-            'Best efficiency point summary': 0
-        }
-        output_suboptions = {
-            'Hill Chart Contour': {'Hide Blade Angle Lines': 0},
-            '2D Curve Slices - const.blade': {'Const. Head': 1, 'Const. n': 1, 'Const. efficiency': 1}
-        }
-        settings_options = {
-            'Normalize': 0,
-            'Save Chart Data': 0
-        }
-
-        self.processor.get_output_parameters(output_options, output_suboptions, settings_options)
-
     
-
-
-
-    
-
-    def run_test_steps(self):
-        """Run the same steps as in testHillChartProcessor when ButtonDev is clicked."""
-        try:
-            self.turbine_hydraulics_action()
-            self.manage_simulation()
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
-            self.update_status(f"Error during test steps: {str(e)}")
-
-    """
-    Development mode methods end here
-    """
 
 
 if __name__ == "__main__":
