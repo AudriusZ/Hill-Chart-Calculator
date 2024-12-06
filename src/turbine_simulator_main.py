@@ -70,9 +70,11 @@ class ManualAutomaticControlWidget(QWidget):
 
         # Connect the activate checkbox to toggle input fields
         self.ui.checkBox.stateChanged.connect(self.toggle_inputs)
+        self.ui.checkBox_2.stateChanged.connect(self.toggle_inputs)
 
         # Store initial checkbox state for comparison later
         self._checkbox_state = self.ui.checkBox.isChecked()
+        self._checkbox_state = self.ui.checkBox_2.isChecked()
 
         checked = self._checkbox_state
 
@@ -96,7 +98,26 @@ class ManualAutomaticControlWidget(QWidget):
         self.ui.lineEdit_n.setText(f"{n:.1f}")
         self.ui.lineEdit_n_rate.setText(f"{n_rate:.1f}")    
 
-    
+        settings = {
+            "Kp": 1.2,              # PID control coefficient for proportional control
+            "Ki": 0.1,              # PID control coefficient for integral control
+            "Kd": 0.05,             # PID control coefficient for derivative control
+            "H_tolerance": 0.05,    # Tolerance for head control
+            "n_min": 30,            # Minimum rotational speed limit
+            "n_max": 150,           # Maximum rotational speed limit
+            "blade_angle_min": 3,   # Minimum blade angle
+            "blade_angle_max": 26   # Maximum blade angle
+        }
+
+        # Set default value for H_t
+        self.ui.lineEdit_n_min.setText(f"{30:.1f}")
+        self.ui.lineEdit_n_max.setText(f"{150:.1f}")
+        self.ui.lineEdit_blade_angle_min.setText(f"{3:.1f}")
+        self.ui.lineEdit_blade_angle_max.setText(f"{26:.1f}")
+        self.ui.lineEdit_Kp.setText(f"{1.2:.1f}")
+        self.ui.lineEdit_Ki.setText(f"{0.1:.1f}")
+        self.ui.lineEdit_Kd.setText(f"{0.05:.1f}")
+            
 
     def toggle_inputs(self, checked):
         """
@@ -171,6 +192,33 @@ class ManualAutomaticControlWidget(QWidget):
 
         # Add the checkbox state to the dictionary
         values["head_control"] = self.ui.checkBox.isChecked()
+        values["blade_angle_lock"] = self.ui.checkBox_2.isChecked()
+        values["n_lock"] = False
+        
+
+
+        return values
+    
+    def get_all_settings_values(self):
+        """
+        Get all input values from the form dynamically, including the checkbox state.
+
+        Returns:
+            dict: A dictionary containing all the input field values and the checkbox state.
+        """
+        # Define the list of field names corresponding to the lineEdit widgets
+        fields = [
+            "n_min", "n_max", "blade_angle_min", "blade_angle_max", 
+            "Kp", "Ki", "Kd"
+        ]
+
+        # Dynamically fetch and validate values for all fields
+        values = {}
+        for field in fields:
+            value = self.get_input_value(field)
+            if value is None:
+                raise ValueError(f"Invalid value entered for {field}. Please enter a numeric value.")
+            values[field] = value
 
         return values
 
@@ -332,8 +380,37 @@ class MainWindow(QMainWindow):
         Handle manual/automatic control by initializing and running the simulation.
         """
         self.open_control_widget()  # Open the widget
-        self.manage_control_simulation()    
+        control_parameters, control_settings = self.initialize_simulation_and_plots()
+        self.manage_control_simulation(control_parameters = control_parameters, control_settings = control_settings)        
+    
+    def initialize_simulation_and_plots(self):
+        """
+        Initialize the simulation and set up plots.
+        """
+        try:
+            # Fetch control parameters from the GUI
+            control_parameters = self.control_widget.get_all_input_values()
+            control_settings = self.control_widget.get_all_settings_values()
 
+            # Initialize the simulation
+            self.main_processor.initialize_simulation()
+
+            # Initialize the plots
+            fig, axs = self.main_processor.control_processor.initialize_plot()
+            self.plot_axs = axs
+            canvas = self.plot_manager.embed_plot(fig, "Simulation Results")
+            self.plot_canvas = canvas
+
+            # Update the app state
+            self.app_state.simulation_initialized = True
+
+            # Log the status
+            self.update_status("Starting simulation loop.")
+
+            return control_parameters, control_settings  # Return the parameters for further use if needed
+        except Exception as e:
+            self.update_status(f"Error during simulation initialization: {str(e)}")
+            raise
     def apply_control_changes(self):
         """
         Apply changes when the 'Apply' button is pressed.
@@ -348,51 +425,28 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, "Invalid Input", str(e))
             self.update_status(f"Error applying changes: {str(e)}")
-    
         
-    def manage_control_simulation(self, control_parameters = {}):
+    def manage_control_simulation(self, control_parameters=None, control_settings = None):
         """
-        Run the simulation loop, dynamically adapting to live updates of H_t.
+        Run the simulation loop, dynamically adapting to live updates of control parameters.
         Args:
-            H_t (float): The head target value. If None, the current value is fetched.
+            control_parameters (dict): Parameters for the simulation. If None, initializes simulation.
         """
-        # Ensure the simulation is initialized
-
-        
-
-        if not control_parameters:        
-            
-            control_parameters = self.control_widget.get_all_input_values()
-
-            # Initialize simulation
-            self.main_processor.initialize_simulation()
-
-            # Initialize the plots
-            fig, axs = self.main_processor.control_processor.initialize_plot()
-            self.plot_axs = axs
-            canvas = self.plot_manager.embed_plot(fig, "Simulation Results")
-            self.plot_canvas = canvas
-
-            self.app_state.simulation_initialized = True
-
-            self.update_status(f"Starting simulation loop.")
-
-
-        # Use ControlProcessor to run the simulation
-        
         try:
+            # Use ControlProcessor to run the simulation
             self.main_processor.run_simulation(
                 control_parameters,
+                control_settings,
                 axs=self.plot_axs,  # Pass the plot axes
                 log_callback=self.update_status
             )
-        except RuntimeError as e:
-            self.update_status(f"Error: {e}")
-            print(f"Error: {e}")
 
-        # Finalize
-        self.update_status("Simulation complete.")
-        print("Simulation complete.")
+            # Finalize
+            self.update_status("Simulation complete.")
+            print("Simulation complete.")
+        except RuntimeError as e:
+            self.update_status(f"Error during simulation: {str(e)}")
+            print(f"Error: {e}")
 
     
 

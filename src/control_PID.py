@@ -36,22 +36,22 @@ class ControlPID:
             ValueError: If any constraints are invalid.
         """
         if n_min is not None:
-            if n_max is not None and n_min >= n_max:
+            if n_max is not None and n_min > n_max:
                 raise ValueError("n_min must be less than n_max.")
             self.n_min = n_min
 
         if n_max is not None:
-            if n_min is not None and n_max <= n_min:
+            if n_min is not None and n_max < n_min:
                 raise ValueError("n_max must be greater than n_min.")
             self.n_max = n_max
 
         if blade_angle_min is not None:
-            if blade_angle_max is not None and blade_angle_min >= blade_angle_max:
+            if blade_angle_max is not None and blade_angle_min > blade_angle_max:
                 raise ValueError("blade_angle_min must be less than blade_angle_max.")
             self.blade_angle_min = blade_angle_min
 
         if blade_angle_max is not None:
-            if blade_angle_min is not None and blade_angle_max <= blade_angle_min:
+            if blade_angle_min is not None and blade_angle_max < blade_angle_min:
                 raise ValueError("blade_angle_max must be greater than blade_angle_min.")
             self.blade_angle_max = blade_angle_max
 

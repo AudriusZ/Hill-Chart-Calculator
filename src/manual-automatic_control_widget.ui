@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>560</height>
+    <height>690</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -222,6 +222,19 @@
    <property name="title">
     <string>Input Parameters</string>
    </property>
+   <widget class="QCheckBox" name="checkBox_2">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>170</y>
+      <width>75</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Lock</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QPushButton" name="pushButtonApply">
    <property name="geometry">
@@ -242,13 +255,49 @@
      <x>20</x>
      <y>350</y>
      <width>361</width>
-     <height>81</height>
+     <height>211</height>
     </rect>
    </property>
    <property name="title">
-    <string>Expert Parameters</string>
+    <string>Settings</string>
    </property>
-   <widget class="QLabel" name="label_n_2">
+   <widget class="QLabel" name="label_blade_angle_max">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>80</y>
+      <width>111</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Blade Angle max [°]</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_Kp">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>140</y>
+      <width>101</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Kp</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit_Ki">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>170</y>
+      <width>91</width>
+      <height>22</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_n_min">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -258,7 +307,119 @@
      </rect>
     </property>
     <property name="text">
-     <string>placeholder</string>
+     <string>n min [rpm]</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit_blade_angle_max">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>110</y>
+      <width>113</width>
+      <height>22</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_n_max">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>20</y>
+      <width>111</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>n max [rpm]</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_Ki">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>140</y>
+      <width>111</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Ki</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit_n_max">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>50</y>
+      <width>113</width>
+      <height>22</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_Kd">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>140</y>
+      <width>101</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Kd</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit_blade_angle_min">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>110</y>
+      <width>113</width>
+      <height>22</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit_Kd">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>170</y>
+      <width>91</width>
+      <height>22</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_blade_angle_min">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>80</y>
+      <width>101</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Blade Angle min [°]</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit_n_min">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>50</y>
+      <width>113</width>
+      <height>22</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit_Kp">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>170</y>
+      <width>91</width>
+      <height>22</height>
+     </rect>
     </property>
    </widget>
   </widget>
@@ -266,7 +427,7 @@
    <property name="geometry">
     <rect>
      <x>300</x>
-     <y>440</y>
+     <y>570</y>
      <width>81</width>
      <height>31</height>
     </rect>
@@ -279,7 +440,7 @@
    <property name="geometry">
     <rect>
      <x>300</x>
-     <y>510</y>
+     <y>640</y>
      <width>81</width>
      <height>31</height>
     </rect>
@@ -292,7 +453,7 @@
    <property name="geometry">
     <rect>
      <x>200</x>
-     <y>510</y>
+     <y>640</y>
      <width>81</width>
      <height>31</height>
     </rect>
@@ -320,10 +481,10 @@
   <zorder>label_n_rate</zorder>
   <zorder>checkBox</zorder>
   <zorder>pushButtonApply</zorder>
-  <zorder>groupBox_2</zorder>
   <zorder>pushButtonApply_2</zorder>
   <zorder>pushButtonStop</zorder>
   <zorder>pushButtonStart</zorder>
+  <zorder>groupBox_2</zorder>
  </widget>
  <resources/>
  <connections/>

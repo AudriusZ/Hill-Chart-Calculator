@@ -49,21 +49,8 @@ class MainProcessor():
             raise ValueError("BEP data is not initialized. Run 'default_turbine_hydraulics_action' first.")
         
         # Return the relevant BEP data
-        return self.BEP_data
+        return self.BEP_data  
     
-    def toggle_head_control(self, state):
-        """
-        Toggle the head control state in the simulation.
-        Args:
-            state (bool): The new state of head control.
-        """
-        try:
-            self.control_processor.toggle_head_control(state)
-            self.emit_message(f"Head control {'enabled' if state else 'disabled'}.")
-        except Exception as e:
-            self.emit_message(f"Error toggling head control: {str(e)}")
-            raise
-
 
     def maximise_output_action(self):        
         
@@ -94,7 +81,7 @@ class MainProcessor():
             self.emit_message(f"Error during simulation initialization: {str(e)}")
             raise
 
-    def run_simulation(self, control_parameters, axs, log_callback=None):
+    def run_simulation(self, control_parameters, control_settings, axs, log_callback=None):
         """
         Run the simulation loop with live plot updates.
         Args:
@@ -105,6 +92,7 @@ class MainProcessor():
         try:
             self.control_processor.run_simulation(
                 control_parameters,
+                control_settings,
                 axs=axs,  # Pass the plot axes for updates
                 log_callback=log_callback
             )

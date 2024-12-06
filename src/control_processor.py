@@ -20,13 +20,29 @@ class ControlProcessor:
         # Initialize the simulator instance
         self.simulator = ControlSimulator()
 
+        self.settings = {
+            "Kp": 1.2,              # PID control coefficient for proportional control
+            "Ki": 0.1,              # PID control coefficient for integral control
+            "Kd": 0.05,             # PID control coefficient for derivative control
+            "H_tolerance": 0.05,    # Tolerance for head control
+            "n_min": 30,            # Minimum rotational speed limit
+            "n_max": 150,           # Maximum rotational speed limit
+            "blade_angle_min": 3,   # Minimum blade angle
+            "blade_angle_max": 26   # Maximum blade angle
+        }
+
         # Initialize the PID controller with predefined coefficients and constraints
         self.controller = ControlPID(
-            Kp=1.2, Ki=0.1, Kd=0.05,  # PID control coefficients
-            H_tolerance=0.05,         # Tolerance for head control
-            n_min=30, n_max=150,      # Rotational speed limits
-            blade_angle_min=3, blade_angle_max=26  # Blade angle limits
+            Kp=self.settings["Kp"],
+            Ki=self.settings["Ki"],
+            Kd=self.settings["Kd"],
+            H_tolerance=self.settings["H_tolerance"],
+            n_min=self.settings["n_min"],
+            n_max=self.settings["n_max"],
+            blade_angle_min=self.settings["blade_angle_min"],
+            blade_angle_max=self.settings["blade_angle_max"]
         )
+
 
         # Initialize data storage for live plotting, with maximum length based on simulation duration
         maxlen = int(max_duration / self.refresh_rate_physical)
@@ -45,9 +61,7 @@ class ControlProcessor:
         # Cache variables for optimization
         self.cached_H_t = None
         self.cached_n_t = None
-
-        self.head_control = False
-
+        
     def initialize_simulation(self, hill_data, BEP_data, initial_conditions=None, max_duration=14400):
         """
         Initialize the simulation with hill chart and best efficiency point (BEP) data.
@@ -90,18 +104,8 @@ class ControlProcessor:
 
         # Precompute initial outputs to ensure readiness for simulation
         self.compute_outputs()
-
-    def toggle_head_control(self, state):
-        """
-        Toggle head control mode based on the input state.
-
-        Args:
-            state (bool): New state for head control (True or False).
-        """
-        self.head_control = state
-        print(f"Head control toggled to: {self.head_control}")
-
-    def run_simulation(self, control_parameters={}, axs=None, log_callback=None):
+    
+    def run_simulation(self, control_parameters={}, control_settings ={}, axs=None, log_callback=None):
         """
         Run the simulation loop, adapting parameters dynamically.
 
@@ -136,13 +140,12 @@ class ControlProcessor:
             # Update simulation state based on adjusted parameters
             current_control_parameters = control_parameters.copy()
             current_control_parameters.update(self.current_values)
-            self.update_simulation(current_control_parameters, axs, log_callback=log_callback)
+            self.update_simulation(current_control_parameters, control_settings, axs, log_callback=log_callback)
 
             # Increment the simulation time
             self.elapsed_physical_time += self.refresh_rate_physical
 
-        if log_callback:
-            log_callback("Simulation complete.")
+        
     def Q_function(self, elapsed_physical_time):
         """
         Compute a sinusoidal fluctuation for flow rate (Q).
@@ -272,11 +275,41 @@ class ControlProcessor:
         """
         # Determine the delta time for simulation updates
         delta_time = self.refresh_rate_physical        
-        
+
         self.simulator.set_operation_attribute("Q", control_parameters['Q'])
         # Control head (H) or directly set operational parameters
-        self.head_control = control_parameters['head_control']
-        if self.head_control:
+        head_control = control_parameters['head_control']
+        blade_angle_lock = control_parameters['blade_angle_lock']
+        n_lock = control_parameters['n_lock']
+
+        # Handle blade angle constraints
+        if blade_angle_lock:
+            self.controller.set_constraints(
+                blade_angle_min = control_parameters['blade_angle'],
+                blade_angle_max = control_parameters['blade_angle']
+                )
+        else:
+            self.controller.set_constraints(
+                blade_angle_min = self.settings['blade_angle_min'],
+                blade_angle_max = self.settings['blade_angle_max']
+                )
+            
+        # Handle rotational speed constraints      
+        # Further work needed n_t resets in PID step  
+        """
+        if n_lock:
+            self.controller.set_constraints(
+                n_min=control_parameters['n'],
+                n_max=control_parameters['n']
+            )
+        else:
+            self.controller.set_constraints(
+                n_min=self.settings['n_min'],
+                n_max=self.settings['n_max']
+            )
+        """
+
+        if head_control:
             self.perform_control_step(H_t=control_parameters['H_t'], delta_time=delta_time)
         else:
             self.simulator.set_operation_attribute("n", control_parameters['n'])
