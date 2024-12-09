@@ -81,7 +81,7 @@ class MainProcessor():
             self.emit_message(f"Error during simulation initialization: {str(e)}")
             raise
 
-    def run_simulation(self, control_parameters, control_settings, axs, log_callback=None):
+    def run_simulation(self, control_parameters, axs, log_callback=None):
         """
         Run the simulation loop with live plot updates.
         Args:
@@ -90,13 +90,13 @@ class MainProcessor():
             log_callback (callable, optional): Callback for logging status messages.
         """
         try:
+            
             self.control_processor.run_simulation(
-                control_parameters,
-                control_settings,
+                control_parameters,                
                 axs=axs,  # Pass the plot axes for updates
                 log_callback=log_callback
             )
-            self.emit_message("Simulation completed successfully.")
+            self.emit_message("Stopped. Press Start to Continue")
         except RuntimeError as e:
             self.emit_message(f"Error during simulation: {str(e)}")
             raise

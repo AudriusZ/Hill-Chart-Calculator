@@ -31,6 +31,8 @@ class ControlProcessor:
             "blade_angle_max": 26   # Maximum blade angle
         }
 
+        self.continue_simulation = True
+
         # Initialize the PID controller with predefined coefficients and constraints
         self.controller = ControlPID(
             Kp=self.settings["Kp"],
@@ -62,6 +64,10 @@ class ControlProcessor:
         self.cached_H_t = None
         self.cached_n_t = None
         
+    def update_control_settings(self, control_settings):
+        self.settings = control_settings        
+        
+
     def initialize_simulation(self, hill_data, BEP_data, initial_conditions=None, max_duration=14400):
         """
         Initialize the simulation with hill chart and best efficiency point (BEP) data.
@@ -105,7 +111,10 @@ class ControlProcessor:
         # Precompute initial outputs to ensure readiness for simulation
         self.compute_outputs()
     
-    def run_simulation(self, control_parameters={}, control_settings ={}, axs=None, log_callback=None):
+    def set_continue_simulation(self, continue_simulation):
+        self.continue_simulation = continue_simulation
+
+    def run_simulation(self, control_parameters, axs=None, log_callback=None):
         """
         Run the simulation loop, adapting parameters dynamically.
 
@@ -117,7 +126,9 @@ class ControlProcessor:
         if axs is None:
             raise ValueError("axs parameter is required for plotting.")
 
-        while True:  # Replace this with a termination condition as needed
+        # Run simulation continuously
+        while self.continue_simulation:  # Replace this with a termination condition as needed
+
             # Adjust control parameters dynamically
             for param, value in control_parameters.items():
                 if not param.endswith("_rate"):  # Skip rate-related parameters
@@ -140,6 +151,9 @@ class ControlProcessor:
             # Update simulation state based on adjusted parameters
             current_control_parameters = control_parameters.copy()
             current_control_parameters.update(self.current_values)
+
+
+            control_settings = self.settings
             self.update_simulation(current_control_parameters, control_settings, axs, log_callback=log_callback)
 
             # Increment the simulation time
@@ -264,7 +278,7 @@ class ControlProcessor:
             "power": operation_point.power
         }
 
-    def update_simulation(self, control_parameters, axs, log_callback=None):
+    def update_simulation(self, control_parameters, control_settings, axs, log_callback=None):
         """
         Update the simulation state and refresh plots.
 
@@ -282,6 +296,14 @@ class ControlProcessor:
         blade_angle_lock = control_parameters['blade_angle_lock']
         n_lock = control_parameters['n_lock']
 
+        
+        self.controller.set_constraints(
+                blade_angle_min = control_settings['blade_angle_min'],
+                blade_angle_max = control_settings['blade_angle_max'],
+                n_min=control_settings['n_min'],
+                n_max=control_settings['n_max']
+                )
+        
         # Handle blade angle constraints
         if blade_angle_lock:
             self.controller.set_constraints(

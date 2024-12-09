@@ -2,8 +2,10 @@ from simple_pid import PID
 
 
 class ControlPID:
-    def __init__(self, Kp, Ki, Kd, H_tolerance=0.1, n_min=20.0, n_max=150.0, blade_angle_min=8.0, blade_angle_max=21.0):
+    def __init__(self, Kp = 1.2, Ki =0.1, Kd = 0.05, H_tolerance=0.1, n_min=20.0, n_max=150.0, blade_angle_min=8.0, blade_angle_max=21.0):
         """
+
+        
         Initialize the ControlPID controller with PID coefficients and rule-based constraints.
 
         Parameters:

@@ -380,8 +380,11 @@ class MainWindow(QMainWindow):
         Handle manual/automatic control by initializing and running the simulation.
         """
         self.open_control_widget()  # Open the widget
-        control_parameters, control_settings = self.initialize_simulation_and_plots()
-        self.manage_control_simulation(control_parameters = control_parameters, control_settings = control_settings)        
+        control_parameters, control_settings = self.initialize_simulation_and_plots()        
+        
+        self.main_processor.control_processor.continue_simulation = False
+        
+        
     
     def initialize_simulation_and_plots(self):
         """
@@ -405,19 +408,29 @@ class MainWindow(QMainWindow):
             self.app_state.simulation_initialized = True
 
             # Log the status
-            self.update_status("Starting simulation loop.")
+            self.update_status("Press Start to Run Simulation.")
 
             return control_parameters, control_settings  # Return the parameters for further use if needed
         except Exception as e:
             self.update_status(f"Error during simulation initialization: {str(e)}")
             raise
-    def apply_control_changes(self):
+    
+    def start_control(self):
+        self.main_processor.control_processor.continue_simulation = True
+        control_parameters = self.control_widget.get_all_input_values()
+        self.manage_control_simulation(control_parameters)        
+
+
+    def stop_control(self):
+        self.main_processor.control_processor.continue_simulation = False
+
+    def apply_control_parameter_changes(self):
         """
         Apply changes when the 'Apply' button is pressed.
         """
         try:
             # Fetch other input values from the GUI
-            control_parameters = self.control_widget.get_all_input_values()
+            control_parameters = self.control_widget.get_all_input_values()            
 
             # Apply the control parameters to the simulation
             self.manage_control_simulation(control_parameters)
@@ -425,8 +438,27 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, "Invalid Input", str(e))
             self.update_status(f"Error applying changes: {str(e)}")
+
+    def apply_control_settings_changes(self):
+        """
+        Apply changes when the 'Apply' button is pressed.
+        """
+        try:
+            # Fetch other input values from the GUI            
+            control_settings = self.control_widget.get_all_settings_values()
+
+            # Apply the control parameters to the simulation
+            self.main_processor.control_processor.update_control_settings(control_settings)
+            
+            tunings = (control_settings["Kp"], control_settings["Ki"], control_settings["Kd"])
+            self.main_processor.control_processor.controller.pid.tunings =tunings
+            
+            
+        except Exception as e:
+            QMessageBox.warning(self, "Invalid Input", str(e))
+            self.update_status(f"Error applying changes: {str(e)}")
         
-    def manage_control_simulation(self, control_parameters=None, control_settings = None):
+    def manage_control_simulation(self, control_parameters):
         """
         Run the simulation loop, dynamically adapting to live updates of control parameters.
         Args:
@@ -435,15 +467,13 @@ class MainWindow(QMainWindow):
         try:
             # Use ControlProcessor to run the simulation
             self.main_processor.run_simulation(
-                control_parameters,
-                control_settings,
+                control_parameters,                
                 axs=self.plot_axs,  # Pass the plot axes
                 log_callback=self.update_status
             )
 
             # Finalize
-            self.update_status("Simulation complete.")
-            print("Simulation complete.")
+            #self.update_status("Stopped. Press Start to Continue")            
         except RuntimeError as e:
             self.update_status(f"Error during simulation: {str(e)}")
             print(f"Error: {e}")
@@ -465,9 +495,14 @@ class MainWindow(QMainWindow):
                 )            
             
             # Connect the "Apply" button to fetch values only when clicked
-            self.control_widget.ui.pushButtonApply.clicked.connect(self.apply_control_changes)
+            self.control_widget.ui.pushButtonApply.clicked.connect(self.apply_control_parameter_changes)
+            self.control_widget.ui.pushButtonApply_2.clicked.connect(self.apply_control_settings_changes)
+            self.control_widget.ui.pushButtonStart.clicked.connect(self.start_control)
+            self.control_widget.ui.pushButtonStop.clicked.connect(self.stop_control)
 
         self.control_widget.show()
+
+    
 
 
     def get_tree_widget_actions(self):
@@ -511,7 +546,10 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     window = MainWindow()    
-    window.update_status("Program has started successfylly.")
+    #window.update_status("Program has started successfylly.")
+    #window.update_status(f"***Developer mode: Set default turbine hydraulics after double-clicking '{action}'.")
+    window.turbine_hydraulics_action()
+    window.app_state.update_actions("Turbine Hydraulics", True)
     window.show()    
     sys.exit(app.exec())
 
