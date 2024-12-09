@@ -1,3 +1,5 @@
+#pyinstaller --onefile --name Turbine_Simulator_0.1.0 --icon=icon.ico turbine_simulator_main.py
+
 
 from main_processor import MainProcessor
 from PyQt6.QtWidgets import (
