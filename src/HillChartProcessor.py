@@ -91,7 +91,7 @@ class HillChartProcessor:
 
         # Check if normalize setting is enabled
         normalize = self.settings_options.get("Normalize")                    
-        save_data = self.settings_options.get("Save Chart Data")                    
+        save_data = self.settings_options.get("Save 2D Chart Data")                    
 
         if self.output_options.get("Hill Chart Contour"):            
             suboptions = self.output_suboptions.get("Hill Chart Contour", {})
