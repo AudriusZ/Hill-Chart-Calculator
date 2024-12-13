@@ -60,6 +60,64 @@ class MaximisedOutputProcessor:
         self.simulator.get_BEP_data(BEP_data)
         self.simulator.set_operation_attribute("D", BEP_data.D)
 
+    def set_ranges(self, **ranges):
+        """
+        Set custom ranges for flow, head, speed, and blade angles.
+
+        Args:
+            ranges (dict): Dictionary of custom range parameters with keys:
+                - 'Q_start', 'Q_stop', 'Q_step' (for flow rates)
+                - 'H_min', 'H_max' (for head range)
+                - 'n_start', 'n_stop', 'n_step' (for speed)
+                - 'blade_angle_start', 'blade_angle_stop', 'blade_angle_step' (for blade angles)
+
+        Raises:
+            ValueError: If any required range parameter is missing or invalid.
+        """
+        # Extract ranges from the provided dictionary
+        try:
+            # Flow rates
+            Q_start = ranges.get("Q_start")
+            Q_stop = ranges.get("Q_stop")
+            Q_step = ranges.get("Q_step")
+            if Q_start is not None and Q_stop is not None and Q_step is not None:
+                Q_range = np.arange(Q_start, Q_stop + Q_step, Q_step)
+            else:
+                raise ValueError("Missing or invalid parameters for 'Q' range.")
+
+            # Head range
+            H_min = ranges.get("H_min")
+            H_max = ranges.get("H_max")
+            if H_min is not None and H_max is not None:
+                H_range = (H_min, H_max)
+            else:
+                raise ValueError("Missing or invalid parameters for 'H' range.")
+
+            # Speed range
+            n_start = ranges.get("n_start")
+            n_stop = ranges.get("n_stop")
+            n_step = ranges.get("n_step")
+            if n_start is not None and n_stop is not None and n_step is not None:
+                n_range = np.arange(n_start, n_stop + n_step, n_step)
+            else:
+                raise ValueError("Missing or invalid parameters for 'n' range.")
+
+            # Blade angle range
+            blade_angle_start = ranges.get("blade_angle_start")
+            blade_angle_stop = ranges.get("blade_angle_stop")
+            blade_angle_step = ranges.get("blade_angle_step")
+            if blade_angle_start is not None and blade_angle_stop is not None and blade_angle_step is not None:
+                blade_angle_range = np.arange(blade_angle_start, blade_angle_stop + blade_angle_step, blade_angle_step)
+            else:
+                raise ValueError("Missing or invalid parameters for 'blade_angle' range.")
+
+            # Pass validated ranges to the simulator
+            self.simulator.set_ranges(Q_range=Q_range, H_range=H_range, n_range=n_range, blade_angle_range=blade_angle_range)
+
+        except Exception as e:
+            raise ValueError(f"Error setting ranges: {str(e)}")
+
+    
     def get_ranges(self):
         """
         Define the ranges for flow, head, speed, and blade angles, and set them in the simulator.

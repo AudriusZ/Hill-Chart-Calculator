@@ -59,9 +59,9 @@ class MainProcessor():
         return self.BEP_data  
     
 
-    def maximise_output_action(self):        
+    def maximise_output_action(self, ranges):        
         
-        self.maximised_output_processor.maximised_output(self.hill_values.data, self.BEP_data)                
+        self.maximised_output_processor.maximised_output(self.hill_values.data, self.BEP_data, ranges=ranges)                
         plots = self.maximised_output_processor.generate_plots()
 
         return plots
@@ -145,8 +145,8 @@ class MainProcessor():
         """Set default turbine parameters as in the test."""
         
         selected_values = [1, 4]  # 1 - H, 2 - Q, 3 - n, 4 - D
-        var1 = 2.15
-        var2 = 1.65
+        var1 = 2.8
+        var2 = 2
 
         
         self.processor.get_turbine_parameters(selected_values, var1, var2)

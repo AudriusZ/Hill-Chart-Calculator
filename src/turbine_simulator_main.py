@@ -11,7 +11,8 @@ from PyQt6.QtWidgets import (
     )
 from turbine_simulator_gui import ( # Generated GUI files
     Ui_MainWindow,  
-    Ui_FormManualAutomaticControl
+    Ui_FormManualAutomaticControl,
+    Ui_MaximiseOutput
     )
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -47,6 +48,76 @@ class AppState:
 """
 Widget Classes Start here
 """
+
+class MaximiseOutputWidget(QWidget):
+    def __init__(
+            self,
+            parent=None,                        
+            ):
+        super().__init__(parent)        
+        self.ui = Ui_MaximiseOutput()  # Use the generated UI
+        self.ui.setupUi(self)  # Set up the UI on this QWidget
+
+        self.setWindowTitle("Maximise Output")
+
+        # Set default value for var
+        self.ui.lineEdit_Q_start.setText(f"{2:.2f}")
+        self.ui.lineEdit_Q_stop.setText(f"{6.5:.2f}")
+        self.ui.lineEdit_Q_step.setText(f"{0.5:.2f}")
+        self.ui.lineEdit_n_start.setText(f"{10:.0f}")
+        self.ui.lineEdit_n_stop.setText(f"{150:.0f}")
+        self.ui.lineEdit_n_step.setText(f"{1:.0f}")
+        self.ui.lineEdit_blade_angle_start.setText(f"{16.2:.1f}")
+        self.ui.lineEdit_blade_angle_stop.setText(f"{16.2:.2f}")
+        self.ui.lineEdit_blade_angle_step.setText(f"{1:.2f}")
+        self.ui.lineEdit_H_min.setText(f"{0.1:.2f}")
+        self.ui.lineEdit_H_max.setText(f"{2.8:.2f}")
+        
+    def get_input_value(self, field_name):
+        """
+        Get the value from a specified input field dynamically.
+
+        Args:
+            field_name (str): The name of the variable to fetch (e.g., 'H_t', 'Q').
+
+        Returns:
+            float: The entered value if valid, otherwise None.
+        """
+        try:
+            # Dynamically get the corresponding QLineEdit widget
+            field = getattr(self.ui, f"lineEdit_{field_name}")
+            return float(field.text())
+        except (AttributeError, ValueError):
+            # Return None for invalid input or missing fields
+            return None
+        
+    def get_all_input_values(self):
+        """
+        Get all input values from the form dynamically, including the checkbox state.
+
+        Returns:
+            dict: A dictionary containing all the input field values and the checkbox state.
+        """
+        # Define the list of field names corresponding to the lineEdit widgets
+        fields = [
+            "Q_start", "Q_stop", "Q_step",
+            "n_start", "n_stop", "n_step",
+            "blade_angle_start", "blade_angle_stop", "blade_angle_step",
+            "H_min", "H_max"
+        ]
+
+        # Dynamically fetch and validate values for all fields
+        values = {}
+        for field in fields:
+            value = self.get_input_value(field)
+            if value is None:
+                raise ValueError(f"Invalid value entered for {field}. Please enter a numeric value.")
+            values[field] = value
+
+        return values
+
+
+        
 
 class ManualAutomaticControlWidget(QWidget):
     
@@ -457,8 +528,19 @@ class MainWindow(QMainWindow):
         Generate plots for maximised output and embed them into tabs with an export feature.
         """
         try:
+            self.open_maximise_output_widget()  # Open the widget
+
+        except Exception as e:
+            self.update_status(f"Error in maximising output: {str(e)}")
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+
+    def start_maximise_output(self):
+        try:
+            
+            
             # Retrieve the plots from main_processor
-            plots = self.main_processor.maximise_output_action()
+            ranges = self.maximise_output_widget.get_all_input_values()            
+            plots = self.main_processor.maximise_output_action(ranges)
 
             # Embed each plot in a new tab
             for title, fig in plots.items():
@@ -571,7 +653,20 @@ class MainWindow(QMainWindow):
             self.update_status(f"Error during simulation: {str(e)}")
             print(f"Error: {e}")
 
-    
+        
+
+    def open_maximise_output_widget(self):
+        """
+        Open the Manual/Automatic Control widget.
+        """
+        if not hasattr(self, "maximise_output_widget"):
+            # Create the widget
+            #data = self.main_processor.BEP_data            
+            self.maximise_output_widget = MaximiseOutputWidget()                        
+            # Connect the "Start" button to fetch values only when clicked
+            self.maximise_output_widget.ui.pushButtonStart.clicked.connect(self.start_maximise_output)            
+
+        self.maximise_output_widget.show()
 
     def open_control_widget(self):
         """

@@ -1,7 +1,11 @@
 import os
 
 # Define the UI files
-ui_files = ['src/turbine_simulator_window.ui', 'src/manual-automatic_control_widget.ui']
+ui_files = [
+    'src/GUI_QtDesigner/turbine_simulator_window.ui',
+    'src/GUI_QtDesigner/manual-automatic_control_widget.ui',
+    'src/GUI_QtDesigner/maximise_output_widget.ui'
+    ]
 output_file = 'src/turbine_simulator_gui.py'
 
 # Convert .ui files to .py and combine them
