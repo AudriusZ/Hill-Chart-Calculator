@@ -23,6 +23,8 @@ class MainProcessor():
         #Figures are standalone if not called from GUI that embeds them
         self.standalone_figures = True
 
+        
+
     def set_message_callback(self, callback):
         """
         Set a callback function for handling messages.
@@ -39,6 +41,11 @@ class MainProcessor():
         else:
             print(message)  # Default behavior for standalone mode
 
+    def load_data(self, datapath):
+        #datapath = os.path.join(os.path.dirname(__file__), 'Mogu_D1.65m.csv')  # Adjust path as needed
+        self.processor.get_file_path(datapath)
+    
+    
     def get_bep_data(self):
         """
         Retrieve BEP data for initializing the control widget.
@@ -111,6 +118,8 @@ class MainProcessor():
         """
         try:
             # Set default turbine and plot parameters
+            if not self.processor.datapath:
+                self.default_pathname()
             self.default_turbine_parameters()
             self.default_plot_parameters()
             self.default_output_parameters()
@@ -128,14 +137,18 @@ class MainProcessor():
             self.emit_message(f"Error during Turbine Hydraulics action: {str(e)}")
             raise  
 
+    def default_pathname(self):
+        datapath = os.path.join(os.path.dirname(__file__), 'Mogu_D1.65m.csv')  # Adjust path as needed
+        self.processor.get_file_path(datapath)
+    
     def default_turbine_parameters(self):
         """Set default turbine parameters as in the test."""
-        datapath = os.path.join(os.path.dirname(__file__), 'Mogu_D1.65m.csv')  # Adjust path as needed
+        
         selected_values = [1, 4]  # 1 - H, 2 - Q, 3 - n, 4 - D
         var1 = 2.15
         var2 = 1.65
 
-        self.processor.get_file_path(datapath)
+        
         self.processor.get_turbine_parameters(selected_values, var1, var2)
 
     def default_plot_parameters(self):

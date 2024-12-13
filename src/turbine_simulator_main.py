@@ -1,11 +1,11 @@
-#pyinstaller --onefile --name Turbine_Simulator_0.1.0 --icon=icon.ico turbine_simulator_main.py
+#pyinstaller --onefile --name Turbine_Simulator_0.1.1 --icon=icon.ico turbine_simulator_main.py
 
 
 from main_processor import MainProcessor
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QTreeWidgetItem,
     QMessageBox, QWidget, QVBoxLayout,
-    QTabWidget, QTreeWidget
+    QTabWidget, QTreeWidget, QFileDialog
     )
 from turbine_simulator_gui import ( # Generated GUI files
     Ui_MainWindow,  
@@ -319,7 +319,7 @@ class MainWindow(QMainWindow):
                 self.turbine_hydraulics_action()
 
             elif action == "Load Data":
-                self.load_data_action()
+                self.load_data_action()            
 
             elif action == "Maximised Output":
                 if self.app_state.actions.get("Turbine Hydraulics", False):
@@ -358,17 +358,14 @@ class MainWindow(QMainWindow):
     
     def load_data_action(self):
         """Handle the 'Load Data' action."""
-        pass
-        """
-        from HillChartProcessor import HillChartProcessor  # Processing logic
-        self.processor = HillChartProcessor()
+        
         file_path, _ = QFileDialog.getOpenFileName(self, "Select Turbine Data File", "", "CSV Files (*.csv)")
-        if file_path:
-            self.processor.get_file_path(file_path)
+        if file_path:            
+            self.main_processor.processor.get_file_path(file_path)
             self.update_status(f"Loaded data from: {file_path}")
         else:
             QMessageBox.warning(self, "No File Selected", "Please select a valid file.")    
-        """
+        
 
     def maximise_output_action(self):
         plots = self.main_processor.maximise_output_action()
@@ -550,7 +547,7 @@ if __name__ == "__main__":
     window = MainWindow()    
     #window.update_status("Program has started successfylly.")
     #window.update_status(f"***Developer mode: Set default turbine hydraulics after double-clicking '{action}'.")
-    window.turbine_hydraulics_action()
+    #window.turbine_hydraulics_action()
     window.app_state.update_actions("Turbine Hydraulics", True)
     window.show()    
     sys.exit(app.exec())

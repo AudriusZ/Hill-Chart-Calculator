@@ -12,6 +12,9 @@ class HillChartProcessor:
         self.root_window = tk.Tk()
         self.root_window.withdraw()  # Hide the root window as it's not needed
 
+        #attributes
+        self.datapath = None
+
     def get_file_path(self, file_path):
         self.datapath = file_path
 
