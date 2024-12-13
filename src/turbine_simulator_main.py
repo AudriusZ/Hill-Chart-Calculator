@@ -1,4 +1,4 @@
-#pyinstaller --onefile --name Turbine_Simulator_0.1.1 --icon=icon.ico turbine_simulator_main.py
+#pyinstaller --onefile --name Turbine_Simulator_0.2.0 --icon=icon.ico turbine_simulator_main.py
 
 import csv
 from collections import defaultdict

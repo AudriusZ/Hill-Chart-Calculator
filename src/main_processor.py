@@ -157,8 +157,8 @@ class MainProcessor():
         min_efficiency_limit = 0.1
         n_contours = 25        
         extrapolation_options_vars = [1, 1]
-        extrapolation_values_n11 = [10, 200, 10]
-        extrapolation_values_blade_angles = [2, 26.1, 10]
+        extrapolation_values_n11 = [5, 200, 10]
+        extrapolation_values_blade_angles = [15, 17, 10]
 
         self.processor.get_plot_parameters(n_contours, extrapolation_options_vars, extrapolation_values_n11, extrapolation_values_blade_angles, min_efficiency_limit=min_efficiency_limit)
 
