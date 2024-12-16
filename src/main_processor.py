@@ -146,9 +146,14 @@ class MainProcessor():
         
         selected_values = [1, 4]  # 1 - H, 2 - Q, 3 - n, 4 - D
         var1 = 2.15
-        var2 = 1.65
+        var2 = 1.65        
+        self.processor.set_turbine_parameters(selected_values, var1, var2)
 
-        
+    def set_turbine_size_parameters(self, parameters):        
+        selected_values = [1, 4]  # 1 - H, 2 - Q, 3 - n, 4 - D
+        var1 = parameters["input_1"]
+        var2 = parameters["input_2"]
+        selected_values = parameters["selected_values"]
         self.processor.set_turbine_parameters(selected_values, var1, var2)
 
     def default_plot_parameters(self):

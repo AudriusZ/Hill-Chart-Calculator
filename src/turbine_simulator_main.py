@@ -172,6 +172,10 @@ class MainWindow(QMainWindow):
             self.update_status(f"Error in maximising output: {str(e)}")
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
 
+    def set_turbine_size_parameters(self):
+        parameters = self.sizing_widget.get_all_input_values()
+        self.main_processor.set_turbine_size_parameters(parameters)
+
     def start_maximise_output(self):
         try:
             
@@ -193,8 +197,7 @@ class MainWindow(QMainWindow):
         Handle manual/automatic control by initializing and running the simulation.
         """
         self.open_control_widget()  # Open the widget
-        control_parameters, control_settings = self.initialize_simulation_and_plots()        
-        
+        self.initialize_simulation_and_plots()                
         self.main_processor.control_processor.continue_simulation = False
         
         
@@ -300,8 +303,8 @@ class MainWindow(QMainWindow):
         
         if not hasattr(self, "sizing_widget"):
             self.sizing_widget = SizingWidget()
-            self.sizing_widget.ui.pushButton.clicked.connect(apply_button())
-            self.maximise_output_widget.ui.pushButtonStart.clicked.connect(self.start_maximise_output)            
+            self.sizing_widget.ui.pushButton.clicked.connect(self.set_turbine_size_parameters)
+            
         self.sizing_widget.show()
 
 

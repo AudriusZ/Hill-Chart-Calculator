@@ -56,7 +56,19 @@ class SizingWidget(BaseWidget):
         self.setWindowTitle("Sizing")
 
         # Set default value for var
-        self.ui.lineEdit_input_1.setText(f"{2:.2f}")        
+        self.ui.lineEdit_input_1.setText(f"{2:.2f}")
+
+    def get_all_input_values(self):
+        fields = [
+            "input_1", "input_2"
+        ]       
+    
+        values = super().get_all_line_edit_values(fields)
+
+        # Add the additional checkbox states to the dictionary
+        values["selected_values"] = [1,4]        
+
+        return values
 
     
         
