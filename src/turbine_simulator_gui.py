@@ -293,10 +293,10 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class Ui_MaximiseOutput(object):
-    def setupUi(self, Maximise_Output):
-        Maximise_Output.setObjectName("Maximise_Output")
-        Maximise_Output.resize(450, 550)
-        self.groupBox_Q = QtWidgets.QGroupBox(parent=Maximise_Output)
+    def setupUi(self, MaximiseOutput):
+        MaximiseOutput.setObjectName("MaximiseOutput")
+        MaximiseOutput.resize(450, 550)
+        self.groupBox_Q = QtWidgets.QGroupBox(parent=MaximiseOutput)
         self.groupBox_Q.setGeometry(QtCore.QRect(20, 10, 411, 91))
         self.groupBox_Q.setObjectName("groupBox_Q")
         self.lineEdit_Q_step = QtWidgets.QLineEdit(parent=self.groupBox_Q)
@@ -317,10 +317,10 @@ class Ui_MaximiseOutput(object):
         self.label_Q_Start = QtWidgets.QLabel(parent=self.groupBox_Q)
         self.label_Q_Start.setGeometry(QtCore.QRect(20, 20, 101, 31))
         self.label_Q_Start.setObjectName("label_Q_Start")
-        self.pushButtonStart = QtWidgets.QPushButton(parent=Maximise_Output)
+        self.pushButtonStart = QtWidgets.QPushButton(parent=MaximiseOutput)
         self.pushButtonStart.setGeometry(QtCore.QRect(350, 500, 81, 31))
         self.pushButtonStart.setObjectName("pushButtonStart")
-        self.groupBox_n = QtWidgets.QGroupBox(parent=Maximise_Output)
+        self.groupBox_n = QtWidgets.QGroupBox(parent=MaximiseOutput)
         self.groupBox_n.setGeometry(QtCore.QRect(20, 130, 411, 91))
         self.groupBox_n.setObjectName("groupBox_n")
         self.lineEdit_n_step = QtWidgets.QLineEdit(parent=self.groupBox_n)
@@ -341,7 +341,7 @@ class Ui_MaximiseOutput(object):
         self.label_n_Start = QtWidgets.QLabel(parent=self.groupBox_n)
         self.label_n_Start.setGeometry(QtCore.QRect(20, 20, 101, 31))
         self.label_n_Start.setObjectName("label_n_Start")
-        self.groupBox_blade_angle = QtWidgets.QGroupBox(parent=Maximise_Output)
+        self.groupBox_blade_angle = QtWidgets.QGroupBox(parent=MaximiseOutput)
         self.groupBox_blade_angle.setGeometry(QtCore.QRect(20, 250, 411, 91))
         self.groupBox_blade_angle.setObjectName("groupBox_blade_angle")
         self.lineEdit_blade_angle_step = QtWidgets.QLineEdit(parent=self.groupBox_blade_angle)
@@ -362,7 +362,7 @@ class Ui_MaximiseOutput(object):
         self.label_blade_angle_Start = QtWidgets.QLabel(parent=self.groupBox_blade_angle)
         self.label_blade_angle_Start.setGeometry(QtCore.QRect(20, 20, 101, 31))
         self.label_blade_angle_Start.setObjectName("label_blade_angle_Start")
-        self.groupBox_H = QtWidgets.QGroupBox(parent=Maximise_Output)
+        self.groupBox_H = QtWidgets.QGroupBox(parent=MaximiseOutput)
         self.groupBox_H.setGeometry(QtCore.QRect(20, 370, 411, 91))
         self.groupBox_H.setObjectName("groupBox_H")
         self.lineEdit_H_min = QtWidgets.QLineEdit(parent=self.groupBox_H)
@@ -378,37 +378,37 @@ class Ui_MaximiseOutput(object):
         self.label_H_min.setGeometry(QtCore.QRect(20, 20, 101, 31))
         self.label_H_min.setObjectName("label_H_min")
 
-        self.retranslateUi(Maximise_Output)
-        QtCore.QMetaObject.connectSlotsByName(Maximise_Output)
+        self.retranslateUi(MaximiseOutput)
+        QtCore.QMetaObject.connectSlotsByName(MaximiseOutput)
 
-    def retranslateUi(self, Maximise_Output):
+    def retranslateUi(self, MaximiseOutput):
         _translate = QtCore.QCoreApplication.translate
-        Maximise_Output.setWindowTitle(_translate("Maximise_Output", "Form"))
-        self.groupBox_Q.setTitle(_translate("Maximise_Output", "Range of Q [m³/s]"))
-        self.label_Q_Step.setText(_translate("Maximise_Output", "Step"))
-        self.label_Q_Stop.setText(_translate("Maximise_Output", "Stop"))
-        self.label_Q_Start.setText(_translate("Maximise_Output", "Start"))
-        self.pushButtonStart.setText(_translate("Maximise_Output", "Start"))
-        self.groupBox_n.setTitle(_translate("Maximise_Output", "Range of n [m³/s]"))
-        self.label_n_Step.setText(_translate("Maximise_Output", "Step"))
-        self.label_n_Stop.setText(_translate("Maximise_Output", "Stop"))
-        self.label_n_Start.setText(_translate("Maximise_Output", "Start"))
-        self.groupBox_blade_angle.setTitle(_translate("Maximise_Output", "Range of Blade Angles [°]"))
-        self.label_blade_angle_Step.setText(_translate("Maximise_Output", "Step"))
-        self.label_blade_angle_Stop.setText(_translate("Maximise_Output", "Stop"))
-        self.label_blade_angle_Start.setText(_translate("Maximise_Output", "Start"))
-        self.groupBox_H.setTitle(_translate("Maximise_Output", "Limits of H [m]"))
-        self.label_H_max.setText(_translate("Maximise_Output", "Max."))
-        self.label_H_min.setText(_translate("Maximise_Output", "Min."))
+        MaximiseOutput.setWindowTitle(_translate("MaximiseOutput", "Form"))
+        self.groupBox_Q.setTitle(_translate("MaximiseOutput", "Range of Q [m³/s]"))
+        self.label_Q_Step.setText(_translate("MaximiseOutput", "Step"))
+        self.label_Q_Stop.setText(_translate("MaximiseOutput", "Stop"))
+        self.label_Q_Start.setText(_translate("MaximiseOutput", "Start"))
+        self.pushButtonStart.setText(_translate("MaximiseOutput", "Start"))
+        self.groupBox_n.setTitle(_translate("MaximiseOutput", "Range of n [rpm]"))
+        self.label_n_Step.setText(_translate("MaximiseOutput", "Step"))
+        self.label_n_Stop.setText(_translate("MaximiseOutput", "Stop"))
+        self.label_n_Start.setText(_translate("MaximiseOutput", "Start"))
+        self.groupBox_blade_angle.setTitle(_translate("MaximiseOutput", "Range of Blade Angles [°]"))
+        self.label_blade_angle_Step.setText(_translate("MaximiseOutput", "Step"))
+        self.label_blade_angle_Stop.setText(_translate("MaximiseOutput", "Stop"))
+        self.label_blade_angle_Start.setText(_translate("MaximiseOutput", "Start"))
+        self.groupBox_H.setTitle(_translate("MaximiseOutput", "Limits of H [m]"))
+        self.label_H_max.setText(_translate("MaximiseOutput", "Max."))
+        self.label_H_min.setText(_translate("MaximiseOutput", "Min."))
 
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    Maximise_Output = QtWidgets.QWidget()
+    MaximiseOutput = QtWidgets.QWidget()
     ui = Ui_MaximiseOutput()
-    ui.setupUi(Maximise_Output)
-    Maximise_Output.show()
+    ui.setupUi(MaximiseOutput)
+    MaximiseOutput.show()
     sys.exit(app.exec())
 
 

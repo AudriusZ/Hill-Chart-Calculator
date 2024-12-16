@@ -118,7 +118,7 @@
     </rect>
    </property>
    <property name="title">
-    <string>Range of n [m³/s]</string>
+    <string>Range of n [rpm]</string>
    </property>
    <widget class="QLineEdit" name="lineEdit_n_step">
     <property name="geometry">
