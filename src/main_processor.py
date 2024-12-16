@@ -43,7 +43,7 @@ class MainProcessor():
 
     def load_data(self, datapath):
         #datapath = os.path.join(os.path.dirname(__file__), 'Mogu_D1.65m.csv')  # Adjust path as needed
-        self.processor.get_file_path(datapath)
+        self.processor.set_file_path(datapath)
     
     
     def get_bep_data(self):
@@ -139,7 +139,7 @@ class MainProcessor():
 
     def default_pathname(self):
         datapath = os.path.join(os.path.dirname(__file__), 'Mogu_D1.65m.csv')  # Adjust path as needed
-        self.processor.get_file_path(datapath)
+        self.processor.set_file_path(datapath)
     
     def default_turbine_parameters(self):
         """Set default turbine parameters as in the test."""
@@ -149,7 +149,7 @@ class MainProcessor():
         var2 = 2
 
         
-        self.processor.get_turbine_parameters(selected_values, var1, var2)
+        self.processor.set_turbine_parameters(selected_values, var1, var2)
 
     def default_plot_parameters(self):
         """Set default plot parameters as in the test."""
@@ -160,7 +160,7 @@ class MainProcessor():
         extrapolation_values_n11 = [5, 200, 10]
         extrapolation_values_blade_angles = [15, 17, 10]
 
-        self.processor.get_plot_parameters(n_contours, extrapolation_options_vars, extrapolation_values_n11, extrapolation_values_blade_angles, min_efficiency_limit=min_efficiency_limit)
+        self.processor.set_plot_parameters(n_contours, extrapolation_options_vars, extrapolation_values_n11, extrapolation_values_blade_angles, min_efficiency_limit=min_efficiency_limit)
 
     def default_output_parameters(self):
         """Set default output parameters as in the test."""
@@ -180,7 +180,7 @@ class MainProcessor():
             'Save Chart Data': 0
         }
 
-        self.processor.get_output_parameters(output_options, output_suboptions, settings_options)  
+        self.processor.set_output_parameters(output_options, output_suboptions, settings_options)  
     
 
     

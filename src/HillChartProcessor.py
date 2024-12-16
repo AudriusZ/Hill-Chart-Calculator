@@ -15,15 +15,15 @@ class HillChartProcessor:
         #attributes
         self.datapath = None
 
-    def get_file_path(self, file_path):
+    def set_file_path(self, file_path):
         self.datapath = file_path
 
-    def get_turbine_parameters(self, selected_values, var1, var2):
+    def set_turbine_parameters(self, selected_values, var1, var2):
         self.selected_values = selected_values
         self.var1 = var1
         self.var2 = var2  
 
-    def get_plot_parameters(self, n_contours, extrapolation_options_vars,extrapolation_values_n11,extrapolation_values_blade_angles, min_efficiency_limit = 0.5):
+    def set_plot_parameters(self, n_contours, extrapolation_options_vars,extrapolation_values_n11,extrapolation_values_blade_angles, min_efficiency_limit = 0.5):
         self.n_contours = n_contours        
         self.min_efficiency_limit = min_efficiency_limit
         
@@ -39,7 +39,7 @@ class HillChartProcessor:
             self.max_angle = extrapolation_values_blade_angles[1]
             self.n_angle = extrapolation_values_blade_angles[2]
 
-    def get_output_parameters(self, output_options, output_suboptions, settings_options):        
+    def set_output_parameters(self, output_options, output_suboptions, settings_options):        
         self.output_options = output_options   
         self.output_suboptions = output_suboptions
         self.settings_options = settings_options

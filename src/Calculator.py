@@ -308,14 +308,14 @@ class HillChartCalculator(tk.Tk):
         self.get_extrapolation_values()
         
         plot_processor = HillChartProcessor()
-        plot_processor.get_file_path(self.datapath)
-        plot_processor.get_turbine_parameters(self.selected_values, self.var1, self.var2)
-        plot_processor.get_plot_parameters(self.n_contours, [self.extrapolation_options_vars[0].get(),self.extrapolation_options_vars[1].get()],self.extrapolation_values_n11,self.extrapolation_values_blade_angles, min_efficiency_limit=self.min_efficiency_limit)        
+        plot_processor.set_file_path(self.datapath)
+        plot_processor.set_turbine_parameters(self.selected_values, self.var1, self.var2)
+        plot_processor.set_plot_parameters(self.n_contours, [self.extrapolation_options_vars[0].get(),self.extrapolation_options_vars[1].get()],self.extrapolation_values_n11,self.extrapolation_values_blade_angles, min_efficiency_limit=self.min_efficiency_limit)        
         plot_options = {option: var.get() for option, var in self.output_vars.items()}
         plot_suboptions = {option: {sub_option: sub_var.get() for sub_option, sub_var in zip(self.sub_output_options[option], sub_vars)}
             for option, sub_vars in self.sub_output_vars.items()}
         settings_options = {option: var.get() for option, var in self.settings_vars.items()}
-        plot_processor.get_output_parameters(plot_options, plot_suboptions, settings_options)        
+        plot_processor.set_output_parameters(plot_options, plot_suboptions, settings_options)        
         plot_processor.generate_outputs()        
 
     def get_selected_values(self):
