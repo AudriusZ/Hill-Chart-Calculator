@@ -143,7 +143,7 @@ class MainWindow(QMainWindow):
         
         file_path, _ = QFileDialog.getOpenFileName(self, "Select Turbine Data File", "", "CSV Files (*.csv)")
         if file_path:            
-            self.main_processor.processor.get_file_path(file_path)
+            self.main_processor.processor.set_file_path(file_path)
             self.update_status(f"Loaded data from: {file_path}")
         else:
             QMessageBox.warning(self, "No File Selected", "Please select a valid file.")

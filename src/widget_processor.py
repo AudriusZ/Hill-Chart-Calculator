@@ -8,7 +8,43 @@ from turbine_simulator_gui import ( # Generated GUI files
     Ui_Sizing
     )
 
-class SizingWidget(QWidget):
+class BaseWidget(QWidget):
+    def get_line_edit_value(self, field_name):
+        """
+        Get the value from a specified input field dynamically.
+
+        Args:
+            field_name (str): The name of the variable to fetch (e.g., 'H_t', 'Q').
+
+        Returns:
+            float: The entered value if valid, otherwise None.
+        """
+        try:
+            # Dynamically get the corresponding QLineEdit widget
+            field = getattr(self.ui, f"lineEdit_{field_name}")
+            return float(field.text())
+        except (AttributeError, ValueError):
+            return None
+
+    def get_all_line_edit_values(self, fields):
+        """
+        Get all input values from the form dynamically.
+
+        Args:
+            fields (list): List of field names to fetch.
+
+        Returns:
+            dict: A dictionary containing all the input field values.
+        """
+        values = {}
+        for field in fields:
+            value = self.get_line_edit_value(field)
+            if value is None:
+                raise ValueError(f"Invalid value entered for {field}. Please enter a numeric value.")
+            values[field] = value
+        return values
+
+class SizingWidget(BaseWidget):
     def __init__(
             self,
             parent=None,                        
@@ -25,7 +61,7 @@ class SizingWidget(QWidget):
     
         
 
-class MaximiseOutputWidget(QWidget):
+class MaximiseOutputWidget(BaseWidget):
     def __init__(
             self,
             parent=None,                        
@@ -49,53 +85,19 @@ class MaximiseOutputWidget(QWidget):
         self.ui.lineEdit_H_min.setText(f"{0.1:.2f}")
         self.ui.lineEdit_H_max.setText(f"{2.8:.2f}")
         
-    def get_input_value(self, field_name):
-        """
-        Get the value from a specified input field dynamically.
-
-        Args:
-            field_name (str): The name of the variable to fetch (e.g., 'H_t', 'Q').
-
-        Returns:
-            float: The entered value if valid, otherwise None.
-        """
-        try:
-            # Dynamically get the corresponding QLineEdit widget
-            field = getattr(self.ui, f"lineEdit_{field_name}")
-            return float(field.text())
-        except (AttributeError, ValueError):
-            # Return None for invalid input or missing fields
-            return None
-        
     def get_all_input_values(self):
-        """
-        Get all input values from the form dynamically, including the checkbox state.
-
-        Returns:
-            dict: A dictionary containing all the input field values and the checkbox state.
-        """
-        # Define the list of field names corresponding to the lineEdit widgets
         fields = [
             "Q_start", "Q_stop", "Q_step",
             "n_start", "n_stop", "n_step",
             "blade_angle_start", "blade_angle_stop", "blade_angle_step",
             "H_min", "H_max"
         ]
-
-        # Dynamically fetch and validate values for all fields
-        values = {}
-        for field in fields:
-            value = self.get_input_value(field)
-            if value is None:
-                raise ValueError(f"Invalid value entered for {field}. Please enter a numeric value.")
-            values[field] = value
-
-        return values
+        return super().get_all_line_edit_values(fields)
 
 
         
 
-class ManualAutomaticControlWidget(QWidget):
+class ManualAutomaticControlWidget(BaseWidget):
     
     
     def __init__(
@@ -196,56 +198,25 @@ class ManualAutomaticControlWidget(QWidget):
 
         self.ui.lineEdit_H_t.setStyleSheet(normal_style if checked else gray_style)
         self.ui.lineEdit_H_t_rate.setStyleSheet(normal_style if checked else gray_style)     
-        
     
-    def get_input_value(self, field_name):
-        """
-        Get the value from a specified input field dynamically.
-
-        Args:
-            field_name (str): The name of the variable to fetch (e.g., 'H_t', 'Q').
-
-        Returns:
-            float: The entered value if valid, otherwise None.
-        """
-        try:
-            # Dynamically get the corresponding QLineEdit widget
-            field = getattr(self.ui, f"lineEdit_{field_name}")
-            return float(field.text())
-        except (AttributeError, ValueError):
-            # Return None for invalid input or missing fields
-            return None
-        
     def get_all_input_values(self):
-        """
-        Get all input values from the form dynamically, including the checkbox state.
-
-        Returns:
-            dict: A dictionary containing all the input field values and the checkbox state.
-        """
-        # Define the list of field names corresponding to the lineEdit widgets
+        # Define the list of standard fields to fetch
         fields = [
-            "H_t", "H_t_rate", "Q", "Q_rate", 
-            "blade_angle", "blade_angle_rate", 
+            "H_t", "H_t_rate", "Q", "Q_rate",
+            "blade_angle", "blade_angle_rate",
             "n", "n_rate"
         ]
 
-        # Dynamically fetch and validate values for all fields
-        values = {}
-        for field in fields:
-            value = self.get_input_value(field)
-            if value is None:
-                raise ValueError(f"Invalid value entered for {field}. Please enter a numeric value.")
-            values[field] = value
+        # Get the standard input values from the base class
+        values = super().get_all_line_edit_values(fields)
 
-        # Add the checkbox state to the dictionary
+        # Add the additional checkbox states to the dictionary
         values["head_control"] = self.ui.checkBox.isChecked()
         values["blade_angle_lock"] = self.ui.checkBox_2.isChecked()
-        values["n_lock"] = False
-        
-
+        values["n_lock"] = False  # Default value
 
         return values
+    
     
     def get_all_settings_values(self):
         """
@@ -260,15 +231,7 @@ class ManualAutomaticControlWidget(QWidget):
             "Kp", "Ki", "Kd"
         ]
 
-        # Dynamically fetch and validate values for all fields
-        values = {}
-        for field in fields:
-            value = self.get_input_value(field)
-            if value is None:
-                raise ValueError(f"Invalid value entered for {field}. Please enter a numeric value.")
-            values[field] = value
-
-        return values
+        return super().get_all_line_edit_values(fields)
 
 
 
