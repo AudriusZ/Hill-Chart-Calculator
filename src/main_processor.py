@@ -145,8 +145,8 @@ class MainProcessor():
         """Set default turbine parameters as in the test."""
         
         selected_values = [1, 4]  # 1 - H, 2 - Q, 3 - n, 4 - D
-        var1 = 2.8
-        var2 = 2
+        var1 = 2.15
+        var2 = 1.65
 
         
         self.processor.set_turbine_parameters(selected_values, var1, var2)
@@ -158,7 +158,7 @@ class MainProcessor():
         n_contours = 25        
         extrapolation_options_vars = [1, 1]
         extrapolation_values_n11 = [5, 200, 10]
-        extrapolation_values_blade_angles = [15, 17, 10]
+        extrapolation_values_blade_angles = [3, 26, 10]
 
         self.processor.set_plot_parameters(n_contours, extrapolation_options_vars, extrapolation_values_n11, extrapolation_values_blade_angles, min_efficiency_limit=min_efficiency_limit)
 
