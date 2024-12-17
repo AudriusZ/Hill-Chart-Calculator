@@ -1,6 +1,7 @@
 
 from PyQt6.QtWidgets import (
-    QWidget
+    QWidget, QCheckBox, QLabel, QLineEdit, QPushButton
+    
     )
 from turbine_simulator_gui import ( # Generated GUI files      
     Ui_FormManualAutomaticControl,
@@ -9,6 +10,7 @@ from turbine_simulator_gui import ( # Generated GUI files
     )
 
 class BaseWidget(QWidget):
+    
     def get_line_edit_value(self, field_name):
         """
         Get the value from a specified input field dynamically.
@@ -43,30 +45,111 @@ class BaseWidget(QWidget):
                 raise ValueError(f"Invalid value entered for {field}. Please enter a numeric value.")
             values[field] = value
         return values
+    
+    def set_widget_enabled_with_style(self, widget, enabled):
+        """
+        Enables or disables a widget and updates its style to reflect the disabled state.
+
+        Args:
+            widget (QWidget): The widget to enable/disable.
+            enabled (bool): True to enable, False to disable.
+        """
+        widget.setEnabled(enabled)
+        gray_style = "color: gray;"  # Grayed-out text style
+        normal_style = "color: black;"  # Normal text style
+
+        # Apply styles dynamically based on the widget's state
+        if isinstance(widget, (QCheckBox, QLabel, QLineEdit, QPushButton)):
+            widget.setStyleSheet(gray_style if not enabled else normal_style)
+
+    def update_checkboxes_state(self, checkboxes, max_selected=2):
+        """
+        Allow up to 'max_selected' checkboxes to be selected. Disable others and gray them out.
+
+        Args:
+            checkboxes (list): List of QCheckBox widgets.
+            max_selected (int): Maximum number of checkboxes allowed to be selected.
+        """
+        selected = [cb for cb in checkboxes if cb.isChecked()]
+        for cb in checkboxes:
+            enabled = cb in selected or len(selected) < max_selected
+            self.set_widget_enabled_with_style(cb, enabled)
+        return selected
+
+    def update_input_field_labels(self, input_labels, input_fields, selected_checkboxes, default_labels):
+        """
+        Update input field labels and enable/disable input fields based on selected checkboxes.
+
+        Args:
+            input_labels (list): List of QLabel widgets for input field labels.
+            input_fields (list): List of QLineEdit widgets for input fields.
+            selected_checkboxes (list): List of selected QCheckBox widgets.
+            default_labels (list): Default labels to show when no selection is valid.
+        """
+        if len(selected_checkboxes) == 2:
+            # Update labels to match selected checkboxes
+            input_labels[0].setText(selected_checkboxes[0].text())
+            input_labels[1].setText(selected_checkboxes[1].text())
+            input_fields[0].setEnabled(True)
+            input_fields[1].setEnabled(True)
+        else:
+            # Reset labels and disable inputs
+            for lbl, field, default in zip(input_labels, input_fields, default_labels):
+                lbl.setText(default)
+                field.setEnabled(False)
 
 class SizingWidget(BaseWidget):
-    def __init__(
-            self,
-            parent=None,                        
-            ):
-        super().__init__(parent)        
-        self.ui = Ui_Sizing()  # Use the generated UI
-        self.ui.setupUi(self)  # Set up the UI on this QWidget
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.ui = Ui_Sizing()
+        self.ui.setupUi(self)
 
         self.setWindowTitle("Sizing")
 
-        # Set default value for var
-        self.ui.lineEdit_input_1.setText(f"{2:.2f}")
+        # Store checkboxes in a list for dynamic control
+        self.checkboxes = [
+            self.ui.checkBox_1,
+            self.ui.checkBox_2,
+            self.ui.checkBox_3,
+            self.ui.checkBox_4,
+        ]
+
+        # Define input labels, input fields, and their default values
+        self.input_labels = [self.ui.label_input_1, self.ui.label_input_2]
+        self.input_fields = [self.ui.lineEdit_input_1, self.ui.lineEdit_input_2]
+        self.default_labels = ["Input value 1", "Input value 2"]
+
+        # Connect checkboxes to the update method
+        for checkbox in self.checkboxes:
+            checkbox.stateChanged.connect(self.update_checkboxes)
+
+    def update_checkboxes(self):
+        """
+        Update the checkboxes, input field labels, and states.
+        """
+        selected = self.update_checkboxes_state(self.checkboxes, max_selected=2)
+        self.update_input_field_labels(
+            input_labels=self.input_labels,
+            input_fields=self.input_fields,
+            selected_checkboxes=selected,
+            default_labels=self.default_labels
+        )
 
     def get_all_input_values(self):
-        fields = [
-            "input_1", "input_2"
-        ]       
-    
+        """
+        Get input values and selected checkboxes dynamically.
+
+        Returns:
+            dict: A dictionary containing input field values and selected checkboxes.
+        """
+        fields = ["input_1", "input_2"]
         values = super().get_all_line_edit_values(fields)
 
-        # Add the additional checkbox states to the dictionary
-        values["selected_values"] = [1,4]        
+        # Dynamically find the indices of selected checkboxes
+        selected_values = [i + 1 for i, cb in enumerate(self.checkboxes) if cb.isChecked()]
+        
+        # Add the selected checkbox indices to the dictionary
+        values["selected_values"] = selected_values
 
         return values
 
@@ -245,6 +328,11 @@ class ManualAutomaticControlWidget(BaseWidget):
 
         return super().get_all_line_edit_values(fields)
 
-
-
+if __name__ == "__main__":
+    from PyQt6.QtWidgets import QApplication
+    import sys
+    app = QApplication(sys.argv)  # Create the application instance
+    sizing = SizingWidget()       # Instantiate your widget
+    sizing.show()                 # Show the widget
+    sys.exit(app.exec())          # Execute the app's main loop
  
