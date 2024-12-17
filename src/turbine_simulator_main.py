@@ -173,8 +173,19 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
 
     def set_turbine_size_parameters(self):
-        parameters = self.sizing_widget.get_all_input_values()
-        self.main_processor.set_turbine_size_parameters(parameters)
+        
+        """
+        Set turbine size
+        """
+        try:
+            parameters = self.sizing_widget.get_all_input_values()
+            text_widget = self.main_processor.set_turbine_size_parameters(parameters)
+            self.plot_manager.embed_textEdit(text_widget, "Turbine Sizing")            
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+            self.update_status(f"Error during Turbine Sizing action: {str(e)}")
+        
 
     def start_maximise_output(self):
         try:
@@ -298,9 +309,7 @@ class MainWindow(QMainWindow):
         """
         Open the Sizing widget.
         """
-        def apply_button():
-            print("Apply Sizing")
-        
+                
         if not hasattr(self, "sizing_widget"):
             self.sizing_widget = SizingWidget()
             self.sizing_widget.ui.pushButton.clicked.connect(self.set_turbine_size_parameters)

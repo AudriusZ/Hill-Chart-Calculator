@@ -18,6 +18,23 @@ class PlotManager:
         self.tab_widget.setTabsClosable(True)  # Enable the close button on tabs
         self.tab_widget.tabCloseRequested.connect(self.close_tab)  # Connect to the tab close signal
 
+    def embed_textEdit(self, text_widget, title):
+        """
+        Embed a QTextEdit widget into a new tab.
+
+        Args:
+            text_widget (QTextEdit): The QTextEdit widget to embed.
+            title (str): Title of the new tab.
+        """
+        tab = QWidget()
+        layout = QVBoxLayout()
+        layout.addWidget(text_widget)
+
+        tab.setLayout(layout)
+        self.tab_widget.addTab(tab, title)
+        self.tab_widget.setCurrentIndex(self.tab_widget.count() - 1)
+
+    
     def embed_plot(self, fig, tab_name: str, add_export_button=False):
         """
         Embed a matplotlib figure into a new tab, with an optional 'Export' button.

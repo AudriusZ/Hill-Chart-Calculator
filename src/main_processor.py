@@ -155,6 +155,10 @@ class MainProcessor():
         var2 = parameters["input_2"]
         selected_values = parameters["selected_values"]
         self.processor.set_turbine_parameters(selected_values, var1, var2)
+        self.processor.read_raw_data()
+        self.processor.prepare_BEP_data()
+        text_widget = self.processor.display_results_in_PyQt6_textbox(show_standalone=False)
+        return text_widget
 
     def default_plot_parameters(self):
         """Set default plot parameters as in the test."""
