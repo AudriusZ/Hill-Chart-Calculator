@@ -5,6 +5,7 @@ import copy
 import tkinter as tk
 import numpy as np
 import matplotlib.pyplot as plt
+from PyQt6.QtWidgets import QTextEdit
 
 class HillChartProcessor:
     def __init__(self):
@@ -19,6 +20,8 @@ class HillChartProcessor:
         
         #other attributes
         self.datapath = None
+        self.extrapolate_blade = None
+        self.extrapolate_n11 = None
 
 
 
@@ -51,18 +54,24 @@ class HillChartProcessor:
         self.output_suboptions = output_suboptions
         self.settings_options = settings_options
 
-    def prepare_core_data(self):
-        
-        BEP_values = HillChart()
-        BEP_values.read_hill_chart_values(self.datapath)
+    def read_raw_data(self):
+        raw_data = HillChart()        
+        raw_data.read_hill_chart_values(self.datapath)
+        self.raw_data = raw_data
+        return raw_data
+    
+    def prepare_BEP_data(self):        
+        BEP_values = copy.deepcopy(self.raw_data)
         BEP_values.filter_for_maximum_efficiency()
         BEP_values.calculate_cases(self.selected_values, self.var1, self.var2)
         BEP_data = BEP_values.return_values()
-        
-        raw_data = HillChart()        
-        raw_data.read_hill_chart_values(self.datapath)
-
-        hill_values = copy.deepcopy(raw_data)
+        self.BEP_data = BEP_data
+        return BEP_data
+    
+    def prepare_core_data(self):
+        self.read_raw_data()
+        self.prepare_BEP_data()
+        hill_values = copy.deepcopy(self.raw_data)
 
         if self.extrapolate_n11:
             hill_values.extrapolate_along_n11(min_n11=self.n11_min, max_n11=self.n11_max, n_n11=self.n_n11)
@@ -71,12 +80,8 @@ class HillChartProcessor:
             hill_values.extrapolate_along_blade_angles(min_angle=self.min_angle, max_angle=self.max_angle, n_angle=self.n_angle)
 
         hill_values.prepare_hill_chart_data(min_efficiency_limit = self.min_efficiency_limit)
-
-        self.BEP_data = BEP_data
-        self.raw_data = raw_data
-        self.hill_values = hill_values
-
-        return BEP_data, hill_values, raw_data
+        
+        self.hill_values = hill_values        
     
     def generate_outputs(self, show_standalone=True):        
         """
@@ -375,25 +380,47 @@ class HillChartProcessor:
         BEP_data = self.BEP_data
         num_sets = len(BEP_data.H)
         results = []
+
+        # Dictionary for units
+        units = {
+            'H': '[m]',
+            'Q': '[m³/s]',
+            'n': '[rpm]',
+            'D': '[m]',
+            'efficiency': '[-]',
+            'power': '[W]',
+            'Ns': '[rpm]'
+        }
+
+        # Dictionary for varying decimal points
+        decimals = {
+            'H': 2,
+            'Q': 2,
+            'n': 1,
+            'D': 2,
+            'efficiency': 2,
+            'power': 0,
+            'Ns': 1
+        }
+
+        # Prepare the output
         for index in range(num_sets):
-            results.append("BEP values:\n")
+            results.append("Best Efficiency Point (BEP) values:\n")
             for attr in ['H', 'Q', 'n', 'D', 'efficiency', 'power', 'Ns']:
                 value = getattr(BEP_data, attr)[index] if getattr(BEP_data, attr) else 'N/A'
                 if isinstance(value, float):
-                    value_format = f"{value:.2f}"
+                    # Format value with varying decimals
+                    num_decimals = decimals.get(attr, 2)
+                    value_format = f"{value:.{num_decimals}f}"
                 else:
                     value_format = str(value)
-                results.append(f"{attr} = {value_format}\n")
+                unit = units.get(attr, "")  # Fetch the unit for the attribute
+                results.append(f"{attr} = {value_format} {unit}\n")
             results.append("\n")
         return ''.join(results)
 
-    """
-    def print_results(self, BEP_data):
-        prepared_text = self.prepare_text_results(BEP_data)
-        print(prepared_text)
-    """
 
-    def display_results_in_textbox(self):        
+    def display_results_in_textbox(self, show_standalone = True):        
         prepared_text = self.prepare_text_results()
 
         # Create a new top-level window
@@ -411,5 +438,26 @@ class HillChartProcessor:
         # Make the Text widget read-only
         text_widget.config(state=tk.DISABLED)
 
-        # You do not need to call mainloop() here. It is already running.
+        # Show standalone if requested, otherwise return the figure
+        if show_standalone:
+            plt.show(block=False)
+        else:
+            return text_widget
+        
+    def display_results_in_PyQt6_textbox(self, show_standalone = True):
+        """
+        Create a QTextEdit widget with prepared results text.
+
+        Returns:
+            QTextEdit: A PyQt6 text widget containing the results.
+        """
+        prepared_text = self.prepare_text_results()  # Prepare the text content
+
+        # Create a QTextEdit widget
+        text_widget = QTextEdit()
+        text_widget.setReadOnly(True)  # Make the widget read-only
+        text_widget.setPlainText(prepared_text)  # Insert the prepared text
+
+        return text_widget
+
           
