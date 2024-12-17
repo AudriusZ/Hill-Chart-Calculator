@@ -1,10 +1,10 @@
-import os
 from HillChart import HillChart
 from PerformanceCurve import PerformanceCurve 
 import matplotlib.pyplot as plt
 import copy
 import tkinter as tk
 import numpy as np
+import matplotlib.pyplot as plt
 
 class HillChartProcessor:
     def __init__(self):
@@ -12,8 +12,15 @@ class HillChartProcessor:
         self.root_window = tk.Tk()
         self.root_window.withdraw()  # Hide the root window as it's not needed
 
-        #attributes
+        # Attributes to hold core data
+        self.BEP_data = None
+        self.hill_values = None
+        self.raw_data = None
+        
+        #other attributes
         self.datapath = None
+
+
 
     def set_file_path(self, file_path):
         self.datapath = file_path
@@ -51,11 +58,11 @@ class HillChartProcessor:
         BEP_values.filter_for_maximum_efficiency()
         BEP_values.calculate_cases(self.selected_values, self.var1, self.var2)
         BEP_data = BEP_values.return_values()
+        
+        raw_data = HillChart()        
+        raw_data.read_hill_chart_values(self.datapath)
 
-        Raw_data = HillChart()        
-        Raw_data.read_hill_chart_values(self.datapath)
-
-        hill_values = copy.deepcopy(Raw_data)
+        hill_values = copy.deepcopy(raw_data)
 
         if self.extrapolate_n11:
             hill_values.extrapolate_along_n11(min_n11=self.n11_min, max_n11=self.n11_max, n_n11=self.n_n11)
@@ -65,7 +72,11 @@ class HillChartProcessor:
 
         hill_values.prepare_hill_chart_data(min_efficiency_limit = self.min_efficiency_limit)
 
-        return BEP_data, hill_values, Raw_data
+        self.BEP_data = BEP_data
+        self.raw_data = raw_data
+        self.hill_values = hill_values
+
+        return BEP_data, hill_values, raw_data
     
     def generate_outputs(self, show_standalone=True):        
         """
@@ -77,20 +88,21 @@ class HillChartProcessor:
         Returns:
             tuple: (BEP_data, hill_values, raw_data)
         """
-        BEP_data, hill_values, raw_data = self.prepare_core_data()
+        self.prepare_core_data()
 
         if self.output_options.get("Best efficiency point summary"):
-            self.display_results_in_textbox(BEP_data)
+            self.display_results_in_textbox()
         
         # Generate the outputs based on user selection
         if self.output_options.get("3D Hill Chart"):
             # Handle 3D Hill Chart separately
             if show_standalone:
-                self.plot_3d_hill_chart(hill_values)
+                self.plot_3d_hill_chart()
             else:
-                # Return the figure for embedding
-                fig = self.plot_3d_hill_chart(hill_values, show_standalone=False)
-                return BEP_data, hill_values, raw_data, fig  # Include the figure in the return
+                # Return the figure for embedding                
+                fig = self.plot_3d_hill_chart(show_standalone=False)
+                
+                return self.BEP_data, self.hill_values, self.raw_data, fig  # Include the figure in the return
 
         # Check if normalize setting is enabled
         normalize = self.settings_options.get("Normalize")                    
@@ -100,32 +112,33 @@ class HillChartProcessor:
             suboptions = self.output_suboptions.get("Hill Chart Contour", {})
             plot_blade_angles = not suboptions.get("Hide Blade Angle Lines")  
             if normalize:              
-                self.plot_normalized_hill_chart_contour(hill_values, BEP_data, plot_blade_angles=plot_blade_angles)
+                self.plot_normalized_hill_chart_contour(plot_blade_angles=plot_blade_angles)
             else:
-                self.plot_hill_chart_contour(hill_values, BEP_data, plot_blade_angles=plot_blade_angles)            
+                self.plot_hill_chart_contour(plot_blade_angles=plot_blade_angles)            
 
         if self.output_options.get("2D Curve Slices"):
-            self.plot_curve_slices(hill_values, BEP_data, normalize=normalize, save_data=save_data)        
+            self.plot_curve_slices(normalize=normalize, save_data=save_data)        
 
         if self.output_options.get("2D Curve Slices - const.blade"):
             suboptions = self.output_suboptions.get("2D Curve Slices - const.blade", {})
 
             # Now check the sub-options within "2D Curve Slices - const.blade"
             if suboptions.get("Const. Head"):                
-                self.plot_blade_slices(hill_values, BEP_data, normalize=normalize, save_data=save_data)
+                self.plot_blade_slices(normalize=normalize, save_data=save_data)
 
             if suboptions.get("Const. n"):
-                self.plot_blade_slices_const_n(hill_values, BEP_data, normalize=normalize, save_data=save_data)
+                self.plot_blade_slices_const_n(normalize=normalize, save_data=save_data)
 
             if suboptions.get("Const. efficiency"): 
-                self.plot_blade_slices_const_efficiency(raw_data, BEP_data, normalize=normalize, save_data=save_data)        
+                self.plot_blade_slices_const_efficiency(normalize=normalize, save_data=save_data)        
 
-        return BEP_data, hill_values, raw_data
+
+        return self.BEP_data, self.hill_values, self.raw_data
       
 
         
     
-    def plot_3d_hill_chart(self, hill_values, show_standalone=True):
+    def plot_3d_hill_chart(self, show_standalone=True):
         """
         Plot a 3D Hill Chart using the given hill_values.
 
@@ -136,8 +149,9 @@ class HillChartProcessor:
         Returns:
             matplotlib.figure.Figure: The created Matplotlib figure (if show_standalone=False).
         """
-        import matplotlib.pyplot as plt
+        
 
+        hill_values = self.hill_values
         # Create the figure and axis
         fig = plt.figure()
         ax1 = fig.add_subplot(111, projection='3d')
@@ -157,8 +171,11 @@ class HillChartProcessor:
             return fig
 
     
-    def plot_hill_chart_contour(self, hill_values, BEP_data, plot_blade_angles = True):
-        # Create a deep copy of hill_values
+    def plot_hill_chart_contour(self, plot_blade_angles = True):
+        hill_values = self.hill_values
+        BEP_data = self.BEP_data
+        
+        # Create a deep copy of hill_values        
         hill_values_nD = copy.deepcopy(hill_values)
 
         # Create subplots
@@ -190,7 +207,10 @@ class HillChartProcessor:
         plt.tight_layout()
         plt.show(block=False)
 
-    def plot_normalized_hill_chart_contour(self, hill_values, BEP_data, plot_blade_angles = True):
+    def plot_normalized_hill_chart_contour(self, plot_blade_angles = True):
+        hill_values = self.hill_values
+        BEP_data = self.BEP_data
+
         hill_values_norm = copy.deepcopy(hill_values)        
         
 
@@ -227,7 +247,10 @@ class HillChartProcessor:
         plt.tight_layout()
         plt.show(block=False)
 
-    def plot_curve_slices(self, hill_values, BEP_data, normalize = False, save_data = False):
+    def plot_curve_slices(self, normalize = False, save_data = False):
+        hill_values = self.hill_values
+        BEP_data = self.BEP_data
+        
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         
         q_curve_values = copy.deepcopy(hill_values)      
@@ -263,7 +286,10 @@ class HillChartProcessor:
         
         plt.show(block=False)
         
-    def plot_blade_slices(self, hill_values, BEP_data, normalize = False, save_data = False):
+    def plot_blade_slices(self, normalize = False, save_data = False):
+        hill_values = self.hill_values
+        BEP_data = self.BEP_data
+        
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         blade_slice_values = copy.deepcopy(hill_values)
         blade_slice_values = PerformanceCurve(blade_slice_values)
@@ -286,7 +312,10 @@ class HillChartProcessor:
         
         plt.show(block=False)    
 
-    def plot_blade_slices_const_n(self, hill_values, BEP_data, normalize = False, save_data = False):
+    def plot_blade_slices_const_n(self, normalize = False, save_data = False):
+        hill_values = self.hill_values
+        BEP_data = self.BEP_data
+
         _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         blade_slice_values = copy.deepcopy(hill_values)
         blade_slice_values = PerformanceCurve(blade_slice_values)                
@@ -309,7 +338,9 @@ class HillChartProcessor:
         
         plt.show(block=False)    
 
-    def plot_blade_slices_const_efficiency(self, raw_data, BEP_data, normalize = False, save_data = False):
+    def plot_blade_slices_const_efficiency(self, normalize = False, save_data = False):
+        raw_data = self.raw_data
+        BEP_data = self.BEP_data 
                 
         _, ax4 = plt.subplots(2, 2, figsize=(15, 10))                  
         
@@ -340,7 +371,8 @@ class HillChartProcessor:
         
         plt.show(block=False) 
 
-    def prepare_text_results(self, BEP_data):
+    def prepare_text_results(self):
+        BEP_data = self.BEP_data
         num_sets = len(BEP_data.H)
         results = []
         for index in range(num_sets):
@@ -354,13 +386,15 @@ class HillChartProcessor:
                 results.append(f"{attr} = {value_format}\n")
             results.append("\n")
         return ''.join(results)
-    
+
+    """
     def print_results(self, BEP_data):
         prepared_text = self.prepare_text_results(BEP_data)
         print(prepared_text)
+    """
 
-    def display_results_in_textbox(self, BEP_data):
-        prepared_text = self.prepare_text_results(BEP_data)
+    def display_results_in_textbox(self):        
+        prepared_text = self.prepare_text_results()
 
         # Create a new top-level window
         result_window = tk.Toplevel(self.root_window)
