@@ -44,6 +44,8 @@ class HillChart:
         self.BEP_data = BEP_data
 
     def extrapolate_along_n11(self, min_n11 = None, max_n11 = None, n_n11 = 10):
+        n_n11 = max(3, int(round(n_n11)))
+        
         # Convert lists to numpy arrays for easier manipulation
         blade_angles = np.array(self.data.blade_angle)
         n11 = np.array(self.data.n11)
@@ -104,6 +106,8 @@ class HillChart:
         self.data.efficiency = new_efficiency
 
     def extrapolate_along_blade_angles(self, min_angle = None, max_angle = None, n_angle = 2):
+        n_angle = max(3, int(round(n_angle)))
+
         # Convert lists to numpy arrays for easier manipulation
         blade_angles = np.array(self.data.blade_angle)
         n11 = np.array(self.data.n11)
