@@ -6,7 +6,8 @@ from PyQt6.QtWidgets import (
 from turbine_simulator_gui import ( # Generated GUI files      
     Ui_FormManualAutomaticControl,
     Ui_MaximiseOutput,
-    Ui_Sizing
+    Ui_Sizing,
+    Ui_DataFitting
     )
 
 class BaseWidget(QWidget):
@@ -62,6 +63,8 @@ class BaseWidget(QWidget):
         if isinstance(widget, (QCheckBox, QLabel, QLineEdit, QPushButton)):
             widget.setStyleSheet(gray_style if not enabled else normal_style)
 
+    
+
     def update_checkboxes_state(self, checkboxes, max_selected=2):
         """
         Allow up to 'max_selected' checkboxes to be selected. Disable others and gray them out.
@@ -97,6 +100,67 @@ class BaseWidget(QWidget):
             for lbl, field, default in zip(input_labels, input_fields, default_labels):
                 lbl.setText(default)
                 field.setEnabled(False)
+
+class DataFittingWidget(BaseWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.ui = Ui_DataFitting()
+        self.ui.setupUi(self)
+
+        self.setWindowTitle("Data Fitting")
+
+        # Define groups of widgets for n11 and blade angle
+        self.n11_widgets = [
+            self.ui.label_n11_min,
+            self.ui.lineEdit_n11_min,
+            self.ui.label_n11_max,
+            self.ui.lineEdit_n11_max,
+            self.ui.label_n11_pts,
+            self.ui.lineEdit_n11_pts,
+        ]
+        self.blade_angle_widgets = [
+            self.ui.label_blade_angle_min,
+            self.ui.lineEdit_blade_angle_min,
+            self.ui.label_blade_angle_max,
+            self.ui.lineEdit_blade_angle_max,
+            self.ui.label_blade_angle_pts,
+            self.ui.lineEdit_blade_angle_pts,
+        ]
+
+        # Initialize widget states
+        self.set_widget_enabled_with_style(self.ui.checkBox_extrapolate_n11, True)
+        self.set_widget_enabled_with_style(self.ui.checkBox_extrapolate_blade_angle, False)
+        self.toggle_widgets(self.n11_widgets, False)
+        self.toggle_widgets(self.blade_angle_widgets, False)
+
+        # Connect checkbox signals to handlers
+        self.ui.checkBox_extrapolate_n11.stateChanged.connect(self.update_widget_states)
+        self.ui.checkBox_extrapolate_blade_angle.stateChanged.connect(self.update_widget_states)
+
+    def toggle_widgets(self, widgets, enabled):
+        """
+        Enable or disable a group of widgets.
+
+        Args:
+            widgets (list): List of widgets to enable/disable.
+            enabled (bool): Whether to enable the widgets.
+        """
+        for widget in widgets:
+            self.set_widget_enabled_with_style(widget, enabled)
+
+    def update_widget_states(self):
+        """
+        Update widget states dynamically based on checkbox states.
+        """
+        # Update n11 widgets based on its checkbox state
+        n11_enabled = self.ui.checkBox_extrapolate_n11.isChecked()
+        self.toggle_widgets(self.n11_widgets, n11_enabled)
+
+        # Update blade angle checkbox and widgets based on n11 checkbox state
+        self.set_widget_enabled_with_style(self.ui.checkBox_extrapolate_blade_angle, n11_enabled)
+        blade_angle_enabled = n11_enabled and self.ui.checkBox_extrapolate_blade_angle.isChecked()
+        self.toggle_widgets(self.blade_angle_widgets, blade_angle_enabled)
+        
 
 class SizingWidget(BaseWidget):
     def __init__(self, parent=None):
@@ -332,7 +396,7 @@ if __name__ == "__main__":
     from PyQt6.QtWidgets import QApplication
     import sys
     app = QApplication(sys.argv)  # Create the application instance
-    sizing = SizingWidget()       # Instantiate your widget
+    sizing = DataFittingWidget()       # Instantiate your widget
     sizing.show()                 # Show the widget
     sys.exit(app.exec())          # Execute the app's main loop
  
