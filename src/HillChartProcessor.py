@@ -49,6 +49,32 @@ class HillChartProcessor:
             self.max_angle = extrapolation_values_blade_angles[1]
             self.n_angle = extrapolation_values_blade_angles[2]
 
+    def set_surface_fit_parameters(self, params):
+        """
+        Set surface fit parameters from a dictionary.
+
+        Args:
+            params (dict): Dictionary containing surface fit parameters.
+        """
+        # Set common parameters
+        self.min_efficiency_limit = params.get("min_efficiency_limit", 0.5)
+
+        # Handle n11 extrapolation
+        self.extrapolate_n11 = params.get("checkBox_extrapolate_n11", False)
+        if self.extrapolate_n11:
+            self.n11_min = params.get("n11_min", 3)
+            self.n11_max = params.get("n11_max", 26)
+            self.n_n11 = params.get("n11_pts", 10)
+
+        # Handle blade angle extrapolation
+        self.extrapolate_blade = params.get("checkBox_extrapolate_blade_angle", False)
+        if self.extrapolate_blade:
+            self.min_angle = params.get("blade_angle_min", 60)
+            self.max_angle = params.get("blade_angle_max", 180)
+            self.n_angle = params.get("blade_angle_pts", 10)
+
+
+
     def set_output_parameters(self, output_options, output_suboptions, settings_options):        
         self.output_options = output_options   
         self.output_suboptions = output_suboptions
@@ -82,6 +108,8 @@ class HillChartProcessor:
         hill_values.prepare_hill_chart_data(min_efficiency_limit = self.min_efficiency_limit)
         
         self.hill_values = hill_values        
+
+    
     
     def generate_outputs(self, show_standalone=True):        
         """
@@ -101,13 +129,7 @@ class HillChartProcessor:
         # Generate the outputs based on user selection
         if self.output_options.get("3D Hill Chart"):
             # Handle 3D Hill Chart separately
-            if show_standalone:
-                self.plot_3d_hill_chart()
-            else:
-                # Return the figure for embedding                
-                fig = self.plot_3d_hill_chart(show_standalone=False)
-                
-                return self.BEP_data, self.hill_values, self.raw_data, fig  # Include the figure in the return
+            fig = self.plot_3d_hill_chart(show_standalone=show_standalone)            
 
         # Check if normalize setting is enabled
         normalize = self.settings_options.get("Normalize")                    
@@ -138,7 +160,7 @@ class HillChartProcessor:
                 self.plot_blade_slices_const_efficiency(normalize=normalize, save_data=save_data)        
 
 
-        return self.BEP_data, self.hill_values, self.raw_data
+        return self.BEP_data, self.hill_values, self.raw_data, fig
       
 
         

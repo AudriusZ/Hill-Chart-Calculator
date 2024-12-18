@@ -149,8 +149,7 @@ class MainProcessor():
         var2 = 1.65        
         self.processor.set_turbine_parameters(selected_values, var1, var2)
 
-    def set_turbine_size_parameters(self, parameters):        
-        selected_values = [1, 4]  # 1 - H, 2 - Q, 3 - n, 4 - D
+    def set_turbine_size_parameters(self, parameters):                
         var1 = parameters["input_1"]
         var2 = parameters["input_2"]
         selected_values = parameters["selected_values"]

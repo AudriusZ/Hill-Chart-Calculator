@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>DataFitting</class>
- <widget class="QWidget" name="DataFitting">
+ <class>SurfaceFitting</class>
+ <widget class="QWidget" name="SurfaceFitting">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -17,13 +17,13 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>10</y>
+     <y>280</y>
      <width>231</width>
      <height>91</height>
     </rect>
    </property>
    <property name="title">
-    <string>Data Fitting Options</string>
+    <string>Surface Trim Options</string>
    </property>
    <widget class="QLabel" name="label_input_1">
     <property name="geometry">
@@ -62,14 +62,14 @@
     </rect>
    </property>
    <property name="text">
-    <string>Fit Data</string>
+    <string>Fit Surface</string>
    </property>
   </widget>
   <widget class="QGroupBox" name="groupBox_2">
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>130</y>
+     <y>20</y>
      <width>231</width>
      <height>241</height>
     </rect>

@@ -8,7 +8,8 @@ from turbine_simulator_gui import ( # Generated GUI files
 from widget_processor import (
     ManualAutomaticControlWidget,
     MaximiseOutputWidget,
-    SizingWidget
+    SizingWidget,
+    SurfaceFittingWidget
     )
 
 from plot_manager import PlotManager
@@ -103,17 +104,23 @@ class MainWindow(QMainWindow):
                 else:
                     self.update_status(f"Must 'Load Data' first.")
 
+            elif action == "Surface Fit Settings":
+                if self.app_state.actions.get("Sizing", False):
+                    self.surface_fit_action()
+                else:
+                    self.update_status(f"Must set'Sizing' parameters first.")
+
             elif action == "Maximised Output":
-                if self.app_state.actions.get("Turbine Hydraulics", False):
+                if self.app_state.actions.get("Turbine Hydraulics", False) or self.app_state.actions.get("Surface Fit Settings", False):
                     self.maximise_output_action()                   
                 else:
-                    self.update_status(f"Must set 'Turbine Hydraulics' first.")
+                    self.update_status(f"Must set 'Turbine Hydraulics' or 'Surface Fit Settings' first.")
 
             elif action == "Manual/Automatic Control":
-                if self.app_state.actions.get("Turbine Hydraulics", False):
+                if self.app_state.actions.get("Turbine Hydraulics", False) or self.app_state.actions.get("Surface Fit Settings", False):
                     self.manual_automatic_control_action()                    
                 else:
-                    self.update_status(f"Must set 'Turbine Hydraulics' first.")
+                    self.update_status(f"Must set 'Turbine Hydraulics' or 'Surface Fit Settings' first.")
             else:
                 self.update_status(f"No action defined for '{action}'.")
             
@@ -158,8 +165,16 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             self.update_status(f"Error in sizing: {str(e)}")
-            
-        
+
+    def surface_fit_action(self):
+        """
+        Select key parameters for data fitting
+        """
+        try:
+            self.open_surface_fitting_widget()
+
+        except Exception as e:
+            self.update_status(f"Error in surface fitting: {str(e)}")
 
     def maximise_output_action(self):
         """
@@ -185,7 +200,24 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
             self.update_status(f"Error during Turbine Sizing action: {str(e)}")
+
+    
+
+    def set_surface_fitting_parameters(self):
         
+        """
+        Set suraface fitting parameters
+        """
+        try:
+            parameters = self.surface_fitting_widget.get_all_input_values()
+            self.main_processor.processor.set_surface_fit_parameters(parameters)
+            self.main_processor.processor.prepare_core_data()
+            fig = self.main_processor.processor.plot_3d_hill_chart(show_standalone=False)                 
+            self.plot_manager.embed_plot(fig, "3D Hill Chart", add_export_button=True)
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+            self.update_status(f"Error during Turbine Sizing action: {str(e)}")
 
     def start_maximise_output(self):
         try:
@@ -315,7 +347,18 @@ class MainWindow(QMainWindow):
             self.sizing_widget.ui.pushButton.clicked.connect(self.set_turbine_size_parameters)
             
         self.sizing_widget.show()
+        
 
+    def open_surface_fitting_widget(self):
+        """
+        Open the Surface Fitting widget.
+        """ 
+                
+        if not hasattr(self, "surface_fitting_widget"):
+            self.surface_fitting_widget = SurfaceFittingWidget()
+            self.surface_fitting_widget.ui.pushButton.clicked.connect(self.set_surface_fitting_parameters)
+            
+        self.surface_fitting_widget.show()
 
     def open_maximise_output_widget(self):
         """
@@ -388,10 +431,12 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     window = MainWindow()    
-    #window.update_status("Program has started successfylly.")
-    #window.update_status(f"***Developer mode: Set default turbine hydraulics after double-clicking '{action}'.")
+    
     #window.turbine_hydraulics_action()
-    window.app_state.update_actions("Turbine Hydraulics", True)
+    window.main_processor.default_pathname()
+    window.main_processor.default_turbine_parameters()
+    window.app_state.update_actions("Load Data", True)
+    window.app_state.update_actions("Sizing", True)
     window.show()    
     sys.exit(app.exec())
 

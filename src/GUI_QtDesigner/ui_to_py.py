@@ -6,7 +6,7 @@ ui_files = [
     'src/GUI_QtDesigner/manual-automatic_control_widget.ui',
     'src/GUI_QtDesigner/maximise_output_widget.ui',
     'src/GUI_QtDesigner/sizing_widget.ui',
-    'src/GUI_QtDesigner/data_fitting_widget.ui'
+    'src/GUI_QtDesigner/surface_fitting_widget.ui'
     ]
 output_file = 'src/turbine_simulator_gui.py'
 

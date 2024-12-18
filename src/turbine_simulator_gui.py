@@ -494,7 +494,7 @@ if __name__ == "__main__":
     sys.exit(app.exec())
 
 
-# Form implementation generated from reading ui file 'src/GUI_QtDesigner/data_fitting_widget.ui'
+# Form implementation generated from reading ui file 'src/GUI_QtDesigner/surface_fitting_widget.ui'
 #
 # Created by: PyQt6 UI code generator 6.7.1
 #
@@ -505,12 +505,12 @@ if __name__ == "__main__":
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 
-class Ui_DataFitting(object):
-    def setupUi(self, DataFitting):
-        DataFitting.setObjectName("DataFitting")
-        DataFitting.resize(270, 440)
-        self.groupBox = QtWidgets.QGroupBox(parent=DataFitting)
-        self.groupBox.setGeometry(QtCore.QRect(20, 10, 231, 91))
+class Ui_SurfaceFitting(object):
+    def setupUi(self, SurfaceFitting):
+        SurfaceFitting.setObjectName("SurfaceFitting")
+        SurfaceFitting.resize(270, 440)
+        self.groupBox = QtWidgets.QGroupBox(parent=SurfaceFitting)
+        self.groupBox.setGeometry(QtCore.QRect(20, 280, 231, 91))
         self.groupBox.setObjectName("groupBox")
         self.label_input_1 = QtWidgets.QLabel(parent=self.groupBox)
         self.label_input_1.setGeometry(QtCore.QRect(20, 20, 171, 31))
@@ -518,11 +518,11 @@ class Ui_DataFitting(object):
         self.lineEdit_min_efficiency_limit = QtWidgets.QLineEdit(parent=self.groupBox)
         self.lineEdit_min_efficiency_limit.setGeometry(QtCore.QRect(20, 50, 81, 22))
         self.lineEdit_min_efficiency_limit.setObjectName("lineEdit_min_efficiency_limit")
-        self.pushButton = QtWidgets.QPushButton(parent=DataFitting)
+        self.pushButton = QtWidgets.QPushButton(parent=SurfaceFitting)
         self.pushButton.setGeometry(QtCore.QRect(170, 390, 81, 31))
         self.pushButton.setObjectName("pushButton")
-        self.groupBox_2 = QtWidgets.QGroupBox(parent=DataFitting)
-        self.groupBox_2.setGeometry(QtCore.QRect(20, 130, 231, 241))
+        self.groupBox_2 = QtWidgets.QGroupBox(parent=SurfaceFitting)
+        self.groupBox_2.setGeometry(QtCore.QRect(20, 20, 231, 241))
         self.groupBox_2.setObjectName("groupBox_2")
         self.checkBox_extrapolate_n11 = QtWidgets.QCheckBox(parent=self.groupBox_2)
         self.checkBox_extrapolate_n11.setGeometry(QtCore.QRect(20, 30, 191, 20))
@@ -567,40 +567,40 @@ class Ui_DataFitting(object):
         self.label_blade_angle_pts.setGeometry(QtCore.QRect(160, 170, 171, 31))
         self.label_blade_angle_pts.setObjectName("label_blade_angle_pts")
 
-        self.retranslateUi(DataFitting)
-        QtCore.QMetaObject.connectSlotsByName(DataFitting)
+        self.retranslateUi(SurfaceFitting)
+        QtCore.QMetaObject.connectSlotsByName(SurfaceFitting)
 
-    def retranslateUi(self, DataFitting):
+    def retranslateUi(self, SurfaceFitting):
         _translate = QtCore.QCoreApplication.translate
-        DataFitting.setWindowTitle(_translate("DataFitting", "Form"))
-        self.groupBox.setTitle(_translate("DataFitting", "Data Fitting Options"))
-        self.label_input_1.setText(_translate("DataFitting", "Minimum efficiency trim limit"))
-        self.lineEdit_min_efficiency_limit.setText(_translate("DataFitting", "0.2"))
-        self.pushButton.setText(_translate("DataFitting", "Fit Data"))
-        self.groupBox_2.setTitle(_translate("DataFitting", "Data Interpolation/Extrapolation Options"))
-        self.checkBox_extrapolate_n11.setText(_translate("DataFitting", "Extrapolate unit speed n11 [rpm]"))
-        self.checkBox_extrapolate_blade_angle.setText(_translate("DataFitting", "Extrapolate Blade Angles [°]"))
-        self.label_n11_min.setText(_translate("DataFitting", "Min."))
-        self.lineEdit_n11_min.setText(_translate("DataFitting", "60"))
-        self.label_n11_max.setText(_translate("DataFitting", "Max."))
-        self.lineEdit_n11_max.setText(_translate("DataFitting", "200"))
-        self.label_n11_pts.setText(_translate("DataFitting", "No. of Pts"))
-        self.lineEdit_n11_pts.setText(_translate("DataFitting", "10"))
-        self.lineEdit_blade_angle_max.setText(_translate("DataFitting", "26"))
-        self.lineEdit_blade_angle_pts.setText(_translate("DataFitting", "10"))
-        self.label_blade_angle_min.setText(_translate("DataFitting", "Min."))
-        self.lineEdit_blade_angle_min.setText(_translate("DataFitting", "3"))
-        self.label_blade_angle_max.setText(_translate("DataFitting", "Max."))
-        self.label_blade_angle_pts.setText(_translate("DataFitting", "No. of Pts"))
+        SurfaceFitting.setWindowTitle(_translate("SurfaceFitting", "Form"))
+        self.groupBox.setTitle(_translate("SurfaceFitting", "Surface Trim Options"))
+        self.label_input_1.setText(_translate("SurfaceFitting", "Minimum efficiency trim limit"))
+        self.lineEdit_min_efficiency_limit.setText(_translate("SurfaceFitting", "0.2"))
+        self.pushButton.setText(_translate("SurfaceFitting", "Fit Surface"))
+        self.groupBox_2.setTitle(_translate("SurfaceFitting", "Data Interpolation/Extrapolation Options"))
+        self.checkBox_extrapolate_n11.setText(_translate("SurfaceFitting", "Extrapolate unit speed n11 [rpm]"))
+        self.checkBox_extrapolate_blade_angle.setText(_translate("SurfaceFitting", "Extrapolate Blade Angles [°]"))
+        self.label_n11_min.setText(_translate("SurfaceFitting", "Min."))
+        self.lineEdit_n11_min.setText(_translate("SurfaceFitting", "60"))
+        self.label_n11_max.setText(_translate("SurfaceFitting", "Max."))
+        self.lineEdit_n11_max.setText(_translate("SurfaceFitting", "200"))
+        self.label_n11_pts.setText(_translate("SurfaceFitting", "No. of Pts"))
+        self.lineEdit_n11_pts.setText(_translate("SurfaceFitting", "10"))
+        self.lineEdit_blade_angle_max.setText(_translate("SurfaceFitting", "26"))
+        self.lineEdit_blade_angle_pts.setText(_translate("SurfaceFitting", "10"))
+        self.label_blade_angle_min.setText(_translate("SurfaceFitting", "Min."))
+        self.lineEdit_blade_angle_min.setText(_translate("SurfaceFitting", "3"))
+        self.label_blade_angle_max.setText(_translate("SurfaceFitting", "Max."))
+        self.label_blade_angle_pts.setText(_translate("SurfaceFitting", "No. of Pts"))
 
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    DataFitting = QtWidgets.QWidget()
-    ui = Ui_DataFitting()
-    ui.setupUi(DataFitting)
-    DataFitting.show()
+    SurfaceFitting = QtWidgets.QWidget()
+    ui = Ui_SurfaceFitting()
+    ui.setupUi(SurfaceFitting)
+    SurfaceFitting.show()
     sys.exit(app.exec())
 
 
