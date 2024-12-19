@@ -124,7 +124,7 @@ class MainWindow(QMainWindow):
                 else:
                     self.update_status(f"Must set 'Turbine Hydraulics' or 'Surface Fit Settings' first.")
             else:
-                self.update_status(f"No action defined for '{action}'.")
+                self.update_status(f"***No action defined for '{action}'.")
             
             # If no exception occurred, mark the action as successful
             self.app_state.update_actions(action, True)

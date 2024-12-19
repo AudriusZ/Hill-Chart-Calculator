@@ -57,8 +57,8 @@ class ControlPID:
                 raise ValueError("blade_angle_max must be greater than blade_angle_min.")
             self.blade_angle_max = blade_angle_max
 
-        print(f"Constraints updated: n_min={self.n_min}, n_max={self.n_max}, "
-            f"blade_angle_min={self.blade_angle_min}, blade_angle_max={self.blade_angle_max}")
+        #print(f"Constraints updated: n_min={self.n_min}, n_max={self.n_max}, "
+        #    f"blade_angle_min={self.blade_angle_min}, blade_angle_max={self.blade_angle_max}")
 
 
     def control_step(self, H, H_t, n, n_t, blade_angle, delta_time):
