@@ -85,6 +85,8 @@ class MainWindow(QMainWindow):
         # Initialize simulation state
         self.simulation_initialized = False
 
+        self.update_status(f"Program started.") 
+
     def tree_item_double_clicked(self, item: QTreeWidgetItem, column: int):
         """Handle tree item double-click actions."""
         action = item.text(0)  # Get the text of the clicked item
@@ -195,7 +197,8 @@ class MainWindow(QMainWindow):
         try:
             parameters = self.sizing_widget.get_all_input_values()
             text_widget = self.main_processor.set_turbine_size_parameters(parameters)
-            self.plot_manager.embed_textEdit(text_widget, "Turbine Sizing")            
+            self.plot_manager.embed_textEdit(text_widget, "Turbine Sizing")       
+            self.update_status(f"Turbine sizing set.")     
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
@@ -212,6 +215,7 @@ class MainWindow(QMainWindow):
             parameters = self.surface_fitting_widget.get_all_input_values()
             fig = self.main_processor.set_surface_fitting_parameters(parameters)            
             self.plot_manager.embed_plot(fig, "3D Hill Chart", add_export_button=True)
+            self.update_status(f"Surface fitting parameters set.") 
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
