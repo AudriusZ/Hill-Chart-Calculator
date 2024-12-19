@@ -23,6 +23,8 @@ class MainProcessor():
         #Figures are standalone if not called from GUI that embeds them
         self.standalone_figures = True
 
+        # Initialise empty BEP data
+        self.BEP_data = None
         
 
     def set_message_callback(self, callback):
@@ -45,19 +47,31 @@ class MainProcessor():
         #datapath = os.path.join(os.path.dirname(__file__), 'Mogu_D1.65m.csv')  # Adjust path as needed
         self.processor.set_file_path(datapath)
     
+    def set_file_path(self,path):
+        self.processor.set_file_path(path)    
     
-    def get_bep_data(self):
+    def get_BEP_data(self):
         """
-        Retrieve BEP data for initializing the control widget.
         Returns:
             BEP data
-        """
-        if not self.BEP_data:
-            raise ValueError("BEP data is not initialized. Run 'default_turbine_hydraulics_action' first.")
-        
-        # Return the relevant BEP data
+        """        
         return self.BEP_data  
     
+    def set_turbine_size_parameters(self, parameters):                
+        var1 = parameters["input_1"]
+        var2 = parameters["input_2"]
+        selected_values = parameters["selected_values"]
+        self.processor.set_turbine_parameters(selected_values, var1, var2)
+        self.processor.read_raw_data()
+        self.BEP_data = self.processor.prepare_BEP_data()
+        text_widget = self.processor.display_results_in_PyQt6_textbox(show_standalone=False)
+        return text_widget
+    
+    def set_surface_fitting_parameters(self, parameters):
+        self.processor.set_surface_fit_parameters(parameters)
+        self.hill_values = self.processor.prepare_core_data()
+        fig = self.processor.plot_3d_hill_chart(show_standalone=False) 
+        return fig
 
     def maximise_output_action(self, ranges):        
         
@@ -108,6 +122,9 @@ class MainProcessor():
             self.emit_message(f"Error during simulation: {str(e)}")
             raise
     
+    
+
+
     """
     Development mode methods start here
     """
@@ -148,16 +165,7 @@ class MainProcessor():
         var1 = 2.15
         var2 = 1.65        
         self.processor.set_turbine_parameters(selected_values, var1, var2)
-
-    def set_turbine_size_parameters(self, parameters):                
-        var1 = parameters["input_1"]
-        var2 = parameters["input_2"]
-        selected_values = parameters["selected_values"]
-        self.processor.set_turbine_parameters(selected_values, var1, var2)
-        self.processor.read_raw_data()
-        self.processor.prepare_BEP_data()
-        text_widget = self.processor.display_results_in_PyQt6_textbox(show_standalone=False)
-        return text_widget
+        self.BEP_data = self.processor.get_BEP_data()
 
     def default_plot_parameters(self):
         """Set default plot parameters as in the test."""

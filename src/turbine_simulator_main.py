@@ -150,7 +150,7 @@ class MainWindow(QMainWindow):
         
         file_path, _ = QFileDialog.getOpenFileName(self, "Select Turbine Data File", "", "CSV Files (*.csv)")
         if file_path:            
-            self.main_processor.processor.set_file_path(file_path)
+            self.main_processor.set_file_path(file_path)
             self.update_status(f"Loaded data from: {file_path}")
         else:
             QMessageBox.warning(self, "No File Selected", "Please select a valid file.")
@@ -210,9 +210,7 @@ class MainWindow(QMainWindow):
         """
         try:
             parameters = self.surface_fitting_widget.get_all_input_values()
-            self.main_processor.processor.set_surface_fit_parameters(parameters)
-            self.main_processor.processor.prepare_core_data()
-            fig = self.main_processor.processor.plot_3d_hill_chart(show_standalone=False)                 
+            fig = self.main_processor.set_surface_fitting_parameters(parameters)            
             self.plot_manager.embed_plot(fig, "3D Hill Chart", add_export_button=True)
 
         except Exception as e:
@@ -379,7 +377,7 @@ class MainWindow(QMainWindow):
         """
         if not hasattr(self, "control_widget"):
             # Create the widget with a default H_t value
-            data = self.main_processor.BEP_data            
+            data = self.main_processor.get_BEP_data()
             self.control_widget = ManualAutomaticControlWidget(                
                 H_t= data.H[0],
                 Q=data.Q[0],
@@ -433,10 +431,10 @@ if __name__ == "__main__":
     window = MainWindow()    
     
     #window.turbine_hydraulics_action()
-    window.main_processor.default_pathname()
-    window.main_processor.default_turbine_parameters()
-    window.app_state.update_actions("Load Data", True)
-    window.app_state.update_actions("Sizing", True)
+    #window.main_processor.default_pathname()
+    #window.main_processor.default_turbine_parameters()
+    #window.app_state.update_actions("Load Data", True)
+    #window.app_state.update_actions("Sizing", True)
     window.show()    
     sys.exit(app.exec())
 

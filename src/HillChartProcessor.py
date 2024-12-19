@@ -80,6 +80,9 @@ class HillChartProcessor:
         self.output_suboptions = output_suboptions
         self.settings_options = settings_options
 
+    def get_BEP_data(self):
+        return self.BEP_data
+
     def read_raw_data(self):
         raw_data = HillChart()        
         raw_data.read_hill_chart_values(self.datapath)
@@ -108,6 +111,8 @@ class HillChartProcessor:
         hill_values.prepare_hill_chart_data(min_efficiency_limit = self.min_efficiency_limit)
         
         self.hill_values = hill_values        
+
+        return hill_values
 
     
     
