@@ -1,4 +1,4 @@
-#pyinstaller --onefile --name Turbine_Simulator_0.2.0 --icon=icon.ico turbine_simulator_main.py
+#pyinstaller --onefile --name Turbine_Simulator_0.3.0 --icon=icon.ico turbine_simulator_main.py
 
 from main_processor import MainProcessor
 
@@ -189,6 +189,14 @@ class MainWindow(QMainWindow):
             self.update_status(f"Error in maximising output: {str(e)}")
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
 
+    def manual_automatic_control_action(self):
+        """
+        Handle manual/automatic control by initializing and running the simulation.
+        """
+        self.open_control_widget()  # Open the widget
+        self.initialize_simulation_and_plots()                
+        self.main_processor.control_processor.continue_simulation = False
+
     def set_turbine_size_parameters(self):
         
         """
@@ -237,13 +245,7 @@ class MainWindow(QMainWindow):
             self.update_status(f"Error in maximising output: {str(e)}")
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
     
-    def manual_automatic_control_action(self):
-        """
-        Handle manual/automatic control by initializing and running the simulation.
-        """
-        self.open_control_widget()  # Open the widget
-        self.initialize_simulation_and_plots()                
-        self.main_processor.control_processor.continue_simulation = False
+    
         
         
     
