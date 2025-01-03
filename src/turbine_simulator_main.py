@@ -1,4 +1,4 @@
-#pyinstaller --onefile --name Turbine_Simulator_0.3.0 --icon=icon.ico turbine_simulator_main.py
+#pyinstaller --onefile --name Turbine_Simulator_0.2.1 --icon=icon.ico --noconsole turbine_simulator_main.py
 
 from main_processor import MainProcessor
 
