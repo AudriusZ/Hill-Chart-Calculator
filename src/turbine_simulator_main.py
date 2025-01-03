@@ -23,6 +23,9 @@ from PyQt6.QtWidgets import (
     QWidget
     )
 
+from PyQt6.QtGui import QPixmap
+
+
 
 class AppState:
     def __init__(self, actions_list=None):
@@ -65,6 +68,8 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         self.setWindowTitle("Turbine Simulator")
+        self.ui.CoverImage.setPixmap(QPixmap("src/icon.png"))
+        self.ui.CoverImage.setScaledContents(True)  # Enable scaling to fit QLabel
 
         # Initialize main processor
         self.main_processor = MainProcessor()
@@ -89,7 +94,7 @@ class MainWindow(QMainWindow):
         # Initialize simulation state
         self.simulation_initialized = False
 
-        self.update_status(f"Program started.") 
+        self.update_status(f"Program has started successfully.") 
 
     
 

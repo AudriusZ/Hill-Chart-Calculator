@@ -97,7 +97,7 @@
      </rect>
     </property>
     <property name="plainText">
-     <string>Status updates here</string>
+     <string>Welcome to the Turbine Simulator. Use the menu on the left to get started. Status updates will be shown here.</string>
     </property>
    </widget>
    <widget class="QTabWidget" name="tabWidget">
@@ -119,14 +119,35 @@
      <attribute name="title">
       <string/>
      </attribute>
-     <widget class="QGraphicsView" name="graphicsView">
+     <widget class="QLabel" name="CoverImage">
       <property name="geometry">
        <rect>
-        <x>60</x>
-        <y>50</y>
-        <width>911</width>
-        <height>421</height>
+        <x>300</x>
+        <y>60</y>
+        <width>416</width>
+        <height>469</height>
        </rect>
+      </property>
+      <property name="text">
+       <string>CoverImage</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label">
+      <property name="geometry">
+       <rect>
+        <x>400</x>
+        <y>10</y>
+        <width>221</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>20</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Turbine Simulator</string>
       </property>
      </widget>
     </widget>
