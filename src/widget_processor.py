@@ -1,7 +1,6 @@
 
 from PyQt6.QtWidgets import (
-    QWidget, QCheckBox, QLabel, QLineEdit, QPushButton
-    
+    QWidget
     )
 
 from PyQt6.QtGui import QIntValidator
@@ -52,19 +51,35 @@ class BaseWidget(QWidget):
     
     def set_widget_enabled_with_style(self, widget, enabled):
         """
-        Enables or disables a widget and updates its style to reflect the disabled state.
+        Enables or disables a widget and updates its text color to reflect the state,
+        explicitly preserving font size and other inherited styles.
 
         Args:
             widget (QWidget): The widget to enable/disable.
             enabled (bool): True to enable, False to disable.
         """
         widget.setEnabled(enabled)
-        gray_style = "color: gray;"  # Grayed-out text style
-        normal_style = "color: black;"  # Normal text style
 
-        # Apply styles dynamically based on the widget's state
-        if isinstance(widget, (QCheckBox, QLabel, QLineEdit, QPushButton)):
-            widget.setStyleSheet(gray_style if not enabled else normal_style)
+        # Extract the existing style sheet
+        current_style = widget.styleSheet()
+
+        # Get the current font size from the widget's font
+        font = widget.font()
+        font_size = font.pointSize()
+
+        # Define the new color based on the enabled state
+        color = "gray" if not enabled else "black"
+
+        # Construct a full style sheet, preserving font size
+        updated_style = f"color: {color}; font-size: {font_size}pt;"
+
+        # Append existing style properties if any
+        if current_style:
+            updated_style = current_style + f"; {updated_style}"
+
+        # Apply the updated style
+        widget.setStyleSheet(updated_style)
+
 
     
 
@@ -363,7 +378,7 @@ class ManualAutomaticControlWidget(BaseWidget):
     def toggle_inputs(self, checked):
         """
         Enable or disable blade_angle, blade_angle_rate, n, and n_rate inputs
-        based on the state of the 'Activate' checkbox.
+        based on the state of the 'Activate' checkbox, preserving font size and style.
 
         Args:
             checked (bool): The state of the checkbox (True if checked, False otherwise).
@@ -375,20 +390,23 @@ class ManualAutomaticControlWidget(BaseWidget):
         self.ui.lineEdit_n_rate.setDisabled(checked)
 
         self.ui.lineEdit_H_t.setEnabled(checked)
-        self.ui.lineEdit_H_t_rate.setEnabled(checked)      
-        
-        # Define styles for enabled and disabled labels
-        gray_style = "color: gray;"
-        normal_style = "color: black;"
+        self.ui.lineEdit_H_t_rate.setEnabled(checked)
 
-        # Update QLabel styles based on the checkbox state
-        self.ui.lineEdit_blade_angle.setStyleSheet(gray_style if checked else normal_style) 
-        self.ui.lineEdit_blade_angle_rate.setStyleSheet(gray_style if checked else normal_style)
-        self.ui.lineEdit_n.setStyleSheet(gray_style if checked else normal_style)
-        self.ui.lineEdit_n_rate.setStyleSheet(gray_style if checked else normal_style)
+        # Helper function to update the style of a widget
+        def set_widget_style(widget, enabled):
+            font = widget.font()
+            font_size = font.pointSize()
+            color = "black" if enabled else "gray"
+            updated_style = f"color: {color}; font-size: {font_size}pt;"
+            widget.setStyleSheet(updated_style)
 
-        self.ui.lineEdit_H_t.setStyleSheet(normal_style if checked else gray_style)
-        self.ui.lineEdit_H_t_rate.setStyleSheet(normal_style if checked else gray_style)     
+        # Update styles for the widgets
+        set_widget_style(self.ui.lineEdit_blade_angle, not checked)
+        set_widget_style(self.ui.lineEdit_blade_angle_rate, not checked)
+        set_widget_style(self.ui.lineEdit_n, not checked)
+        set_widget_style(self.ui.lineEdit_n_rate, not checked)
+        set_widget_style(self.ui.lineEdit_H_t, checked)
+        set_widget_style(self.ui.lineEdit_H_t_rate, checked)
     
     def get_all_input_values(self):
         # Define the list of standard fields to fetch

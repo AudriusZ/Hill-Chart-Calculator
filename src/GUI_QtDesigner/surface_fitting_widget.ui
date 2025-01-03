@@ -6,9 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>270</width>
+    <width>331</width>
     <height>440</height>
    </rect>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>11</pointsize>
+   </font>
   </property>
   <property name="windowTitle">
    <string>Form</string>
@@ -18,7 +23,7 @@
     <rect>
      <x>20</x>
      <y>280</y>
-     <width>231</width>
+     <width>291</width>
      <height>91</height>
     </rect>
    </property>
@@ -30,7 +35,7 @@
      <rect>
       <x>20</x>
       <y>20</y>
-      <width>171</width>
+      <width>231</width>
       <height>31</height>
      </rect>
     </property>
@@ -70,7 +75,7 @@
     <rect>
      <x>20</x>
      <y>20</y>
-     <width>231</width>
+     <width>291</width>
      <height>241</height>
     </rect>
    </property>
@@ -82,7 +87,7 @@
      <rect>
       <x>20</x>
       <y>30</y>
-      <width>191</width>
+      <width>251</width>
       <height>20</height>
      </rect>
     </property>
@@ -95,7 +100,7 @@
      <rect>
       <x>20</x>
       <y>150</y>
-      <width>191</width>
+      <width>251</width>
       <height>20</height>
      </rect>
     </property>
@@ -121,7 +126,7 @@
      <rect>
       <x>20</x>
       <y>80</y>
-      <width>51</width>
+      <width>71</width>
       <height>22</height>
      </rect>
     </property>
@@ -132,9 +137,9 @@
    <widget class="QLabel" name="label_n11_max">
     <property name="geometry">
      <rect>
-      <x>90</x>
+      <x>110</x>
       <y>50</y>
-      <width>171</width>
+      <width>71</width>
       <height>31</height>
      </rect>
     </property>
@@ -145,9 +150,9 @@
    <widget class="QLineEdit" name="lineEdit_n11_max">
     <property name="geometry">
      <rect>
-      <x>90</x>
+      <x>110</x>
       <y>80</y>
-      <width>51</width>
+      <width>71</width>
       <height>22</height>
      </rect>
     </property>
@@ -158,7 +163,7 @@
    <widget class="QLabel" name="label_n11_pts">
     <property name="geometry">
      <rect>
-      <x>160</x>
+      <x>200</x>
       <y>50</y>
       <width>171</width>
       <height>31</height>
@@ -171,9 +176,9 @@
    <widget class="QLineEdit" name="lineEdit_n11_pts">
     <property name="geometry">
      <rect>
-      <x>160</x>
+      <x>200</x>
       <y>80</y>
-      <width>51</width>
+      <width>71</width>
       <height>22</height>
      </rect>
     </property>
@@ -184,9 +189,9 @@
    <widget class="QLineEdit" name="lineEdit_blade_angle_max">
     <property name="geometry">
      <rect>
-      <x>90</x>
+      <x>110</x>
       <y>200</y>
-      <width>51</width>
+      <width>71</width>
       <height>22</height>
      </rect>
     </property>
@@ -197,9 +202,9 @@
    <widget class="QLineEdit" name="lineEdit_blade_angle_pts">
     <property name="geometry">
      <rect>
-      <x>160</x>
+      <x>200</x>
       <y>200</y>
-      <width>51</width>
+      <width>71</width>
       <height>22</height>
      </rect>
     </property>
@@ -225,7 +230,7 @@
      <rect>
       <x>20</x>
       <y>200</y>
-      <width>51</width>
+      <width>71</width>
       <height>22</height>
      </rect>
     </property>
@@ -236,9 +241,9 @@
    <widget class="QLabel" name="label_blade_angle_max">
     <property name="geometry">
      <rect>
-      <x>90</x>
+      <x>110</x>
       <y>170</y>
-      <width>171</width>
+      <width>71</width>
       <height>31</height>
      </rect>
     </property>
@@ -249,7 +254,7 @@
    <widget class="QLabel" name="label_blade_angle_pts">
     <property name="geometry">
      <rect>
-      <x>160</x>
+      <x>200</x>
       <y>170</y>
       <width>171</width>
       <height>31</height>
