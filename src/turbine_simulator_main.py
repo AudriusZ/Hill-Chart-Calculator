@@ -73,6 +73,9 @@ class MainWindow(QMainWindow):
         # Initialize the PlotManager with the QTabWidget
         self.plot_manager = PlotManager(self.ui.tabWidget)
 
+        # Register specific cleanup actions for tabs
+        self.plot_manager.register_tab_action("Simulation Results", self.cleanup_simulation_results)        
+
         actions = self.get_tree_widget_actions()
         self.app_state = AppState(actions)
         
@@ -278,11 +281,18 @@ class MainWindow(QMainWindow):
             self.update_status(f"Error during simulation initialization: {str(e)}")
             raise
     
+    def cleanup_simulation_results(self):
+        """
+        Cleanup actions for the 'Simulation Results' tab.
+        """        
+        self.update_status(f"Cleaning up resources for Simulation Results tab.")
+        self.main_processor.control_processor.continue_simulation = False
+        self.main_processor.reset_simulation()
+    
     def start_control(self):
         self.main_processor.control_processor.continue_simulation = True
         control_parameters = self.control_widget.get_all_input_values()
         self.manage_control_simulation(control_parameters)        
-
 
     def stop_control(self):
         self.main_processor.control_processor.continue_simulation = False

@@ -102,6 +102,12 @@ class MainProcessor():
             self.emit_message(f"Error during simulation initialization: {str(e)}")
             raise
 
+    def reset_simulation(self):
+        # Initialize simulation state
+        self.control_processor = ControlProcessor()
+        self.simulation_initialized = False        
+        self.control_processor.continue_simulation = False        
+
     def run_simulation(self, control_parameters, axs, log_callback=None):
         """
         Run the simulation loop with live plot updates.

@@ -16,7 +16,11 @@ class PlotManager:
         """
         self.tab_widget = tab_widget
         self.tab_widget.setTabsClosable(True)  # Enable the close button on tabs
-        self.tab_widget.tabCloseRequested.connect(self.close_tab)  # Connect to the tab close signal
+        self.tab_widget.tabCloseRequested.connect(self.close_tab)  # Connect to the tab close signal      
+
+        # Dictionary to map tab titles to cleanup actions
+        self.tab_cleanup_actions = {}
+  
 
     def embed_textEdit(self, text_widget, title):
         """
@@ -138,12 +142,28 @@ class PlotManager:
         except Exception as e:
             QMessageBox.critical(self.tab_widget, "Export Error", f"An error occurred: {str(e)}")
     
+    def register_tab_action(self, title, cleanup_action):
+        """
+        Register a cleanup action for a specific tab.
+        Args:
+            title (str): The title of the tab.
+            cleanup_action (callable): A callable for cleanup when the tab is closed.
+        """
+        self.tab_cleanup_actions[title] = cleanup_action
+
     def close_tab(self, index):
         """
         Handle closing of a tab.
         Args:
             index (int): The index of the tab to close.
         """
+        tab_title = self.tab_widget.tabText(index)
+
+        # Perform cleanup if a specific action is registered
+        if tab_title in self.tab_cleanup_actions:
+            self.tab_cleanup_actions[tab_title]()
+
+        # Remove the tab from the widget
         self.tab_widget.removeTab(index)
     
     def expand_tree(self, tree_widget: QTreeWidget):
