@@ -31,7 +31,7 @@ class ControlProcessor:
             "blade_angle_max": 26   # Maximum blade angle
         }
 
-        self.continue_simulation = True
+        self.continue_simulation = False
 
         # Initialize the PID controller with predefined coefficients and constraints
         self.controller = ControlPID(

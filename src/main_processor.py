@@ -15,7 +15,7 @@ class MainProcessor():
         self.maximised_output_processor = MaximisedOutputProcessor()
         
         # Initialize simulation state
-        self.simulation_initialized = False
+        self.simulation_initialized = False        
 
         # Optional callback for message handling
         self.message_callback = None
@@ -101,6 +101,10 @@ class MainProcessor():
         except Exception as e:
             self.emit_message(f"Error during simulation initialization: {str(e)}")
             raise
+
+    def stop_simulation(self):
+        """Stop the simulation through the control processor."""
+        self.control_processor.stop_simulation()
 
     def reset_simulation(self):
         # Initialize simulation state
