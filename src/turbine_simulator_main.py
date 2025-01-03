@@ -19,7 +19,8 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QTreeWidgetItem,
     QMessageBox,
-    QFileDialog
+    QFileDialog,
+    QWidget
     )
 
 
@@ -89,6 +90,8 @@ class MainWindow(QMainWindow):
         self.simulation_initialized = False
 
         self.update_status(f"Program started.") 
+
+    
 
     def tree_item_double_clicked(self, item: QTreeWidgetItem, column: int):
         """Handle tree item double-click actions."""
@@ -288,6 +291,7 @@ class MainWindow(QMainWindow):
         self.update_status(f"Cleaning up resources for Simulation Results tab.")
         self.main_processor.control_processor.continue_simulation = False
         self.main_processor.reset_simulation()
+        self.close_widget("control_widget")
     
     def start_control(self):
         self.main_processor.control_processor.continue_simulation = True
@@ -409,7 +413,20 @@ class MainWindow(QMainWindow):
 
         self.control_widget.show()
 
-    
+    def close_widget(self, widget_name):
+        """
+        Close and delete a widget by its attribute name.
+
+        Args:
+            widget_name (str): The name of the widget attribute to close (e.g., "control_widget").
+        """
+        widget = getattr(self, widget_name, None)
+        if widget and isinstance(widget, QWidget):
+            widget.close()  # Properly close the widget
+            delattr(self, widget_name)  # Remove the attribute reference
+            self.update_status(f"Closed and deleted widget: {widget_name}")
+        else:
+            self.update_status(f"Widget '{widget_name}' does not exist or is not a valid QWidget.")
 
 
     def get_tree_widget_actions(self):
