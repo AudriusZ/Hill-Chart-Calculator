@@ -49,10 +49,10 @@ class Ui_MainWindow(object):
         self.tab = QtWidgets.QWidget()
         self.tab.setObjectName("tab")
         self.CoverImage = QtWidgets.QLabel(parent=self.tab)
-        self.CoverImage.setGeometry(QtCore.QRect(290, 60, 398, 451))
+        self.CoverImage.setGeometry(QtCore.QRect(10, 150, 961, 243))
         self.CoverImage.setObjectName("CoverImage")
         self.label = QtWidgets.QLabel(parent=self.tab)
-        self.label.setGeometry(QtCore.QRect(380, 10, 221, 41))
+        self.label.setGeometry(QtCore.QRect(350, 10, 281, 41))
         font = QtGui.QFont()
         font.setPointSize(20)
         self.label.setFont(font)
@@ -91,7 +91,7 @@ class Ui_MainWindow(object):
         self.treeWidget.setSortingEnabled(__sortingEnabled)
         self.plainTextEdit.setPlainText(_translate("MainWindow", "Welcome to the Turbine Simulator. Use the menu on the left to get started. Status updates will be shown here."))
         self.CoverImage.setText(_translate("MainWindow", "CoverImage"))
-        self.label.setText(_translate("MainWindow", "Turbine Simulator"))
+        self.label.setText(_translate("MainWindow", "Turbine Simulator Tool"))
 
 
 if __name__ == "__main__":

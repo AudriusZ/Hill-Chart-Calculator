@@ -137,10 +137,10 @@
      <widget class="QLabel" name="CoverImage">
       <property name="geometry">
        <rect>
-        <x>290</x>
-        <y>60</y>
-        <width>398</width>
-        <height>451</height>
+        <x>10</x>
+        <y>150</y>
+        <width>961</width>
+        <height>243</height>
        </rect>
       </property>
       <property name="text">
@@ -150,9 +150,9 @@
      <widget class="QLabel" name="label">
       <property name="geometry">
        <rect>
-        <x>380</x>
+        <x>350</x>
         <y>10</y>
-        <width>221</width>
+        <width>281</width>
         <height>41</height>
        </rect>
       </property>
@@ -162,7 +162,7 @@
        </font>
       </property>
       <property name="text">
-       <string>Turbine Simulator</string>
+       <string>Turbine Simulator Tool</string>
       </property>
      </widget>
     </widget>

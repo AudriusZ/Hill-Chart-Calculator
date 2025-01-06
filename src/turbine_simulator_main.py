@@ -68,7 +68,7 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         self.setWindowTitle("Turbine Simulator")
-        self.ui.CoverImage.setPixmap(QPixmap("src/icon.png"))
+        self.ui.CoverImage.setPixmap(QPixmap("src/logo.png"))
         self.ui.CoverImage.setScaledContents(True)  # Enable scaling to fit QLabel
 
         # Initialize main processor
