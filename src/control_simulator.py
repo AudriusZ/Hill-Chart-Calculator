@@ -167,10 +167,7 @@ class ControlSimulator(HillChart):
 
         # Verify that there’s sufficient data to proceed
         if len(Q11_slice) < 2 or len(n11_slice) < 2:
-            # Check if self.operation_point exists, otherwise use blade_angle info
-            operation_point_info = getattr(self, 'operation_point', f"Blade angle: {blade_angle}")
-            print("\n", operation_point_info)
-            raise ValueError("This point is outside of the available hill chart data range.")
+             raise ValueError(f"Blade angle {blade_angle}° is outside of the available hill chart data range.")
             
 
         # Return slices if sufficient data is available
