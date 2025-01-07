@@ -107,7 +107,7 @@ class MaximisedOutputProcessor:
             blade_angle_stop = ranges.get("blade_angle_stop")
             blade_angle_step = ranges.get("blade_angle_step")
             if blade_angle_start is not None and blade_angle_stop is not None and blade_angle_step is not None:
-                blade_angle_range = np.arange(blade_angle_start, blade_angle_stop + blade_angle_step, blade_angle_step)
+                blade_angle_range = np.arange(blade_angle_start, blade_angle_stop, blade_angle_step)
             else:
                 raise ValueError("Missing or invalid parameters for 'blade_angle' range.")
 
