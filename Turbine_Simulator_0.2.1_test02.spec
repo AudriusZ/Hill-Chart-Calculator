@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['turbine_simulator_main.py'],
+    ['src\\turbine_simulator_main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('src/logo.png', 'src/')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='Turbine_Simulator_0.1.0',
+    name='Turbine_Simulator_0.2.1_test02',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['icon.ico'],
+    icon=['src\\icon.ico'],
 )

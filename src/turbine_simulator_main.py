@@ -1,4 +1,5 @@
-#pyinstaller --onefile --name Turbine_Simulator_0.2.1 --icon=icon.ico --noconsole turbine_simulator_main.py
+
+#pyinstaller --onefile --name Turbine_Simulator_1.0.0 --icon=src/icon.ico --noconsole --add-data "src/logo.png;src/" src/turbine_simulator_main.py
 
 from main_processor import MainProcessor
 
@@ -24,6 +25,8 @@ from PyQt6.QtWidgets import (
     )
 
 from PyQt6.QtGui import QPixmap
+
+import os
 
 
 
@@ -68,8 +71,17 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         self.setWindowTitle("Turbine Simulator")
-        self.ui.CoverImage.setPixmap(QPixmap("src/logo.png"))
-        self.ui.CoverImage.setScaledContents(True)  # Enable scaling to fit QLabel
+
+                # Determine the base path based on whether the app is bundled or not
+        if hasattr(sys, '_MEIPASS'):
+            base_path = sys._MEIPASS  # PyInstaller sets this in bundled apps
+        else:
+            base_path = os.path.abspath(".")
+
+        # Load the image from the bundled or source directory
+        logo_path = os.path.join(base_path, "src/logo.png")
+        self.ui.CoverImage.setPixmap(QPixmap(logo_path))
+        self.ui.CoverImage.setScaledContents(True)  # Ensure the image scales to fit QLabel        
 
         # Initialize main processor
         self.main_processor = MainProcessor()
