@@ -220,7 +220,7 @@
    <widget class="QLabel" name="label_blade_angle_Step">
     <property name="geometry">
      <rect>
-      <x>290</x>
+      <x>280</x>
       <y>20</y>
       <width>101</width>
       <height>31</height>

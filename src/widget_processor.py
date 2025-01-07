@@ -279,17 +279,17 @@ class MaximiseOutputWidget(BaseWidget):
         self.setWindowTitle("Maximise Output")
 
         # Set default value for var
-        self.ui.lineEdit_Q_start.setText(f"{2:.2f}")
-        self.ui.lineEdit_Q_stop.setText(f"{6.5:.2f}")
+        self.ui.lineEdit_Q_start.setText(f"{1.5:.2f}")
+        self.ui.lineEdit_Q_stop.setText(f"{4.5:.2f}")
         self.ui.lineEdit_Q_step.setText(f"{0.5:.2f}")
         self.ui.lineEdit_n_start.setText(f"{10:.0f}")
         self.ui.lineEdit_n_stop.setText(f"{150:.0f}")
-        self.ui.lineEdit_n_step.setText(f"{1:.0f}")
-        self.ui.lineEdit_blade_angle_start.setText(f"{16.2:.1f}")
-        self.ui.lineEdit_blade_angle_stop.setText(f"{16.2:.2f}")
-        self.ui.lineEdit_blade_angle_step.setText(f"{1:.2f}")
+        self.ui.lineEdit_n_step.setText(f"{5:.0f}")
+        self.ui.lineEdit_blade_angle_start.setText(f"{4:.1f}")
+        self.ui.lineEdit_blade_angle_stop.setText(f"{25:.2f}")
+        self.ui.lineEdit_blade_angle_step.setText(f"{2:.2f}")
         self.ui.lineEdit_H_min.setText(f"{0.1:.2f}")
-        self.ui.lineEdit_H_max.setText(f"{2.8:.2f}")
+        self.ui.lineEdit_H_max.setText(f"{2.15:.2f}")
         
     def get_all_input_values(self):
         fields = [
@@ -361,15 +361,15 @@ class ManualAutomaticControlWidget(BaseWidget):
             "H_tolerance": 0.05,    # Tolerance for head control
             "n_min": 30,            # Minimum rotational speed limit
             "n_max": 150,           # Maximum rotational speed limit
-            "blade_angle_min": 3,   # Minimum blade angle
-            "blade_angle_max": 26   # Maximum blade angle
+            "blade_angle_min": 4,   # Minimum blade angle
+            "blade_angle_max": 25   # Maximum blade angle
         }
 
         # Set default value for H_t
         self.ui.lineEdit_n_min.setText(f"{30:.1f}")
         self.ui.lineEdit_n_max.setText(f"{150:.1f}")
-        self.ui.lineEdit_blade_angle_min.setText(f"{3:.1f}")
-        self.ui.lineEdit_blade_angle_max.setText(f"{26:.1f}")
+        self.ui.lineEdit_blade_angle_min.setText(f"{4:.1f}")
+        self.ui.lineEdit_blade_angle_max.setText(f"{25:.1f}")
         self.ui.lineEdit_Kp.setText(f"{1.2:.1f}")
         self.ui.lineEdit_Ki.setText(f"{0.1:.1f}")
         self.ui.lineEdit_Kd.setText(f"{0.05:.1f}")
