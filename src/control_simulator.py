@@ -28,6 +28,21 @@ class ControlSimulator(HillChart):
         self.n_range = None
         self.blade_angle_range = None   
 
+        self.message_callback = None  # To store the callback function
+
+    def set_message_callback(self, callback):
+        """Set a callback for logging messages."""
+        self.message_callback = callback
+
+    def emit_message(self, message):
+        """Emit a message using the callback if available."""
+        if self.message_callback:
+            self.message_callback(message)
+        else:
+            print(message)  # Default to console output
+
+
+
     def set_operation_attribute(self, attribute_name, value):
         """
         Set an attribute in the operation_point data structure.
@@ -85,9 +100,6 @@ class ControlSimulator(HillChart):
         D = self.operation_point.D
         n = self.operation_point.n    
 
-        #print('n11 slice = ', n11_slice)
-        #print('Q11 slice =', Q11_slice)
-
         try:
             finite_mask = np.isfinite(efficiency_slice) & np.isfinite(n11_slice) & np.isfinite(Q11_slice)
 
@@ -122,14 +134,13 @@ class ControlSimulator(HillChart):
                 elif iter_count == max_iter - 1:
                     return np.nan, np.nan, np.nan, np.nan
 
-                #print(n11_guess, Q11_lookup, Q11_calculated, efficiency)
                 damping_factor = 0.1
                 n11_guess *= 1 + damping_factor * ((Q11_lookup / Q11_calculated) - 1)
 
             raise ValueError("Solution did not converge within the specified number of iterations.")
 
-        except Exception as e:
-            print(f"Error in iterative solution: {e}")
+        except Exception as e:            
+            self.emit_message(f"Error in iterative solution: {e}")
             raise  
 
     def compute_with_slicing(self):
@@ -226,23 +237,25 @@ class ControlSimulator(HillChart):
         start_time = time.time()
 
         # Iterate over Q_range and calculate maximum power for each Q
-        for Q in self.Q_range:
-            print("\nTotal progress = ", counter,'/',Q_range_len)
+        for Q in self.Q_range:            
+            
+            self.emit_message(f"\nTotal progress = {counter} / {Q_range_len}")            
+            
             counter += 1
             
             self.operation_point.Q = Q
             max_power_row = self.maximize_output(min_H, max_H)
             max_power_results[Q] = max_power_row
             
-        print("\nTotal progress = ", counter,'/',Q_range_len)
-        print("\nComplete")
+        self.emit_message(f"\nTotal progress = {counter} / {Q_range_len}")
+        self.emit_message("\nComplete")        
 
         # End timing the operation
         end_time = time.time()
         elapsed_time = end_time - start_time
 
         # Print the elapsed time in seconds
-        print(f"\nTotal elapsed time: {elapsed_time:.0f} seconds")
+        self.emit_message(f"\nTotal elapsed time: {elapsed_time:.0f} seconds")        
 
         # Plot results based on the calculated max power data
         self.plot_results(max_power_results)
@@ -262,9 +275,9 @@ class ControlSimulator(HillChart):
             n11_slice, Q11_slice, efficiency_slice = self.slice_data_for_blade_angle(blade_angle)
             for n in self.n_range:
                 counter += 1
-                print(f"\rProgress for current Q = {counter}/{total}", end="")
                 
-                
+                self.emit_message(f"\rProgress for current Q = {counter}/{total}")
+                                
                 self.operation_point.n = n
                 self.operation_point.blade_angle = blade_angle
                 output = self.calculate_results_from_slice(n11_slice, Q11_slice, efficiency_slice)                
@@ -275,7 +288,7 @@ class ControlSimulator(HillChart):
         elapsed_time = end_time - start_time
 
         # Print the elapsed time in seconds
-        print(f"\nElapsed time: {elapsed_time:.0f} seconds")
+        self.emit_message(f"\nElapsed time: {elapsed_time:.0f} seconds")
 
         # Process the collected outputs
         df = pd.DataFrame(all_outputs).dropna(subset=['power'])

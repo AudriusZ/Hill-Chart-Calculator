@@ -43,6 +43,20 @@ class MaximisedOutputProcessor:
         self.blade_stop = blade_stop
         self.blade_step = blade_step
 
+        self.simulator.set_message_callback(self.emit_message)
+
+    def set_message_callback(self, callback):
+        """Set the message callback for the processor and its simulator."""
+        self.emit_message = callback
+        self.simulator.set_message_callback(callback)
+    
+    def emit_message(self, message):
+        """Emit a message using the callback if available."""
+        if self.message_callback:
+            self.message_callback(message)
+        else:
+            print(message)  # Default to console output
+    
     def initialize_simulation(self, hill_data, BEP_data):
         """
         Initialize the simulation with hill chart and BEP data.

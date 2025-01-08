@@ -13,7 +13,8 @@ class MainProcessor():
         self.processor = HillChartProcessor()
         self.control_processor = ControlProcessor()
         self.maximised_output_processor = MaximisedOutputProcessor()
-        
+
+              
         # Initialize simulation state
         self.simulation_initialized = False        
 
@@ -28,10 +29,9 @@ class MainProcessor():
         
 
     def set_message_callback(self, callback):
-        """
-        Set a callback function for handling messages.
-        """
+        """Pass the callback to all processors."""
         self.message_callback = callback
+        self.maximised_output_processor.set_message_callback(callback)
 
 
     def emit_message(self, message):
