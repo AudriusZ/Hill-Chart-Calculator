@@ -27,8 +27,8 @@ class ControlProcessor:
             "H_tolerance": 0.05,    # Tolerance for head control
             "n_min": 30,            # Minimum rotational speed limit
             "n_max": 150,           # Maximum rotational speed limit
-            "blade_angle_min": 3,   # Minimum blade angle
-            "blade_angle_max": 26   # Maximum blade angle
+            "blade_angle_min": 3.5,   # Minimum blade angle
+            "blade_angle_max": 28.5   # Maximum blade angle
         }
 
         self.continue_simulation = False

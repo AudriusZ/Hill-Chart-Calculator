@@ -115,8 +115,23 @@ class ControlSimulator(HillChart):
             min_n11 = n11_clean.min()
             max_n11 = n11_clean.max()
 
-            Q11_interpolator = PchipInterpolator(n11_clean, Q11_clean)
-            efficiency_interpolator = PchipInterpolator(n11_clean, efficiency_clean)
+            try:
+                Q11_interpolator = PchipInterpolator(n11_clean, Q11_clean)
+            except Exception as e:
+                self.emit_message(
+                    f"Error creating Q11 interpolator in class '{self.__class__.__name__}', method 'compute_n11_iteratively': {e}"
+                )
+                self.plot_debug_data(n11_clean, Q11_clean, "n11_clean", "Q11_clean")
+                raise
+
+            try:
+                efficiency_interpolator = PchipInterpolator(n11_clean, efficiency_clean)
+            except Exception as e:
+                self.emit_message(
+                    f"Error creating efficiency interpolator in class '{self.__class__.__name__}', method 'compute_n11_iteratively': {e}"
+                )
+                self.plot_debug_data(n11_clean, efficiency_clean, "n11_clean", "efficiency_clean")
+                raise
 
             # Iteratively solve for n11, Q11, and H using the initial guess
             for iter_count in range(max_iter):
@@ -140,8 +155,30 @@ class ControlSimulator(HillChart):
             raise ValueError("Solution did not converge within the specified number of iterations.")
 
         except Exception as e:            
-            self.emit_message(f"Error in iterative solution: {e}")
-            raise  
+            self.emit_message(f"Error in iterative solution in class '{self.__class__.__name__}': {e}")
+            raise
+
+    def plot_debug_data(self, x, y, xlabel, ylabel):
+        """
+        Plot debug data to help locate the issue.
+
+        Args:
+            x (array): Data for the x-axis.
+            y (array): Data for the y-axis.
+            xlabel (str): Label for the x-axis.
+            ylabel (str): Label for the y-axis.
+        """
+        import matplotlib.pyplot as plt
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(x, y, marker='o', linestyle='-', label=f'{xlabel} vs {ylabel}')
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.title(f'{xlabel} vs {ylabel}')
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
 
     def compute_with_slicing(self):
         """
@@ -154,7 +191,6 @@ class ControlSimulator(HillChart):
         """
         # Retrieve blade angle from self.operation_point
         blade_angle = self.operation_point.blade_angle
-        
         # Step 1: Prepare slices based on the blade angle
         n11_slice, Q11_slice, efficiency_slice = self.slice_data_for_blade_angle(blade_angle)
         

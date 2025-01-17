@@ -361,15 +361,15 @@ class ManualAutomaticControlWidget(BaseWidget):
             "H_tolerance": 0.05,    # Tolerance for head control
             "n_min": 30,            # Minimum rotational speed limit
             "n_max": 150,           # Maximum rotational speed limit
-            "blade_angle_min": 4,   # Minimum blade angle
-            "blade_angle_max": 25   # Maximum blade angle
+            "blade_angle_min": 3.5,   # Minimum blade angle
+            "blade_angle_max": 28.5   # Maximum blade angle
         }
 
         # Set default value for H_t
         self.ui.lineEdit_n_min.setText(f"{30:.1f}")
         self.ui.lineEdit_n_max.setText(f"{150:.1f}")
-        self.ui.lineEdit_blade_angle_min.setText(f"{4:.1f}")
-        self.ui.lineEdit_blade_angle_max.setText(f"{25:.1f}")
+        self.ui.lineEdit_blade_angle_min.setText(f"{3.5:.1f}")
+        self.ui.lineEdit_blade_angle_max.setText(f"{28.5:.1f}")
         self.ui.lineEdit_Kp.setText(f"{1.2:.1f}")
         self.ui.lineEdit_Ki.setText(f"{0.1:.1f}")
         self.ui.lineEdit_Kd.setText(f"{0.05:.1f}")

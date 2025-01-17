@@ -131,7 +131,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>60</string>
+     <string>20</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_n11_max">
@@ -157,7 +157,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>200</string>
+     <string>190</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_n11_pts">
@@ -183,7 +183,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>10</string>
+     <string>50</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="lineEdit_blade_angle_max">
@@ -196,7 +196,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>26</string>
+     <string>29</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="lineEdit_blade_angle_pts">
@@ -209,7 +209,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>10</string>
+     <string>50</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_blade_angle_min">
