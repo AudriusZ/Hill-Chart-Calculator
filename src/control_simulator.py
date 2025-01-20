@@ -9,6 +9,7 @@ import copy
 import time
 import matplotlib.pyplot as plt
 from control_rule_based import ControlRuleBased
+from PyQt6.QtCore import QCoreApplication
 
 class ControlSimulator(HillChart):
     """Class for simulating turbine control."""    
@@ -301,7 +302,7 @@ class ControlSimulator(HillChart):
         """Iterate through n_range and blade_angle_range to find max power within head constraints."""
         all_outputs = []
         counter = 0
-        total = len(self.n_range) * len(self.blade_angle_range)        
+        total = len(self.n_range) * len(self.blade_angle_range)
 
         # Start timing the operation
         start_time = time.time()
@@ -311,19 +312,21 @@ class ControlSimulator(HillChart):
             n11_slice, Q11_slice, efficiency_slice = self.slice_data_for_blade_angle(blade_angle)
             for n in self.n_range:
                 counter += 1
-                
+
+                # Emit progress messages
                 self.emit_message(f"\rProgress for current Q = {counter}/{total}")
-                                
+                QCoreApplication.processEvents()  # Allow the GUI to update
+
                 self.operation_point.n = n
                 self.operation_point.blade_angle = blade_angle
-                output = self.calculate_results_from_slice(n11_slice, Q11_slice, efficiency_slice)                
+                output = self.calculate_results_from_slice(n11_slice, Q11_slice, efficiency_slice)
                 all_outputs.append(copy.deepcopy(vars(output)))
-                
+
         # End timing the operation
         end_time = time.time()
         elapsed_time = end_time - start_time
 
-        # Print the elapsed time in seconds
+        # Emit elapsed time
         self.emit_message(f"\nElapsed time: {elapsed_time:.0f} seconds")
 
         # Process the collected outputs
