@@ -469,9 +469,28 @@ class MainWindow(QMainWindow):
 
         return actions
 
-    def update_status(self, message):
-        """Update the status box in the GUI."""
-        self.ui.plainTextEdit.appendPlainText(message)
+    
+    def update_status(self, message, overwrite=False):
+        """Update the status box in the GUI.
+
+        Args:
+            message (str): The message to display.
+            overwrite (bool): If True, overwrite the last message.
+        """
+        if overwrite:
+            # Overwrite the last line in the plainTextEdit
+            text = self.ui.plainTextEdit.toPlainText()
+            lines = text.split("\n")
+            if lines:  # If there are existing lines, replace the last one
+                lines[-1] = message
+            else:  # If no lines, just add the message
+                lines.append(message)
+            self.ui.plainTextEdit.setPlainText("\n".join(lines))
+        else:
+            # Append the message
+            self.ui.plainTextEdit.appendPlainText(message)
+
+    
 
 
 

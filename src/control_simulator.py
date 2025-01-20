@@ -35,12 +35,21 @@ class ControlSimulator(HillChart):
         """Set a callback for logging messages."""
         self.message_callback = callback
 
-    def emit_message(self, message):
-        """Emit a message using the callback if available."""
+    def emit_message(self, message, overwrite=False):
+        """
+        Emit a message to the GUI or console.
+
+        Args:
+            message (str): The message to display.
+            overwrite (bool): If True, overwrite the previous message.
+        """
         if self.message_callback:
-            self.message_callback(message)
+            self.message_callback(message, overwrite)
         else:
-            print(message)  # Default to console output
+            if overwrite:
+                print(f"\r{message}", end="", flush=True)
+            else:
+                print(message)
 
 
 
@@ -266,25 +275,20 @@ class ControlSimulator(HillChart):
             raise ValueError("Ranges for Q, H, n, and blade_angle must be set before calling this method.")
 
         min_H, max_H = self.H_range
-        max_power_results = {}
-        Q_range_len = len(self.Q_range)
-        counter = 0
+        max_power_results = {}        
+        self.Q_counter = 0
 
         # Start timing the operation
         start_time = time.time()
 
         # Iterate over Q_range and calculate maximum power for each Q
         for Q in self.Q_range:            
-            
-            self.emit_message(f"\nTotal progress = {counter} / {Q_range_len}")            
-            
-            counter += 1
-            
+            self.Q_counter += 1            
             self.operation_point.Q = Q
             max_power_row = self.maximize_output(min_H, max_H)
             max_power_results[Q] = max_power_row
             
-        self.emit_message(f"\nTotal progress = {counter} / {Q_range_len}")
+        
         self.emit_message("\nComplete")        
 
         # End timing the operation
@@ -313,8 +317,8 @@ class ControlSimulator(HillChart):
             for n in self.n_range:
                 counter += 1
 
-                # Emit progress messages
-                self.emit_message(f"\rProgress for current Q = {counter}/{total}")
+                # Emit progress messages with overwrite=True
+                self.emit_message(f"Total progress = {self.Q_counter} / {len(self.Q_range)}, Progress for current Q = {counter}/{total}")                
                 QCoreApplication.processEvents()  # Allow the GUI to update
 
                 self.operation_point.n = n
@@ -327,7 +331,7 @@ class ControlSimulator(HillChart):
         elapsed_time = end_time - start_time
 
         # Emit elapsed time
-        self.emit_message(f"\nElapsed time: {elapsed_time:.0f} seconds")
+        self.emit_message(f"Elapsed time: {elapsed_time:.0f} seconds", overwrite=False)
 
         # Process the collected outputs
         df = pd.DataFrame(all_outputs).dropna(subset=['power'])
