@@ -72,6 +72,14 @@ class MainProcessor():
         self.hill_values = self.processor.prepare_core_data()
         fig = self.processor.plot_3d_hill_chart(show_standalone=False) 
         return fig
+    
+    def create_contour_plot(self):
+        fig = self.processor.plot_hill_chart_contour(plot_blade_angles=True, show_standalone=False)            
+        return fig
+    
+    def create_plot_curve_slices(self):
+        fig = self.processor.plot_curve_slices(show_standalone=False)
+        return fig
 
     def maximise_output_action(self, ranges):        
         

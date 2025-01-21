@@ -203,7 +203,7 @@ class HillChartProcessor:
             return fig
 
     
-    def plot_hill_chart_contour(self, plot_blade_angles = True):
+    def plot_hill_chart_contour(self, plot_blade_angles = True, show_standalone=True):
         hill_values = self.hill_values
         BEP_data = self.BEP_data
         
@@ -211,7 +211,7 @@ class HillChartProcessor:
         hill_values_nD = copy.deepcopy(hill_values)
 
         # Create subplots
-        _, ax2 = plt.subplots(1, 2, figsize=(15, 7))
+        fig, ax2 = plt.subplots(1, 2, figsize=(15, 7))
         
         # Plot the first contour plot
         hill_values.plot_hill_chart_contour(ax=ax2[0], n_contours=self.n_contours, data_type='default')
@@ -236,8 +236,13 @@ class HillChartProcessor:
                 hill_values_nD.plot_contour_lines(ax2[1], line_coords2)
 
         # Adjust layout and show plot
-        plt.tight_layout()
-        plt.show(block=False)
+        plt.tight_layout()        
+
+        # Show standalone if requested, otherwise return the figure
+        if show_standalone:
+            plt.show(block=False)
+        else:
+            return fig
 
     def plot_normalized_hill_chart_contour(self, plot_blade_angles = True):
         hill_values = self.hill_values
@@ -279,11 +284,11 @@ class HillChartProcessor:
         plt.tight_layout()
         plt.show(block=False)
 
-    def plot_curve_slices(self, normalize = False, save_data = False):
+    def plot_curve_slices(self, normalize = False, save_data = False, show_standalone=True):
         hill_values = self.hill_values
         BEP_data = self.BEP_data
         
-        _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
+        fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         
         q_curve_values = copy.deepcopy(hill_values)      
         q_curve_values = PerformanceCurve(q_curve_values)  
@@ -297,10 +302,7 @@ class HillChartProcessor:
         else:
             labels = 'default'
         q_curve_values.plot_and_save_chart('Q', 'efficiency', ax3[0, 0], label_type=labels, save_data=save_data)
-        q_curve_values.plot_and_save_chart('Q', 'power', ax3[1, 0], label_type=labels, save_data=save_data)
-
-        
-        
+        q_curve_values.plot_and_save_chart('Q', 'power', ax3[1, 0], label_type=labels, save_data=save_data)               
 
         n_curve_values = copy.deepcopy(hill_values)
         n_curve_values = PerformanceCurve(n_curve_values)        
@@ -316,7 +318,11 @@ class HillChartProcessor:
         n_curve_values.plot_and_save_chart('n', 'efficiency',ax=ax3[0,1], label_type = labels, save_data=save_data)      
         n_curve_values.plot_and_save_chart('n', 'power',ax=ax3[1,1], label_type = labels, save_data=save_data)      
         
-        plt.show(block=False)
+        # Show standalone if requested, otherwise return the figure
+        if show_standalone:
+            plt.show(block=False)
+        else:
+            return fig
         
     def plot_blade_slices(self, normalize = False, save_data = False):
         hill_values = self.hill_values

@@ -270,7 +270,7 @@ class MainWindow(QMainWindow):
         try:
             parameters = self.surface_fitting_widget.get_all_input_values()
             fig = self.main_processor.set_surface_fitting_parameters(parameters)            
-            self.plot_manager.embed_plot(fig, "3D Hill Chart", add_export_button=True)
+            self.plot_manager.embed_plot(fig, "3D Hill Chart", add_export_button=False)
             self.update_status(f"Surface fitting parameters set.") 
 
         except Exception as e:
@@ -281,12 +281,19 @@ class MainWindow(QMainWindow):
         """
         Set hydraulic output options to show
         """
-        try:
-            '''
-            parameters = self.surface_fitting_widget.get_all_input_values()
-            fig = self.main_processor.set_surface_fitting_parameters(parameters)            
-            self.plot_manager.embed_plot(fig, "3D Hill Chart", add_export_button=True)
-            '''
+        try:            
+            #parameters = self.surface_fitting_widget.get_all_input_values()
+            fig = self.main_processor.create_contour_plot()            
+            fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=1)
+            self.plot_manager.embed_plot(fig, "Contour Plot", add_export_button=True)
+
+            
+            fig = self.main_processor.create_plot_curve_slices()            
+            fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=1)
+            self.plot_manager.embed_plot(fig, "2D Slices", add_export_button=True)
+
+
+            
             self.update_status(f"Output options set.") 
 
         except Exception as e:
