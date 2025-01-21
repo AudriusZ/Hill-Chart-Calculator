@@ -165,7 +165,7 @@ class MainProcessor():
             raise  
 
     def default_pathname(self):
-        datapath = os.path.join(os.path.dirname(__file__), 'Mogu_D1.65m.csv')  # Adjust path as needed
+        datapath = os.path.join(os.path.dirname(__file__), 'Mogu_Ns_114_rpm_extended_dataset.csv')  # Adjust path as needed
         self.processor.set_file_path(datapath)
     
     def default_turbine_parameters(self):
@@ -180,11 +180,11 @@ class MainProcessor():
     def default_plot_parameters(self):
         """Set default plot parameters as in the test."""
         
-        min_efficiency_limit = 0.1
+        min_efficiency_limit = 0.2
         n_contours = 25        
         extrapolation_options_vars = [1, 1]
-        extrapolation_values_n11 = [5, 200, 10]
-        extrapolation_values_blade_angles = [3, 26, 10]
+        extrapolation_values_n11 = [20, 190, 50]
+        extrapolation_values_blade_angles = [3, 29, 50]
 
         self.processor.set_plot_parameters(n_contours, extrapolation_options_vars, extrapolation_values_n11, extrapolation_values_blade_angles, min_efficiency_limit=min_efficiency_limit)
 

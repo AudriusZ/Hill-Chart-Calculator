@@ -5,11 +5,12 @@ from PyQt6.QtWidgets import (
 
 from PyQt6.QtGui import QIntValidator
 
-from turbine_simulator_gui import ( # Generated GUI files      
-    Ui_FormManualAutomaticControl,
-    Ui_MaximiseOutput,
+from turbine_simulator_gui import ( # Generated GUI files          
     Ui_Sizing,
-    Ui_SurfaceFitting
+    Ui_SurfaceFitting,
+    Ui_OutputOptionsHydraulic,
+    Ui_MaximiseOutput,
+    Ui_FormManualAutomaticControl
     )
 
 class BaseWidget(QWidget):
@@ -208,7 +209,15 @@ class SurfaceFittingWidget(BaseWidget):
 
         return values
         
+class OutputOptionsHydraulicWidget(BaseWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.ui = Ui_OutputOptionsHydraulic()
+        self.ui.setupUi(self)
 
+        self.setWindowTitle("Output Options (Hydraulic)")
+
+        
 class SizingWidget(BaseWidget):
     def __init__(self, parent=None):
         super().__init__(parent)

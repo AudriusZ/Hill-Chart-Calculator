@@ -7,10 +7,11 @@ from turbine_simulator_gui import ( # Generated GUI files
     Ui_MainWindow
     )
 from widget_processor import (
-    ManualAutomaticControlWidget,
-    MaximiseOutputWidget,
     SizingWidget,
-    SurfaceFittingWidget
+    SurfaceFittingWidget,
+    OutputOptionsHydraulicWidget,    
+    MaximiseOutputWidget,
+    ManualAutomaticControlWidget    
     )
 
 from plot_manager import PlotManager
@@ -119,7 +120,6 @@ class MainWindow(QMainWindow):
                 self.update_status(f"***Developer mode: Set default turbine hydraulics after double-clicking '{action}'.")
                 self.turbine_hydraulics_action()
 
-
             elif action == "Load Data":
                 self.load_data_action()                
 
@@ -135,6 +135,13 @@ class MainWindow(QMainWindow):
                 else:
                     self.update_status(f"Must set'Sizing' parameters first.")
 
+            elif action == "Output Options (Hydraulics)":                
+                if self.app_state.actions.get("Surface Fit Settings", False):                    
+                    self.output_options_hydraulics_action()
+                else:
+                    self.update_status(f"Must set 'Surface Fit Settings' first.")                
+                
+
             elif action == "Maximised Output":
                 if self.app_state.actions.get("Turbine Hydraulics", False) or self.app_state.actions.get("Surface Fit Settings", False):
                     self.maximise_output_action()                   
@@ -146,8 +153,17 @@ class MainWindow(QMainWindow):
                     self.manual_automatic_control_action()                    
                 else:
                     self.update_status(f"Must set 'Turbine Hydraulics' or 'Surface Fit Settings' first.")
+            
+            elif action == "Output Options (Simulator)":
+                self.update_status(f"***Action '{action}' triggered but no action defined.")
+                #self.output_options_performance_action()
+
+            elif action == "Turbine Loads":
+                self.update_status(f"***Action '{action}' triggered but no action defined.")
+                
+            
             else:
-                self.update_status(f"***No action defined for '{action}'.")
+                self.update_status(f"***No action defined for '{action}'.")            
             
             # If no exception occurred, mark the action as successful
             self.app_state.update_actions(action, True)
@@ -201,6 +217,16 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.update_status(f"Error in surface fitting: {str(e)}")
 
+    def output_options_hydraulics_action(self):
+        """
+        Select what outputs to show
+        """
+        try:
+            self.open_hydraulic_output_options_widget()
+
+        except Exception as e:
+            self.update_status(f"Error in output options: {str(e)}")
+
     def maximise_output_action(self):
         """
         Generate plots for maximised output and embed them into tabs with an export feature.
@@ -237,8 +263,7 @@ class MainWindow(QMainWindow):
 
     
 
-    def set_surface_fitting_parameters(self):
-        
+    def set_surface_fitting_parameters(self):        
         """
         Set suraface fitting parameters
         """
@@ -251,6 +276,23 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
             self.update_status(f"Error during Turbine Sizing action: {str(e)}")
+    
+    def set_output_options_hydraulic(self):
+        """
+        Set hydraulic output options to show
+        """
+        try:
+            '''
+            parameters = self.surface_fitting_widget.get_all_input_values()
+            fig = self.main_processor.set_surface_fitting_parameters(parameters)            
+            self.plot_manager.embed_plot(fig, "3D Hill Chart", add_export_button=True)
+            '''
+            self.update_status(f"Output options set.") 
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+            self.update_status(f"Error during Output options action: {str(e)}")
+
 
     def start_maximise_output(self):
         try:
@@ -395,6 +437,16 @@ class MainWindow(QMainWindow):
             
         self.surface_fitting_widget.show()
 
+    def open_hydraulic_output_options_widget(self):
+        """
+        Open the widget to select outputs.
+        """
+        if not hasattr(self, "hydraulic_output_options_widget"):
+            self.hydraulic_output_options_widget = OutputOptionsHydraulicWidget()
+            self.hydraulic_output_options_widget.ui.pushButton.clicked.connect(self.set_output_options_hydraulic)
+        self.hydraulic_output_options_widget.show()
+
+
     def open_maximise_output_widget(self):
         """
         Open the Manual/Automatic Control widget.
@@ -499,11 +551,12 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()    
     
-    #window.turbine_hydraulics_action()
-    #window.main_processor.default_pathname()
-    #window.main_processor.default_turbine_parameters()
-    #window.app_state.update_actions("Load Data", True)
-    #window.app_state.update_actions("Sizing", True)
+    window.turbine_hydraulics_action()
+    window.main_processor.default_pathname()
+    window.main_processor.default_turbine_parameters()
+    window.app_state.update_actions("Load Data", True)
+    window.app_state.update_actions("Sizing", True)
+    window.app_state.update_actions("Surface Fit Settings", True)
     window.show()    
     sys.exit(app.exec())
 

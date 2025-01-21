@@ -61,7 +61,7 @@
       </item>
       <item>
        <property name="text">
-        <string>Output Options</string>
+        <string>Output Options (Hydraulics)</string>
        </property>
       </item>
      </item>
@@ -81,7 +81,7 @@
       </item>
       <item>
        <property name="text">
-        <string>Output Options</string>
+        <string>Output Options (Simulator)</string>
        </property>
       </item>
      </item>
