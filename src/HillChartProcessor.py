@@ -285,137 +285,272 @@ class HillChartProcessor:
         else:
             return fig
 
-    def plot_curve_slices(self, normalize = False, save_data = False, show_standalone=True):
+    def plot_individual_slice(self, x_var, y_var, slice_type, normalize=False, save_data=False, show_standalone=True, ax=None):
+        """
+        Generalized function to plot individual slices (curve or blade).
+
+        Parameters:
+            x_var (str): The x-axis variable ('Q' or 'n').
+            y_var (str): The y-axis variable ('efficiency' or 'power').
+            slice_type (str): The type of slicing ('curve' or 'blade').
+            normalize (bool): Whether to normalize the data.
+            save_data (bool): Whether to save the plotted data.
+            show_standalone (bool): Whether to show the plot as a standalone figure.
+            ax (matplotlib.axes.Axes): Axis to plot on (used for subplots).
+
+        Returns:
+            fig, ax (if show_standalone=False)
+        """
         hill_values = self.hill_values
         BEP_data = self.BEP_data
-        
-        fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
-        
-        q_curve_values = copy.deepcopy(hill_values)      
-        q_curve_values = PerformanceCurve(q_curve_values)  
-        q_curve_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)        
-        q_curve_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])    
-        if normalize:
-            q_curve_values.normalize('efficiency', BEP_data.efficiency)       
-            q_curve_values.normalize('Q', BEP_data.Q)               
-            q_curve_values.normalize('power', BEP_data.power)                           
-            labels = 'normalized'
-        else:
-            labels = 'default'
-        q_curve_values.plot_and_save_chart('Q', 'efficiency', ax3[0, 0], label_type=labels, save_data=save_data)
-        q_curve_values.plot_and_save_chart('Q', 'power', ax3[1, 0], label_type=labels, save_data=save_data)               
 
-        n_curve_values = copy.deepcopy(hill_values)
-        n_curve_values = PerformanceCurve(n_curve_values)        
-        n_curve_values.slice_hill_chart_data(selected_Q11=BEP_data.Q11[0])        
-        n_curve_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])   
-        if normalize:
-            n_curve_values.normalize('efficiency', BEP_data.efficiency)       
-            n_curve_values.normalize('Q', BEP_data.Q)               
-            n_curve_values.normalize('power', BEP_data.power)                           
-            labels = 'normalized'
+        # Create a new figure only if no axis is provided
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(7.5, 5))
         else:
-            labels = 'default'        
-        n_curve_values.plot_and_save_chart('n', 'efficiency',ax=ax3[0,1], label_type = labels, save_data=save_data)      
-        n_curve_values.plot_and_save_chart('n', 'power',ax=ax3[1,1], label_type = labels, save_data=save_data)      
-        
-        # Show standalone if requested, otherwise return the figure
+            fig = ax.figure
+
+        # Make a deep copy of hill values
+        slice_values = copy.deepcopy(hill_values)
+        slice_values = PerformanceCurve(slice_values)
+
+        # Determine slicing method
+        if slice_type == 'n':            
+            slice_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0], selected_Q11=None)
+            slice_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])
+        elif slice_type == 'Q':
+            slice_values.slice_hill_chart_data(selected_Q11=BEP_data.Q11[0])
+            slice_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
+        elif slice_type == 'blade':
+            slice_values.slice_hill_chart_data(selected_blade_angle=BEP_data.blade_angle[0])
+            slice_values.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])
+        else:
+            raise ValueError(f"Invalid slice_type: {slice_type}. Must be 'Q', 'n' or 'blade'.")
+
+        # Normalize if required
+        if normalize:
+            slice_values.normalize(x_var, getattr(BEP_data, x_var))
+            slice_values.normalize(y_var, getattr(BEP_data, y_var))
+
+        # Determine title type
+        title_type = 'const_blade' if slice_type == 'blade' else 'default'
+
+        # Plot the chart
+        slice_values.plot_and_save_chart(x_var, y_var, ax, title_type=title_type, label_type='normalized' if normalize else 'default', save_data=save_data)
+
+        # Show or return
+        if show_standalone:
+            plt.show(block=False)
+        else:
+            return fig, ax
+
+
+    def plot_curve_slices(self, normalize=False, save_data=False, show_standalone=True):
+        """
+        Combines all four plots into a single figure with 2x2 subplots.
+
+        Parameters:
+            normalize (bool): Whether to normalize the data.
+            save_data (bool): Whether to save the plotted data.
+            show_standalone (bool): Whether to show the plot as a standalone figure.
+
+        Returns:
+            fig (if show_standalone=False)
+        """
+        fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))
+
+        # Use the generalized function to create all four plots
+        self.plot_individual_slice('Q', 'efficiency', slice_type='n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
+        self.plot_individual_slice('Q', 'power', slice_type='n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
+        self.plot_individual_slice('n', 'efficiency', slice_type='Q', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
+        self.plot_individual_slice('n', 'power', slice_type='Q', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
+
+        # Show or return
         if show_standalone:
             plt.show(block=False)
         else:
             return fig
         
-    def plot_blade_slices(self, normalize = False, save_data = False, show_standalone=True):
+    
+
+
+    def plot_blade_slices(self, normalize=False, save_data=False, show_standalone=True):
+        """
+        Combines all four blade slices into a single figure with 2x2 subplots.
+
+        Parameters:
+            normalize (bool): Whether to normalize the data.
+            save_data (bool): Whether to save the plotted data.
+            show_standalone (bool): Whether to show the plot as a standalone figure.
+
+        Returns:
+            fig (if show_standalone=False)
+        """
+        fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))
+
+        # Use the generalized function to create all four plots
+        self.plot_individual_slice('Q', 'efficiency', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
+        self.plot_individual_slice('Q', 'power', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
+        self.plot_individual_slice('n', 'efficiency', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
+        self.plot_individual_slice('n', 'power', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
+
+        # Show or return
+        if show_standalone:
+            plt.show(block=False)
+        else:
+            return fig
+
+    def plot_individual_blade_slice_const_n(self, x_var, y_var, normalize=False, save_data=False, show_standalone=True, ax=None):
+        """
+        Generalized function to plot individual blade slices for constant n.
+
+        Parameters:
+            x_var (str): The x-axis variable ('H' or 'Q').
+            y_var (str): The y-axis variable ('Q', 'efficiency', or 'power').
+            normalize (bool): Whether to normalize the data.
+            save_data (bool): Whether to save the plotted data.
+            show_standalone (bool): Whether to show the plot as a standalone figure.
+            ax (matplotlib.axes.Axes): Axis to plot on (used for subplots).
+
+        Returns:
+            fig, ax (if show_standalone=False)
+        """
         hill_values = self.hill_values
         BEP_data = self.BEP_data
-        
-        fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
+
+        # Create a new figure only if no axis is provided
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(7.5, 5))
+        else:
+            fig = ax.figure
+
+        # Make a deep copy of hill values
         blade_slice_values = copy.deepcopy(hill_values)
         blade_slice_values = PerformanceCurve(blade_slice_values)
-        blade_slice_values.slice_hill_chart_data(selected_blade_angle = BEP_data.blade_angle[0])                
-        blade_slice_values.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])  
+
+        # Slice blade angle for constant n
+        blade_slice_values.slice_hill_chart_data(selected_blade_angle=BEP_data.blade_angle[0])
+        blade_slice_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])
+
+        # Normalize if required
         if normalize:
-            blade_slice_values.normalize('efficiency', BEP_data.efficiency)       
-            blade_slice_values.normalize('Q', BEP_data.Q)               
-            blade_slice_values.normalize('power', BEP_data.power)                              
-            blade_slice_values.normalize('n', BEP_data.n)                              
-            labels = 'normalized'
+            blade_slice_values.normalize(x_var, getattr(BEP_data, x_var))
+            blade_slice_values.normalize(y_var, getattr(BEP_data, y_var))
+
+        # Plot the chart
+        blade_slice_values.plot_and_save_chart(x_var, y_var, ax, title_type='const_n', label_type='normalized' if normalize else 'default', save_data=save_data)
+
+        # Show or return
+        if show_standalone:
+            plt.show(block=False)
         else:
-            labels = 'default'
-       
-        blade_slice_values.plot_and_save_chart('Q', 'efficiency', ax3[0, 0], title_type='const_blade', label_type = labels, save_data=save_data)
-        blade_slice_values.plot_and_save_chart('Q', 'power', ax3[1, 0], title_type='const_blade', label_type = labels, save_data=save_data)
-        blade_slice_values.plot_and_save_chart('n', 'efficiency', ax3[0, 1], title_type='const_blade', label_type = labels, save_data=save_data)
-        blade_slice_values.plot_and_save_chart('n', 'power', ax3[1, 1], title_type='const_blade', label_type = labels, save_data=save_data)       
-        
-        
-        # Show standalone if requested, otherwise return the figure
+            return fig, ax
+
+
+    def plot_blade_slices_const_n(self, normalize=False, save_data=False, show_standalone=True):
+        """
+        Combines all four constant n blade slices into a single figure with 2x2 subplots.
+
+        Parameters:
+            normalize (bool): Whether to normalize the data.
+            save_data (bool): Whether to save the plotted data.
+            show_standalone (bool): Whether to show the plot as a standalone figure.
+
+        Returns:
+            fig (if show_standalone=False)
+        """
+        fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))
+
+        # Use the generalized function to create all four plots
+        self.plot_individual_blade_slice_const_n('H', 'Q', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
+        self.plot_individual_blade_slice_const_n('H', 'efficiency', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
+        self.plot_individual_blade_slice_const_n('H', 'power', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
+        self.plot_individual_blade_slice_const_n('Q', 'efficiency', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
+
+        # Show or return
         if show_standalone:
             plt.show(block=False)
         else:
             return fig
 
-    def plot_blade_slices_const_n(self, normalize = False, save_data = False, show_standalone=True):
-        hill_values = self.hill_values
-        BEP_data = self.BEP_data
+    def plot_individual_blade_slice_const_efficiency(self, x_var, y_var, normalize=False, save_data=False, show_standalone=True, ax=None):
+        """
+        Generalized function to plot individual blade slices for constant efficiency.
 
-        fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
-        blade_slice_values = copy.deepcopy(hill_values)
-        blade_slice_values = PerformanceCurve(blade_slice_values)                
-        blade_slice_values.slice_hill_chart_data(selected_blade_angle = BEP_data.blade_angle[0])        
-        blade_slice_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])                
-        if normalize:
-            blade_slice_values.normalize('efficiency', BEP_data.efficiency)       
-            blade_slice_values.normalize('power', BEP_data.power)       
-            blade_slice_values.normalize('Q', BEP_data.Q)               
-            blade_slice_values.normalize('H', BEP_data.H)    
-            labels = 'normalized'
-        else:
-            labels = 'default'        
+        Parameters:
+            x_var (str): The x-axis variable ('H' or 'Q').
+            y_var (str): The y-axis variable ('Q', 'n', or 'power').
+            normalize (bool): Whether to normalize the data.
+            save_data (bool): Whether to save the plotted data.
+            show_standalone (bool): Whether to show the plot as a standalone figure.
+            ax (matplotlib.axes.Axes): Axis to plot on (used for subplots).
 
-        blade_slice_values.plot_and_save_chart('H','Q',ax=ax3[0,0],title_type = 'const_n',label_type = labels, save_data=save_data)
-        blade_slice_values.plot_and_save_chart('H','efficiency', ax=ax3[0,1],title_type = 'const_n',label_type = labels, save_data=save_data)
-        blade_slice_values.plot_and_save_chart('H','power', ax=ax3[1,0],title_type = 'const_n',label_type = labels, save_data=save_data)
-        blade_slice_values.plot_and_save_chart('Q','efficiency', ax=ax3[1,1],title_type = 'const_n',label_type = labels, save_data=save_data)
-                
-        # Show standalone if requested, otherwise return the figure
-        if show_standalone:
-            plt.show(block=False)
-        else:
-            return fig
-
-    def plot_blade_slices_const_efficiency(self, normalize = False, save_data = False, show_standalone=True):
+        Returns:
+            fig, ax (if show_standalone=False)
+        """
         raw_data = self.raw_data
         BEP_data = self.BEP_data 
-                
-        fig, ax4 = plt.subplots(2, 2, figsize=(15, 10))                  
-        
+
+        # Create a new figure only if no axis is provided
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(7.5, 5))
+        else:
+            fig = ax.figure
+
+        # Make a deep copy of raw data
         fixed_hillchart_point = copy.deepcopy(raw_data)
         fixed_hillchart_point = PerformanceCurve(fixed_hillchart_point) 
-        fixed_hillchart_point.filter_for_maximum_efficiency()                                
+
+        # Filter for maximum efficiency
+        fixed_hillchart_point.filter_for_maximum_efficiency()
+
+        # Define range for H variation
         H_nom = BEP_data.H[0]        
         H_min = H_nom * 0.2
         H_max = H_nom * 3
         H_step = H_nom * 0.2
         H_var = list(np.arange(H_min, H_max, H_step))                        
-        
+
+        # Iterate over H variations and calculate cases
         for i in H_var:
-            fixed_hillchart_point.calculate_cases([1, 4], i, BEP_data.D[0])              
-        if normalize:            
-            fixed_hillchart_point.normalize('Q', BEP_data.Q)
-            fixed_hillchart_point.normalize('H', BEP_data.H)
-            fixed_hillchart_point.normalize('power', BEP_data.power)  
-            labels = 'normalized'
+            fixed_hillchart_point.calculate_cases([1, 4], i, BEP_data.D[0])
+
+        # Normalize if required
+        if normalize:
+            fixed_hillchart_point.normalize(x_var, getattr(BEP_data, x_var))
+            fixed_hillchart_point.normalize(y_var, getattr(BEP_data, y_var))
+
+        # Plot the chart
+        fixed_hillchart_point.plot_and_save_chart(x_var, y_var, ax, title_type='const_efficiency', label_type='normalized' if normalize else 'default', save_data=save_data)
+
+        # Show or return
+        if show_standalone:
+            plt.show(block=False)
         else:
-            labels = 'default'
-         
-        fixed_hillchart_point.plot_and_save_chart('H','Q',ax=ax4[0,0],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
-        fixed_hillchart_point.plot_and_save_chart('H','n',ax=ax4[1,0],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
-        fixed_hillchart_point.plot_and_save_chart('H','power',ax=ax4[0,1],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
-        fixed_hillchart_point.plot_and_save_chart('Q','power',ax=ax4[1,1],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
-        
-        
-        # Show standalone if requested, otherwise return the figure
+            return fig, ax
+
+
+    def plot_blade_slices_const_efficiency(self, normalize=False, save_data=False, show_standalone=True):
+        """
+        Combines all four constant efficiency blade slices into a single figure with 2x2 subplots.
+
+        Parameters:
+            normalize (bool): Whether to normalize the data.
+            save_data (bool): Whether to save the plotted data.
+            show_standalone (bool): Whether to show the plot as a standalone figure.
+
+        Returns:
+            fig (if show_standalone=False)
+        """
+        fig, ax4 = plt.subplots(2, 2, figsize=(15, 10))
+
+        # Use the generalized function to create all four plots
+        self.plot_individual_blade_slice_const_efficiency('H', 'Q', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax4[0, 0])
+        self.plot_individual_blade_slice_const_efficiency('H', 'n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax4[1, 0])
+        self.plot_individual_blade_slice_const_efficiency('H', 'power', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax4[0, 1])
+        self.plot_individual_blade_slice_const_efficiency('Q', 'power', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax4[1, 1])
+
+        # Show or return
         if show_standalone:
             plt.show(block=False)
         else:
