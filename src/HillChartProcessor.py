@@ -204,53 +204,43 @@ class HillChartProcessor:
 
     
     
-    def plot_first_contour(self, plot_blade_angles=True, show_standalone=True, ax=None):
-        hill_values = self.hill_values
+    def plot_individual_hill_chart_contour(self, data_type='default', plot_blade_angles=True, show_standalone=True, ax=None):
+        """
+        Generalized function to plot individual hill chart contours.
 
-        # Create a figure and axis only if none is provided
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(7.5, 7))
-        else:
-            fig = ax.figure  # Use the figure from the provided axis
+        Parameters:
+            data_type (str): 'default' for the first contour, 'nD' for the second, 'normalized' for the third.
+            plot_blade_angles (bool): Whether to plot blade angle contour lines.
+            show_standalone (bool): Whether to show the plot or return the figure.
+            ax (matplotlib.axes.Axes): Axis to plot on (used for subplots).
 
-        # Plot the first contour plot
-        contour = hill_values.plot_hill_chart_contour(ax=ax, n_contours=self.n_contours, data_type='default')
-
-        if plot_blade_angles:
-            # Plot the angle contour lines
-            line_coords = hill_values.find_contours_at_angles()
-            if line_coords is not None:
-                hill_values.plot_contour_lines(ax, line_coords)
-
-        # Show or return the figure
-        if show_standalone:
-            plt.tight_layout()
-            plt.show(block=False)
-        else:
-            return fig, ax
-
-
-    def plot_second_contour(self, plot_blade_angles=True, show_standalone=True, ax=None):
-        hill_values_nD = copy.deepcopy(self.hill_values)
+        Returns:
+            fig, ax (if show_standalone=False)
+        """
+        hill_values = copy.deepcopy(self.hill_values)  # Make a copy to avoid modifying original data
         BEP_data = self.BEP_data
 
+        if data_type == 'nD':  # Case for nD
+            hill_values.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])
+        
+        elif data_type == 'normalized':  # Case for Normalized
+            hill_values.normalize('efficiency', BEP_data.efficiency)
+            hill_values.normalize('Q11', BEP_data.Q11)
+            hill_values.normalize('n11', BEP_data.n11)
+
         # Create a figure and axis only if none is provided
         if ax is None:
             fig, ax = plt.subplots(figsize=(7.5, 7))
         else:
             fig = ax.figure  # Use the figure from the provided axis
 
-        # Calculate cases for the second contour plot
-        hill_values_nD.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])
-
-        # Plot the second contour plot
-        contour = hill_values_nD.plot_hill_chart_contour(ax=ax, n_contours=self.n_contours, data_type='nD')
+        # Plot the contour plot based on the specified data_type
+        hill_values.plot_hill_chart_contour(ax=ax, n_contours=self.n_contours, data_type=data_type)
 
         if plot_blade_angles:
-            # Plot the angle contour lines
-            line_coords2 = hill_values_nD.find_contours_at_angles(case='nD')
-            if line_coords2 is not None:
-                hill_values_nD.plot_contour_lines(ax, line_coords2)
+            line_coords = hill_values.find_contours_at_angles(case=data_type if data_type == 'nD' else None)
+            if line_coords is not None:
+                hill_values.plot_contour_lines(ax, line_coords)
 
         # Show or return the figure
         if show_standalone:
@@ -264,9 +254,9 @@ class HillChartProcessor:
         # Create a single figure with two subplots
         fig, ax2 = plt.subplots(1, 2, figsize=(15, 7))
 
-        # Use the first and second contour functions, passing the subplot axes
-        self.plot_first_contour(plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[0])
-        self.plot_second_contour(plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[1])
+        # Use the generalized plot_contour function for both subplots
+        self.plot_individual_hill_chart_contour(data_type='default', plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[0])
+        self.plot_individual_hill_chart_contour(data_type='nD', plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[1])
 
         # Adjust layout and show or return the figure
         plt.tight_layout()
@@ -276,45 +266,24 @@ class HillChartProcessor:
             return fig
 
 
-    def plot_normalized_hill_chart_contour(self, plot_blade_angles = True):
-        hill_values = self.hill_values
-        BEP_data = self.BEP_data
+    def plot_normalized_hill_chart_contour(self, plot_blade_angles=True, show_standalone=True):
+        """
+        Creates a figure with two subplots: one with the default hill chart,
+        and another with the normalized hill chart.
+        """
+        # Create a single figure with two subplots
+        fig, ax2 = plt.subplots(1, 2, figsize=(15, 7))
 
-        hill_values_norm = copy.deepcopy(hill_values)        
-        
+        # Use the generalized function for both subplots
+        self.plot_individual_hill_chart_contour(data_type='default', plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[0])
+        self.plot_individual_hill_chart_contour(data_type='normalized', plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[1])
 
-        # Create subplots
-        _, ax2 = plt.subplots(1, 2, figsize=(15, 7))        
-        
-        # Plot the first contour plot
-        hill_values.plot_hill_chart_contour(ax=ax2[0],n_contours=self.n_contours, data_type='default')                         
-
-        if plot_blade_angles:
-            # Plot the blade contour lines
-            line_coords = hill_values.find_contours_at_angles()            
-            if line_coords is not None:
-                hill_values.plot_contour_lines(ax2[0], line_coords)
-
-        
-        # Calculate the second contour
-        
-        hill_values_norm.normalize('efficiency', BEP_data.efficiency)
-        hill_values_norm.normalize('Q11', BEP_data.Q11)
-        hill_values_norm.normalize('n11', BEP_data.n11)
-        
-        
-        hill_values_norm.plot_hill_chart_contour(ax=ax2[1],n_contours=self.n_contours, data_type='normalized') 
-
-        if plot_blade_angles:
-            # Plot the contour lines
-            line_coords2 = hill_values_norm.find_contours_at_angles()            
-            if line_coords is not None:
-                hill_values_norm.plot_contour_lines(ax2[1], line_coords2)
-            
-        
-        # Adjust layout and show plot
+        # Adjust layout and show or return
         plt.tight_layout()
-        plt.show(block=False)
+        if show_standalone:
+            plt.show(block=False)
+        else:
+            return fig
 
     def plot_curve_slices(self, normalize = False, save_data = False, show_standalone=True):
         hill_values = self.hill_values

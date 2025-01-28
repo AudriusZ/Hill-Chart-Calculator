@@ -287,6 +287,8 @@ class MainWindow(QMainWindow):
             #fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=1)
             self.plot_manager.embed_plot(fig[1], "Contour Plot", add_export_button=True)
             self.plot_manager.embed_plot(fig[2], "Contour Plot", add_export_button=True)
+            self.plot_manager.embed_plot(fig[3], "Contour Plot", add_export_button=True)
+            self.plot_manager.embed_plot(fig[4], "Contour Plot", add_export_button=True)
 
             '''
             fig = self.main_processor.create_plot_curve_slices()            

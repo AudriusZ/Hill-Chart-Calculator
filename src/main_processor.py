@@ -75,8 +75,9 @@ class MainProcessor():
     
     def create_contour_plot(self):        
         fig = {}
-        fig[1],_ = self.processor.plot_first_contour(plot_blade_angles=True, show_standalone=False)            
-        fig[2],_ = self.processor.plot_second_contour(plot_blade_angles=True, show_standalone=False)            
+        fig[1],_ = self.processor.plot_individual_hill_chart_contour(data_type='default',plot_blade_angles=True, show_standalone=False)            
+        fig[2],_ = self.processor.plot_individual_hill_chart_contour(data_type='nD', plot_blade_angles=True, show_standalone=False)            
+        fig[3],_ = self.processor.plot_individual_hill_chart_contour(data_type='normalized', plot_blade_angles=True, show_standalone=False)                    
         return fig
     
     def create_plot_curve_slices(self):
