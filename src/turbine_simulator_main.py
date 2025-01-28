@@ -283,19 +283,22 @@ class MainWindow(QMainWindow):
         """
         try:            
             #parameters = self.surface_fitting_widget.get_all_input_values()
-            fig = self.main_processor.create_contour_plot()            
-            #fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=1)
-            self.plot_manager.embed_plot(fig[1], "Contour Plot", add_export_button=True)
-            self.plot_manager.embed_plot(fig[2], "Contour Plot", add_export_button=True)
-            self.plot_manager.embed_plot(fig[3], "Contour Plot", add_export_button=True)
-            self.plot_manager.embed_plot(fig[4], "Contour Plot", add_export_button=True)
+            
+            """
+            figs = self.main_processor.create_contour_plot()                        
+            for fig in figs.values():
+                self.plot_manager.embed_plot(fig, "Contour Plot", add_export_button=True)
+            """
 
-            '''
-            fig = self.main_processor.create_plot_curve_slices()            
-            fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=1)
-            self.plot_manager.embed_plot(fig, "2D Slices", add_export_button=True)
-            '''
+            figs = self.main_processor.create_plot_curve_slices()            
+            for fig in figs.values():
+                fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=1)
+                # Change title font size for each subplot
+                for ax in fig.get_axes():  # Get all subplots (axes) in the figure
+                    ax.set_title(ax.get_title(), fontsize=10)  # Keep existing title but adjust formatting
 
+                # Embed the modified figure
+                self.plot_manager.embed_plot(fig, "2D Slices", add_export_button=True)
             
             self.update_status(f"Output options set.") 
 

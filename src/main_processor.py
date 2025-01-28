@@ -81,7 +81,11 @@ class MainProcessor():
         return fig
     
     def create_plot_curve_slices(self):
-        fig = self.processor.plot_curve_slices(show_standalone=False)
+        fig = {}
+        fig[1] = self.processor.plot_curve_slices(show_standalone=False)
+        fig[2] = self.processor.plot_blade_slices(show_standalone=False)
+        fig[3] = self.processor.plot_blade_slices_const_n(show_standalone=False)
+        fig[4] = self.processor.plot_blade_slices_const_efficiency(show_standalone=False)
         return fig
 
     def maximise_output_action(self, ranges):        

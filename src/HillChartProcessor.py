@@ -325,11 +325,11 @@ class HillChartProcessor:
         else:
             return fig
         
-    def plot_blade_slices(self, normalize = False, save_data = False):
+    def plot_blade_slices(self, normalize = False, save_data = False, show_standalone=True):
         hill_values = self.hill_values
         BEP_data = self.BEP_data
         
-        _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
+        fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         blade_slice_values = copy.deepcopy(hill_values)
         blade_slice_values = PerformanceCurve(blade_slice_values)
         blade_slice_values.slice_hill_chart_data(selected_blade_angle = BEP_data.blade_angle[0])                
@@ -349,13 +349,17 @@ class HillChartProcessor:
         blade_slice_values.plot_and_save_chart('n', 'power', ax3[1, 1], title_type='const_blade', label_type = labels, save_data=save_data)       
         
         
-        plt.show(block=False)    
+        # Show standalone if requested, otherwise return the figure
+        if show_standalone:
+            plt.show(block=False)
+        else:
+            return fig
 
-    def plot_blade_slices_const_n(self, normalize = False, save_data = False):
+    def plot_blade_slices_const_n(self, normalize = False, save_data = False, show_standalone=True):
         hill_values = self.hill_values
         BEP_data = self.BEP_data
 
-        _, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
+        fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))  
         blade_slice_values = copy.deepcopy(hill_values)
         blade_slice_values = PerformanceCurve(blade_slice_values)                
         blade_slice_values.slice_hill_chart_data(selected_blade_angle = BEP_data.blade_angle[0])        
@@ -373,15 +377,18 @@ class HillChartProcessor:
         blade_slice_values.plot_and_save_chart('H','efficiency', ax=ax3[0,1],title_type = 'const_n',label_type = labels, save_data=save_data)
         blade_slice_values.plot_and_save_chart('H','power', ax=ax3[1,0],title_type = 'const_n',label_type = labels, save_data=save_data)
         blade_slice_values.plot_and_save_chart('Q','efficiency', ax=ax3[1,1],title_type = 'const_n',label_type = labels, save_data=save_data)
-        
-        
-        plt.show(block=False)    
+                
+        # Show standalone if requested, otherwise return the figure
+        if show_standalone:
+            plt.show(block=False)
+        else:
+            return fig
 
-    def plot_blade_slices_const_efficiency(self, normalize = False, save_data = False):
+    def plot_blade_slices_const_efficiency(self, normalize = False, save_data = False, show_standalone=True):
         raw_data = self.raw_data
         BEP_data = self.BEP_data 
                 
-        _, ax4 = plt.subplots(2, 2, figsize=(15, 10))                  
+        fig, ax4 = plt.subplots(2, 2, figsize=(15, 10))                  
         
         fixed_hillchart_point = copy.deepcopy(raw_data)
         fixed_hillchart_point = PerformanceCurve(fixed_hillchart_point) 
@@ -408,7 +415,11 @@ class HillChartProcessor:
         fixed_hillchart_point.plot_and_save_chart('Q','power',ax=ax4[1,1],title_type = 'const_efficiency',label_type = labels, save_data=save_data)
         
         
-        plt.show(block=False) 
+        # Show standalone if requested, otherwise return the figure
+        if show_standalone:
+            plt.show(block=False)
+        else:
+            return fig
 
     def prepare_text_results(self):
         BEP_data = self.BEP_data
