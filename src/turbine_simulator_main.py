@@ -558,12 +558,12 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()    
     
-    window.turbine_hydraulics_action()
-    window.main_processor.default_pathname()
-    window.main_processor.default_turbine_parameters()
-    window.app_state.update_actions("Load Data", True)
-    window.app_state.update_actions("Sizing", True)
-    window.app_state.update_actions("Surface Fit Settings", True)
+    #window.turbine_hydraulics_action()
+    #window.main_processor.default_pathname()
+    #window.main_processor.default_turbine_parameters()
+    #window.app_state.update_actions("Load Data", True)
+    #window.app_state.update_actions("Sizing", True)
+    #window.app_state.update_actions("Surface Fit Settings", True)
     window.show()    
     sys.exit(app.exec())
 
