@@ -203,46 +203,78 @@ class HillChartProcessor:
             return fig
 
     
-    def plot_hill_chart_contour(self, plot_blade_angles = True, show_standalone=True):
+    
+    def plot_first_contour(self, plot_blade_angles=True, show_standalone=True, ax=None):
         hill_values = self.hill_values
-        BEP_data = self.BEP_data
-        
-        # Create a deep copy of hill_values        
-        hill_values_nD = copy.deepcopy(hill_values)
 
-        # Create subplots
-        fig, ax2 = plt.subplots(1, 2, figsize=(15, 7))
-        
+        # Create a figure and axis only if none is provided
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(7.5, 7))
+        else:
+            fig = ax.figure  # Use the figure from the provided axis
+
         # Plot the first contour plot
-        hill_values.plot_hill_chart_contour(ax=ax2[0], n_contours=self.n_contours, data_type='default')
+        contour = hill_values.plot_hill_chart_contour(ax=ax, n_contours=self.n_contours, data_type='default')
 
-        
         if plot_blade_angles:
             # Plot the angle contour lines
-            line_coords = hill_values.find_contours_at_angles()            
+            line_coords = hill_values.find_contours_at_angles()
             if line_coords is not None:
-                hill_values.plot_contour_lines(ax2[0], line_coords)
+                hill_values.plot_contour_lines(ax, line_coords)
 
-        # Calculate the second contour plot
-        hill_values_nD.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])        
-        
+        # Show or return the figure
+        if show_standalone:
+            plt.tight_layout()
+            plt.show(block=False)
+        else:
+            return fig, ax
+
+
+    def plot_second_contour(self, plot_blade_angles=True, show_standalone=True, ax=None):
+        hill_values_nD = copy.deepcopy(self.hill_values)
+        BEP_data = self.BEP_data
+
+        # Create a figure and axis only if none is provided
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(7.5, 7))
+        else:
+            fig = ax.figure  # Use the figure from the provided axis
+
+        # Calculate cases for the second contour plot
+        hill_values_nD.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])
+
         # Plot the second contour plot
-        hill_values_nD.plot_hill_chart_contour(ax=ax2[1], n_contours=self.n_contours, data_type='nD')
+        contour = hill_values_nD.plot_hill_chart_contour(ax=ax, n_contours=self.n_contours, data_type='nD')
 
         if plot_blade_angles:
             # Plot the angle contour lines
-            line_coords2 = hill_values_nD.find_contours_at_angles(case ='nD')            
-            if line_coords is not None:
-                hill_values_nD.plot_contour_lines(ax2[1], line_coords2)
+            line_coords2 = hill_values_nD.find_contours_at_angles(case='nD')
+            if line_coords2 is not None:
+                hill_values_nD.plot_contour_lines(ax, line_coords2)
 
-        # Adjust layout and show plot
-        plt.tight_layout()        
+        # Show or return the figure
+        if show_standalone:
+            plt.tight_layout()
+            plt.show(block=False)
+        else:
+            return fig, ax
 
-        # Show standalone if requested, otherwise return the figure
+
+    def plot_hill_chart_contour(self, plot_blade_angles=True, show_standalone=True):
+        # Create a single figure with two subplots
+        fig, ax2 = plt.subplots(1, 2, figsize=(15, 7))
+
+        # Use the first and second contour functions, passing the subplot axes
+        self.plot_first_contour(plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[0])
+        self.plot_second_contour(plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[1])
+
+        # Adjust layout and show or return the figure
+        plt.tight_layout()
         if show_standalone:
             plt.show(block=False)
         else:
             return fig
+
 
     def plot_normalized_hill_chart_contour(self, plot_blade_angles = True):
         hill_values = self.hill_values

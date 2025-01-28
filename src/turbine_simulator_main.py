@@ -284,14 +284,15 @@ class MainWindow(QMainWindow):
         try:            
             #parameters = self.surface_fitting_widget.get_all_input_values()
             fig = self.main_processor.create_contour_plot()            
-            fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=1)
-            self.plot_manager.embed_plot(fig, "Contour Plot", add_export_button=True)
+            #fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=1)
+            self.plot_manager.embed_plot(fig[1], "Contour Plot", add_export_button=True)
+            self.plot_manager.embed_plot(fig[2], "Contour Plot", add_export_button=True)
 
-            
+            '''
             fig = self.main_processor.create_plot_curve_slices()            
             fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=1)
             self.plot_manager.embed_plot(fig, "2D Slices", add_export_button=True)
-
+            '''
 
             
             self.update_status(f"Output options set.") 
@@ -558,12 +559,12 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()    
     
-    #window.turbine_hydraulics_action()
-    #window.main_processor.default_pathname()
-    #window.main_processor.default_turbine_parameters()
-    #window.app_state.update_actions("Load Data", True)
-    #window.app_state.update_actions("Sizing", True)
-    #window.app_state.update_actions("Surface Fit Settings", True)
+    window.turbine_hydraulics_action()
+    window.main_processor.default_pathname()
+    window.main_processor.default_turbine_parameters()
+    window.app_state.update_actions("Load Data", True)
+    window.app_state.update_actions("Sizing", True)
+    window.app_state.update_actions("Surface Fit Settings", True)
     window.show()    
     sys.exit(app.exec())
 
