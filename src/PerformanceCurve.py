@@ -18,14 +18,7 @@ class PerformanceCurve(HillChart):
             n11_slice = self.data.n11[:, idx]
             Q11_slice = self.data.Q11[:, idx]
             efficiency_slice = self.data.efficiency[:, idx]
-
-            # Update self.data to only contain the sliced values
-            self.data.clear_data()
-            self.data.n11 = n11_slice
-            self.data.Q11 = Q11_slice
-            self.data.efficiency = efficiency_slice
-
-            return n11_slice, Q11_slice, efficiency_slice
+            blade_angle_slice = self.data.blade_angle[:, idx]
         
         elif selected_Q11 is not None:
             # Find the index of the closest value in Q11 grid
@@ -35,14 +28,7 @@ class PerformanceCurve(HillChart):
             n11_slice = self.data.n11[idx, :]
             Q11_slice = self.data.Q11[idx, :]
             efficiency_slice = self.data.efficiency[idx, :]
-
-            # Update self.data to only contain the sliced values
-            self.data.clear_data()
-            self.data.n11 = n11_slice
-            self.data.Q11 = Q11_slice
-            self.data.efficiency = efficiency_slice
-
-            return n11_slice, Q11_slice, efficiency_slice
+            blade_angle_slice = self.data.blade_angle[:, idx]
         
         elif selected_blade_angle is not None:
             line_coords = self.find_contours_at_angles(target_angles=selected_blade_angle)       
@@ -50,17 +36,19 @@ class PerformanceCurve(HillChart):
             Q11_coords = line_coords[selected_blade_angle][1]
             n11_slice, Q11_slice, efficiency_slice = self.custom_slice_hill_chart_data(n11_coords, Q11_coords)
             blade_angle_slice = [selected_blade_angle] * len(n11_slice)
-            
-            self.data.clear_data()
-            self.data.n11 = n11_slice
-            self.data.Q11 = Q11_slice
-            self.data.efficiency = efficiency_slice
-            self.data.blade_angle = blade_angle_slice
-
-            return n11_slice, Q11_slice, efficiency_slice, blade_angle_slice
         
         else:
             raise ValueError("Either selected_n11 or selected_Q11 must be provided")
+        
+                    # Update self.data to only contain the sliced values
+        self.data.clear_data()
+        self.data.n11 = n11_slice
+        self.data.Q11 = Q11_slice
+        self.data.efficiency = efficiency_slice
+        self.data.blade_angle = blade_angle_slice
+
+        return n11_slice, Q11_slice, efficiency_slice, blade_angle_slice         
+        
 
     def custom_slice_hill_chart_data(self, n11_array, Q11_array):
         if n11_array is not None and Q11_array is not None:
