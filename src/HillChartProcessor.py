@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PyQt6.QtWidgets import QTextEdit
 
+
 class HillChartProcessor:
     def __init__(self):
         # Initialize the Tkinter root window (you can hide it if necessary)

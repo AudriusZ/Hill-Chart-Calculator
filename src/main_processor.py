@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (QFileDialog, QMessageBox)
 from HillChartProcessor import HillChartProcessor  # Processing logic
 from control_processor import ControlProcessor
 from maximised_output_processor import MaximisedOutputProcessor
+from itertools import product
 
 import os
 
@@ -84,6 +85,45 @@ class MainProcessor():
         fig = {}
         normalize=False        
         
+        # Define the matrix of possible values for each parameter position
+        param_matrix = {
+            'x_var': ['n', 'Q', 'blade_angle', 'H'],
+            'y_var': ['efficiency', 'power', 'n', 'Q'],
+            'slice_by': ['n11', 'Q11', 'blade_angle'],
+            'const_1': ['n', 'Q', 'H'],
+            'const_2': ['D']
+        }
+
+        # Generate all possible parameter combinations dynamically
+        preset_combinations = list(product(
+            param_matrix['x_var'],
+            param_matrix['y_var'],
+            param_matrix['slice_by'],
+            param_matrix['const_1'],
+            param_matrix['const_2']
+        ))
+
+        
+
+        # Loop through generated combinations and run plot_slice_projection
+        for i, params in enumerate(preset_combinations):
+            fig[i], _ = self.processor.plot_slice_projection(*params, normalize=normalize, show_standalone=False)
+
+        # Handle constant efficiency cases separately
+        const_efficiency_matrix = {
+            'x_var': ['H', 'Q'],
+            'y_var': ['Q', 'n', 'power']
+        }
+
+        const_efficiency_combinations = list(product(
+            const_efficiency_matrix['x_var'],
+            const_efficiency_matrix['y_var']
+        ))
+
+        for i, params in enumerate(const_efficiency_combinations, start=len(preset_combinations)):
+            fig[i], _ = self.processor.plot_individual_const_efficiency(*params, normalize=normalize, show_standalone=False)
+
+        """
         fig[0],_ = self.processor.plot_slice_projection('Q', 'efficiency', 'n11', 'n', 'D', normalize=normalize, show_standalone=False)        
         fig[1],_ = self.processor.plot_slice_projection('Q', 'power', 'n11', 'n', 'D', normalize=normalize, show_standalone=False)
         fig[2],_ = self.processor.plot_slice_projection('n', 'efficiency', 'Q11', 'Q', 'D', normalize=normalize, show_standalone=False)
@@ -106,7 +146,7 @@ class MainProcessor():
 
         fig[16],_ = self.processor.plot_slice_projection('blade_angle', 'efficiency', 'n11', 'n', 'D', normalize=normalize, show_standalone=False)
         fig[17],_ = self.processor.plot_slice_projection('blade_angle', 'power', 'n11', 'n', 'D', normalize=normalize, show_standalone=False)
-        
+        """
         
         return fig
 
