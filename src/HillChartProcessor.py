@@ -23,8 +23,6 @@ class HillChartProcessor:
         self.extrapolate_blade = None
         self.extrapolate_n11 = None
 
-
-
     def set_file_path(self, file_path):
         self.datapath = file_path
 
@@ -73,8 +71,6 @@ class HillChartProcessor:
             self.max_angle = params.get("blade_angle_max", 180)
             self.n_angle = params.get("blade_angle_pts", 10)
 
-
-
     def set_output_parameters(self, output_options, output_suboptions, settings_options):        
         self.output_options = output_options   
         self.output_suboptions = output_suboptions
@@ -114,7 +110,6 @@ class HillChartProcessor:
 
         return hill_values
 
-    
     
     def generate_outputs(self, show_standalone=True):        
         """
@@ -165,10 +160,7 @@ class HillChartProcessor:
                 self.plot_blade_slices_const_efficiency(normalize=normalize, save_data=save_data)        
 
 
-        return self.BEP_data, self.hill_values, self.raw_data, fig
-      
-
-        
+        return self.BEP_data, self.hill_values, self.raw_data, fig    
     
     def plot_3d_hill_chart(self, show_standalone=True):
         """
@@ -201,9 +193,7 @@ class HillChartProcessor:
             plt.show(block=False)
         else:
             return fig
-
-    
-    
+ 
     def plot_individual_hill_chart_contour(self, data_type='default', plot_blade_angles=True, show_standalone=True, ax=None):
         """
         Generalized function to plot individual hill chart contours.
@@ -247,45 +237,9 @@ class HillChartProcessor:
             plt.tight_layout()
             plt.show(block=False)
         else:
-            return fig, ax
+            return fig, ax    
 
-
-    def plot_hill_chart_contour(self, plot_blade_angles=True, show_standalone=True):
-        # Create a single figure with two subplots
-        fig, ax2 = plt.subplots(1, 2, figsize=(15, 7))
-
-        # Use the generalized plot_contour function for both subplots
-        self.plot_individual_hill_chart_contour(data_type='default', plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[0])
-        self.plot_individual_hill_chart_contour(data_type='nD', plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[1])
-
-        # Adjust layout and show or return the figure
-        plt.tight_layout()
-        if show_standalone:
-            plt.show(block=False)
-        else:
-            return fig
-
-
-    def plot_normalized_hill_chart_contour(self, plot_blade_angles=True, show_standalone=True):
-        """
-        Creates a figure with two subplots: one with the default hill chart,
-        and another with the normalized hill chart.
-        """
-        # Create a single figure with two subplots
-        fig, ax2 = plt.subplots(1, 2, figsize=(15, 7))
-
-        # Use the generalized function for both subplots
-        self.plot_individual_hill_chart_contour(data_type='default', plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[0])
-        self.plot_individual_hill_chart_contour(data_type='normalized', plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[1])
-
-        # Adjust layout and show or return
-        plt.tight_layout()
-        if show_standalone:
-            plt.show(block=False)
-        else:
-            return fig
-
-    def plot_individual_slice(self, x_var, y_var, slice_type, normalize=False, save_data=False, show_standalone=True, ax=None):
+    def plot_slice_projection(self, x_var, y_var, slice_type, normalize=False, save_data=False, show_standalone=True, ax=None):
         """
         Generalized function to plot individual slices (curve, blade, or constant n).
 
@@ -346,39 +300,148 @@ class HillChartProcessor:
             plt.show(block=False)
         else:
             return fig, ax
+   
+    def prepare_text_results(self):
+        BEP_data = self.BEP_data
+        num_sets = len(BEP_data.H)
+        results = []
 
+        # Dictionary for units
+        units = {
+            'H': '[m]',
+            'Q': '[m³/s]',
+            'n': '[rpm]',
+            'D': '[m]',
+            'efficiency': '[-]',
+            'power': '[W]',
+            'Ns': '[rpm]'
+        }
 
-    def plot_curve_slices(self, normalize=False, save_data=False, show_standalone=True):
+        # Dictionary for varying decimal points
+        decimals = {
+            'H': 2,
+            'Q': 2,
+            'n': 1,
+            'D': 2,
+            'efficiency': 2,
+            'power': 0,
+            'Ns': 1
+        }
+
+        # Prepare the output
+        for index in range(num_sets):
+            results.append("Best Efficiency Point (BEP) values:\n")
+            for attr in ['H', 'Q', 'n', 'D', 'efficiency', 'power', 'Ns']:
+                value = getattr(BEP_data, attr)[index] if getattr(BEP_data, attr) else 'N/A'
+                if isinstance(value, float):
+                    # Format value with varying decimals
+                    num_decimals = decimals.get(attr, 2)
+                    value_format = f"{value:.{num_decimals}f}"
+                else:
+                    value_format = str(value)
+                unit = units.get(attr, "")  # Fetch the unit for the attribute
+                results.append(f"{attr} = {value_format} {unit}\n")
+            results.append("\n")
+        return ''.join(results)
+
+    
+        
+    def display_results_in_PyQt6_textbox(self, show_standalone = True):
         """
-        Combines all four plots into a single figure with 2x2 subplots.
-
-        Parameters:
-            normalize (bool): Whether to normalize the data.
-            save_data (bool): Whether to save the plotted data.
-            show_standalone (bool): Whether to show the plot as a standalone figure.
+        Create a QTextEdit widget with prepared results text.
 
         Returns:
-            fig (if show_standalone=False)
+            QTextEdit: A PyQt6 text widget containing the results.
         """
-        fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))
+        prepared_text = self.prepare_text_results()  # Prepare the text content
 
-        # Use the generalized function to create all four plots
-        self.plot_individual_slice('Q', 'efficiency', slice_type='n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
-        self.plot_individual_slice('Q', 'power', slice_type='n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
-        self.plot_individual_slice('n', 'efficiency', slice_type='Q', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
-        self.plot_individual_slice('n', 'power', slice_type='Q', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
+        # Create a QTextEdit widget
+        text_widget = QTextEdit()
+        text_widget.setReadOnly(True)  # Make the widget read-only
+        text_widget.setPlainText(prepared_text)  # Insert the prepared text
 
-        # Show or return
+        return text_widget
+
+
+
+    
+        
+        
+    """
+    Deprecated code left for backwards compatibility with Calculator.py
+    """
+    
+    def plot_hill_chart_contour(self, plot_blade_angles=True, show_standalone=True):
+        """
+        DEPRECATED: This method is kept for backwards compatibility with Calculator.py
+        """
+        # Create a single figure with two subplots
+        fig, ax2 = plt.subplots(1, 2, figsize=(15, 7))
+
+        # Use the generalized plot_contour function for both subplots
+        self.plot_individual_hill_chart_contour(data_type='default', plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[0])
+        self.plot_individual_hill_chart_contour(data_type='nD', plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[1])
+
+        # Adjust layout and show or return the figure
+        plt.tight_layout()
         if show_standalone:
             plt.show(block=False)
         else:
             return fig
-      
     
+    def plot_normalized_hill_chart_contour(self, plot_blade_angles=True, show_standalone=True):
+        """
+        DEPRECATED: This method is kept for backwards compatibility with Calculator.py
+        
+        Creates a figure with two subplots: one with the default hill chart,
+        and another with the normalized hill chart.
+        """
+        # Create a single figure with two subplots
+        fig, ax2 = plt.subplots(1, 2, figsize=(15, 7))
 
+        # Use the generalized function for both subplots
+        self.plot_individual_hill_chart_contour(data_type='default', plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[0])
+        self.plot_individual_hill_chart_contour(data_type='normalized', plot_blade_angles=plot_blade_angles, show_standalone=False, ax=ax2[1])
+
+        # Adjust layout and show or return
+        plt.tight_layout()
+        if show_standalone:
+            plt.show(block=False)
+        else:
+            return fig
+
+    def plot_curve_slices(self, normalize=False, save_data=False, show_standalone=True):
+                """
+                DEPRECATED: This method is kept for backwards compatibility with Calculator.py
+                
+                Combines all four plots into a single figure with 2x2 subplots.
+
+                Parameters:
+                    normalize (bool): Whether to normalize the data.
+                    save_data (bool): Whether to save the plotted data.
+                    show_standalone (bool): Whether to show the plot as a standalone figure.
+
+                Returns:
+                    fig (if show_standalone=False)
+                """
+                fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))
+
+                # Use the generalized function to create all four plots
+                self.plot_slice_projection('Q', 'efficiency', slice_type='n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
+                self.plot_slice_projection('Q', 'power', slice_type='n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
+                self.plot_slice_projection('n', 'efficiency', slice_type='Q', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
+                self.plot_slice_projection('n', 'power', slice_type='Q', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
+
+                # Show or return
+                if show_standalone:
+                    plt.show(block=False)
+                else:
+                    return fig
 
     def plot_blade_slices(self, normalize=False, save_data=False, show_standalone=True):
         """
+        DEPRECATED: This method is kept for backwards compatibility with Calculator.py
+        
         Combines all four blade slices into a single figure with 2x2 subplots.
 
         Parameters:
@@ -392,10 +455,10 @@ class HillChartProcessor:
         fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))
 
         # Use the generalized function to create all four plots
-        self.plot_individual_slice('Q', 'efficiency', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
-        self.plot_individual_slice('Q', 'power', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
-        self.plot_individual_slice('n', 'efficiency', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
-        self.plot_individual_slice('n', 'power', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
+        self.plot_slice_projection('Q', 'efficiency', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
+        self.plot_slice_projection('Q', 'power', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
+        self.plot_slice_projection('n', 'efficiency', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
+        self.plot_slice_projection('n', 'power', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
 
         # Show or return
         if show_standalone:
@@ -403,9 +466,10 @@ class HillChartProcessor:
         else:
             return fig
 
-    
     def plot_blade_slices_const_n(self, normalize=False, save_data=False, show_standalone=True):
         """
+        DEPRECATED: This method is kept for backwards compatibility with Calculator.py
+
         Combines all four constant n blade slices into a single figure with 2x2 subplots.
 
         Parameters:
@@ -419,10 +483,10 @@ class HillChartProcessor:
         fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))
 
         # Use the generalized function to create all four plots        
-        self.plot_individual_slice('H', 'Q', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
-        self.plot_individual_slice('H', 'efficiency', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
-        self.plot_individual_slice('H', 'power', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
-        self.plot_individual_slice('Q', 'efficiency', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
+        self.plot_slice_projection('H', 'Q', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
+        self.plot_slice_projection('H', 'efficiency', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
+        self.plot_slice_projection('H', 'power', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
+        self.plot_slice_projection('Q', 'efficiency', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
 
         # Show or return
         if show_standalone:
@@ -432,6 +496,8 @@ class HillChartProcessor:
 
     def plot_individual_const_efficiency(self, x_var, y_var, normalize=False, save_data=False, show_standalone=True, ax=None):
         """
+        DEPRECATED: This method is kept for backwards compatibility with Calculator.py
+        
         Generalized function to plot individual blade slices for constant efficiency.
 
         Parameters:
@@ -486,9 +552,10 @@ class HillChartProcessor:
         else:
             return fig, ax
 
-
     def plot_blade_slices_const_efficiency(self, normalize=False, save_data=False, show_standalone=True):
         """
+        DEPRECATED: This method is kept for backwards compatibility with Calculator.py
+        
         Combines all four constant efficiency blade slices into a single figure with 2x2 subplots.
 
         Parameters:
@@ -512,52 +579,12 @@ class HillChartProcessor:
             plt.show(block=False)
         else:
             return fig
-
-    def prepare_text_results(self):
-        BEP_data = self.BEP_data
-        num_sets = len(BEP_data.H)
-        results = []
-
-        # Dictionary for units
-        units = {
-            'H': '[m]',
-            'Q': '[m³/s]',
-            'n': '[rpm]',
-            'D': '[m]',
-            'efficiency': '[-]',
-            'power': '[W]',
-            'Ns': '[rpm]'
-        }
-
-        # Dictionary for varying decimal points
-        decimals = {
-            'H': 2,
-            'Q': 2,
-            'n': 1,
-            'D': 2,
-            'efficiency': 2,
-            'power': 0,
-            'Ns': 1
-        }
-
-        # Prepare the output
-        for index in range(num_sets):
-            results.append("Best Efficiency Point (BEP) values:\n")
-            for attr in ['H', 'Q', 'n', 'D', 'efficiency', 'power', 'Ns']:
-                value = getattr(BEP_data, attr)[index] if getattr(BEP_data, attr) else 'N/A'
-                if isinstance(value, float):
-                    # Format value with varying decimals
-                    num_decimals = decimals.get(attr, 2)
-                    value_format = f"{value:.{num_decimals}f}"
-                else:
-                    value_format = str(value)
-                unit = units.get(attr, "")  # Fetch the unit for the attribute
-                results.append(f"{attr} = {value_format} {unit}\n")
-            results.append("\n")
-        return ''.join(results)
-
-
+        
     def display_results_in_textbox(self, show_standalone = True):        
+        """
+        DEPRECATED: This method is kept for backwards compatibility with Calculator.py
+        """
+        
         prepared_text = self.prepare_text_results()
 
         # Create a new top-level window
@@ -580,21 +607,3 @@ class HillChartProcessor:
             plt.show(block=False)
         else:
             return text_widget
-        
-    def display_results_in_PyQt6_textbox(self, show_standalone = True):
-        """
-        Create a QTextEdit widget with prepared results text.
-
-        Returns:
-            QTextEdit: A PyQt6 text widget containing the results.
-        """
-        prepared_text = self.prepare_text_results()  # Prepare the text content
-
-        # Create a QTextEdit widget
-        text_widget = QTextEdit()
-        text_widget.setReadOnly(True)  # Make the widget read-only
-        text_widget.setPlainText(prepared_text)  # Insert the prepared text
-
-        return text_widget
-
-          
