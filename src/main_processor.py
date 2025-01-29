@@ -82,36 +82,27 @@ class MainProcessor():
     
     def create_plot_curve_slices(self):
         fig = {}
-        normalize=False
+        normalize=False        
         
+        fig[0],_ = self.processor.plot_slice_projection('Q', 'efficiency', 'n11', 'n', 'D', normalize=normalize, show_standalone=False)
+        fig[1],_ = self.processor.plot_slice_projection('Q', 'power', 'n11', 'n', 'D', normalize=normalize, show_standalone=False)
+        fig[2],_ = self.processor.plot_slice_projection('n', 'efficiency', 'Q11', 'Q', 'D', normalize=normalize, show_standalone=False)
+        fig[3],_ = self.processor.plot_slice_projection('n', 'power', 'Q11', 'Q', 'D', normalize=normalize, show_standalone=False)
         
-        fig[0] = self.processor.plot_curve_slices(normalize=normalize, show_standalone=False)
-        fig[1],_ = self.processor.plot_slice_projection('Q', 'efficiency', slice_type='n', normalize=normalize, show_standalone=False)
-        fig[2],_ = self.processor.plot_slice_projection('Q', 'power', slice_type='n', normalize=normalize, show_standalone=False)
-        fig[3],_ = self.processor.plot_slice_projection('n', 'efficiency', slice_type='Q', normalize=normalize, show_standalone=False)
-        fig[4],_ = self.processor.plot_slice_projection('n', 'power', slice_type='Q', normalize=normalize, show_standalone=False)
-        
-        fig[5] = self.processor.plot_blade_slices(normalize=normalize, show_standalone=False)
-        fig[6],_ = self.processor.plot_slice_projection('Q', 'efficiency', slice_type='blade', normalize=normalize, show_standalone=False)
-        fig[7],_ = self.processor.plot_slice_projection('Q', 'power', slice_type='blade', normalize=normalize, show_standalone=False)
-        fig[8],_ = self.processor.plot_slice_projection('n', 'efficiency', slice_type='blade', normalize=normalize, show_standalone=False)
-        fig[9],_ = self.processor.plot_slice_projection('n', 'power', slice_type='blade', normalize=normalize, show_standalone=False)
-        
-        
-        fig[10] = self.processor.plot_blade_slices_const_n(show_standalone=False)     
-        fig[12],_ = self.processor.plot_slice_projection('H', 'Q', slice_type='const_n', normalize=normalize, show_standalone=False)
-        fig[13],_ = self.processor.plot_slice_projection('H', 'efficiency', slice_type='const_n', normalize=normalize, show_standalone=False)
-        fig[14],_ = self.processor.plot_slice_projection('H', 'power', slice_type='const_n', normalize=normalize, show_standalone=False)
-        fig[15],_ = self.processor.plot_slice_projection('Q', 'efficiency', slice_type='const_n', normalize=normalize, show_standalone=False)
-        
-        
-        fig[15] = self.processor.plot_blade_slices_const_efficiency(show_standalone=False)
-        fig[16],_ = self.processor.plot_individual_const_efficiency('H', 'Q', normalize=normalize, show_standalone=False)
-        fig[17],_ = self.processor.plot_individual_const_efficiency('H', 'n', normalize=normalize, show_standalone=False)
-        fig[18],_ = self.processor.plot_individual_const_efficiency('H', 'power', normalize=normalize, show_standalone=False)
-        fig[19],_ = self.processor.plot_individual_const_efficiency('Q', 'power', normalize=normalize, show_standalone=False)
-        
+        fig[4],_ = self.processor.plot_slice_projection('Q', 'efficiency', 'blade_angle', 'H', 'D', normalize=normalize, show_standalone=False)
+        fig[5],_ = self.processor.plot_slice_projection('Q', 'power', 'blade_angle', 'H', 'D', normalize=normalize, show_standalone=False)
+        fig[6],_ = self.processor.plot_slice_projection('n', 'efficiency', 'blade_angle', 'H', 'D', normalize=normalize, show_standalone=False)
+        fig[7],_ = self.processor.plot_slice_projection('n', 'power', 'blade_angle', 'H', 'D', normalize=normalize, show_standalone=False)
 
+        fig[8],_ = self.processor.plot_slice_projection('H', 'Q', 'blade_angle', 'n', 'D', normalize=normalize, show_standalone=False)
+        fig[9],_ = self.processor.plot_slice_projection('H', 'efficiency', 'blade_angle', 'n', 'D', normalize=normalize, show_standalone=False)
+        fig[10],_ = self.processor.plot_slice_projection('H', 'power', 'blade_angle', 'n', 'D', normalize=normalize, show_standalone=False)
+        fig[11],_ = self.processor.plot_slice_projection('Q', 'efficiency', 'blade_angle', 'n', 'D', normalize=normalize, show_standalone=False)             
+        
+        fig[12],_ = self.processor.plot_individual_const_efficiency('H', 'Q', normalize=normalize, show_standalone=False)
+        fig[13],_ = self.processor.plot_individual_const_efficiency('H', 'n', normalize=normalize, show_standalone=False)
+        fig[14],_ = self.processor.plot_individual_const_efficiency('H', 'power', normalize=normalize, show_standalone=False)
+        fig[15],_ = self.processor.plot_individual_const_efficiency('Q', 'power', normalize=normalize, show_standalone=False)
         
         return fig
 

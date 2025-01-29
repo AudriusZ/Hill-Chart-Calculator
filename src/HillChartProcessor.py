@@ -239,14 +239,16 @@ class HillChartProcessor:
         else:
             return fig, ax    
 
-    def plot_slice_projection(self, x_var, y_var, slice_type, normalize=False, save_data=False, show_standalone=True, ax=None):
+    def plot_slice_projection(self, x_var, y_var, slice_by, const_1, const_2, normalize=False, save_data=False, show_standalone=True, ax=None):
         """
-        Generalized function to plot individual slices (curve, blade, or constant n).
+        Generalized function to plot slices dynamically based on input parameters.
 
         Parameters:
             x_var (str): The x-axis variable ('Q', 'n', or 'H').
             y_var (str): The y-axis variable ('efficiency', 'power', or 'Q').
-            slice_type (str): The type of slicing ('curve', 'blade', 'const_n').
+            slice_by (str): The slicing variable ('n11', 'Q11', or 'blade_angle').
+            const_1 (str): The first constant parameter for calculate_cases ('H', 'Q', 'n', 'D').
+            const_2 (str): The second constant parameter for calculate_cases ('H', 'Q', 'n', 'D').
             normalize (bool): Whether to normalize the data.
             save_data (bool): Whether to save the plotted data.
             show_standalone (bool): Whether to show the plot as a standalone figure.
@@ -268,32 +270,61 @@ class HillChartProcessor:
         slice_values = copy.deepcopy(hill_values)
         slice_values = PerformanceCurve(slice_values)
 
-        # Determine slicing method
-        if slice_type == 'n':            
+        # Determine slicing method by explicitly passing the correct argument
+        if slice_by == 'n11':
             slice_values.slice_hill_chart_data(selected_n11=BEP_data.n11[0])
-            slice_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])
-        elif slice_type == 'Q':
+        elif slice_by == 'Q11':
             slice_values.slice_hill_chart_data(selected_Q11=BEP_data.Q11[0])
-            slice_values.calculate_cases([2, 4], BEP_data.Q[0], BEP_data.D[0])
-        elif slice_type == 'blade':
+        elif slice_by == 'blade_angle':
             slice_values.slice_hill_chart_data(selected_blade_angle=BEP_data.blade_angle[0])
-            slice_values.calculate_cases([1, 4], BEP_data.H[0], BEP_data.D[0])
-        elif slice_type == 'const_n':
-            slice_values.slice_hill_chart_data(selected_blade_angle=BEP_data.blade_angle[0])
-            slice_values.calculate_cases([3, 4], BEP_data.n[0], BEP_data.D[0])
         else:
-            raise ValueError(f"Invalid slice_type: {slice_type}. Must be 'Q', 'n', 'blade', or 'const_n'.")
+            raise ValueError(f"Invalid slice_by: {slice_by}. Must be 'n11', 'Q11', or 'blade_angle'.")
+
+        # Determine parameters for calculate_cases
+        param_mapping = {
+            'H': BEP_data.H[0],
+            'Q': BEP_data.Q[0],
+            'n': BEP_data.n[0],
+            'D': BEP_data.D[0]
+        }
+
+        if const_1 not in param_mapping or const_2 not in param_mapping:
+            raise ValueError(f"Invalid const parameters: {const_1}, {const_2}. Must be 'H', 'Q', 'n', or 'D'.")
+
+        # Case mapping
+        case_index = {
+            'H': 1,
+            'Q': 2,
+            'n': 3,
+            'D': 4
+        }
+
+        # Ensure const_1 and const_2 are valid keys
+        if const_1 not in case_index or const_2 not in case_index:
+            raise ValueError(f"Invalid case combination: ({const_1}, {const_2}). Must be 'H', 'Q', 'n', or 'D'.")
+
+        # Dynamically determine case indices
+        case_indices = [case_index[const_1], case_index[const_2]]
+
+        # Apply the calculated case indices dynamically
+        slice_values.calculate_cases(case_indices, param_mapping[const_1], param_mapping[const_2])
 
         # Normalize if required
         if normalize:
             slice_values.normalize(x_var, getattr(BEP_data, x_var))
             slice_values.normalize(y_var, getattr(BEP_data, y_var))
 
+        
         # Determine title type
-        title_type = 'const_blade' if slice_type == 'blade' else 'const_n' if slice_type == 'const_n' else 'default'        
+        title_type = (
+            'const_n' if slice_by == 'blade_angle' and const_1 == 'n'
+            else'const_blade' if slice_by == 'blade_angle'            
+            else 'default'
+        )
 
         # Plot the chart
-        slice_values.plot_and_save_chart(x_var, y_var, ax, title_type=title_type, label_type='normalized' if normalize else 'default', save_data=save_data)
+        slice_values.plot_and_save_chart(x_var, y_var, ax, title_type=title_type, 
+                                        label_type='normalized' if normalize else 'default', save_data = False)
 
         # Show or return
         if show_standalone:
@@ -301,6 +332,38 @@ class HillChartProcessor:
         else:
             return fig, ax
    
+    
+
+    def plot_slice_projection_preset(self, x_var, y_var, slice_type, normalize=False, save_data=False, show_standalone=True, ax=None):
+        """
+        Generalized function to plot individual slices (curve, blade, or constant n).
+
+        Parameters:
+            x_var (str): The x-axis variable ('Q', 'n', or 'H').
+            y_var (str): The y-axis variable ('efficiency', 'power', or 'Q').
+            slice_type (str): The type of slicing ('curve', 'blade', 'const_n').
+            normalize (bool): Whether to normalize the data.
+            save_data (bool): Whether to save the plotted data.
+            show_standalone (bool): Whether to show the plot as a standalone figure.
+            ax (matplotlib.axes.Axes): Axis to plot on (used for subplots).
+
+        Returns:
+            fig, ax (if show_standalone=False)
+        """
+        slice_config = {
+            'n': ('n11', 'n', 'D'),
+            'Q': ('Q11', 'Q', 'D'),
+            'blade': ('blade_angle', 'H', 'D'),
+            'const_n': ('blade_angle', 'n', 'D')
+        }
+
+        if slice_type not in slice_config:
+            raise ValueError(f"Invalid slice_type: {slice_type}. Must be 'Q', 'n', 'blade', or 'const_n'.")
+
+        slice_by, const_1, const_2 = slice_config[slice_type]
+
+        return self.plot_slice_projection(x_var, y_var, slice_by, const_1, const_2, normalize, save_data, show_standalone, ax)
+        
     def prepare_text_results(self):
         BEP_data = self.BEP_data
         num_sets = len(BEP_data.H)
@@ -343,9 +406,7 @@ class HillChartProcessor:
                 results.append(f"{attr} = {value_format} {unit}\n")
             results.append("\n")
         return ''.join(results)
-
     
-        
     def display_results_in_PyQt6_textbox(self, show_standalone = True):
         """
         Create a QTextEdit widget with prepared results text.
@@ -427,10 +488,10 @@ class HillChartProcessor:
                 fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))
 
                 # Use the generalized function to create all four plots
-                self.plot_slice_projection('Q', 'efficiency', slice_type='n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
-                self.plot_slice_projection('Q', 'power', slice_type='n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
-                self.plot_slice_projection('n', 'efficiency', slice_type='Q', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
-                self.plot_slice_projection('n', 'power', slice_type='Q', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
+                self.plot_slice_projection_preset('Q', 'efficiency', slice_type='n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
+                self.plot_slice_projection_preset('Q', 'power', slice_type='n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
+                self.plot_slice_projection_preset('n', 'efficiency', slice_type='Q', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
+                self.plot_slice_projection_preset('n', 'power', slice_type='Q', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
 
                 # Show or return
                 if show_standalone:
@@ -455,10 +516,10 @@ class HillChartProcessor:
         fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))
 
         # Use the generalized function to create all four plots
-        self.plot_slice_projection('Q', 'efficiency', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
-        self.plot_slice_projection('Q', 'power', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
-        self.plot_slice_projection('n', 'efficiency', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
-        self.plot_slice_projection('n', 'power', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
+        self.plot_slice_projection_preset('Q', 'efficiency', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
+        self.plot_slice_projection_preset('Q', 'power', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
+        self.plot_slice_projection_preset('n', 'efficiency', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
+        self.plot_slice_projection_preset('n', 'power', slice_type='blade', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
 
         # Show or return
         if show_standalone:
@@ -483,10 +544,10 @@ class HillChartProcessor:
         fig, ax3 = plt.subplots(2, 2, figsize=(15, 10))
 
         # Use the generalized function to create all four plots        
-        self.plot_slice_projection('H', 'Q', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
-        self.plot_slice_projection('H', 'efficiency', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
-        self.plot_slice_projection('H', 'power', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
-        self.plot_slice_projection('Q', 'efficiency', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
+        self.plot_slice_projection_preset('H', 'Q', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 0])
+        self.plot_slice_projection_preset('H', 'efficiency', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[0, 1])
+        self.plot_slice_projection_preset('H', 'power', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 0])
+        self.plot_slice_projection_preset('Q', 'efficiency', slice_type='const_n', normalize=normalize, save_data=save_data, show_standalone=False, ax=ax3[1, 1])
 
         # Show or return
         if show_standalone:
