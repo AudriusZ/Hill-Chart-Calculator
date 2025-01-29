@@ -284,11 +284,11 @@ class MainWindow(QMainWindow):
         try:            
             #parameters = self.surface_fitting_widget.get_all_input_values()
             
-            """
+            
             figs = self.main_processor.create_contour_plot()                        
             for fig in figs.values():
                 self.plot_manager.embed_plot(fig, "Contour Plot", add_export_button=True)
-            """
+            
 
             figs = self.main_processor.create_plot_curve_slices()            
             for fig in figs.values():
