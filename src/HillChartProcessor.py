@@ -336,8 +336,7 @@ class HillChartProcessor:
             slice_values.normalize(y_var, getattr(BEP_data, y_var))
 
         # Determine title type
-        title_type = 'const_blade' if slice_type == 'blade' else 'const_n' if slice_type == 'const_n' else 'default'
-        title_type = 'default'
+        title_type = 'const_blade' if slice_type == 'blade' else 'const_n' if slice_type == 'const_n' else 'default'        
 
         # Plot the chart
         slice_values.plot_and_save_chart(x_var, y_var, ax, title_type=title_type, label_type='normalized' if normalize else 'default', save_data=save_data)
