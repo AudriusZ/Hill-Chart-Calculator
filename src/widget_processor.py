@@ -216,6 +216,25 @@ class OutputOptionsHydraulicWidget(BaseWidget):
         self.ui.setupUi(self)
 
         self.setWindowTitle("Output Options (Hydraulic)")
+        
+        self.disable_and_style_checkboxes()
+
+    def disable_and_style_checkboxes(self):
+        """Disable all checkboxes and apply a gray-out effect."""
+        checkboxes = [
+            self.ui.checkBoxContour_1,
+            self.ui.checkBoxContour_2,
+            self.ui.checkBoxContour_3,
+            self.ui.checkBoxSlice_1,
+            self.ui.checkBoxSlice_2
+        ]
+
+        for checkbox in checkboxes:
+            checkbox.setEnabled(False)  # Disable checkbox
+            checkbox.setStyleSheet("color: gray;")  # Apply gray color
+
+    
+        
 
         
 class SizingWidget(BaseWidget):

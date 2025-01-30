@@ -226,7 +226,7 @@ class HillChartProcessor:
             fig = ax.figure  # Use the figure from the provided axis
 
         # Plot the contour plot based on the specified data_type
-        hill_values.plot_hill_chart_contour(ax=ax, n_contours=self.n_contours, data_type=data_type)
+        hill_values.plot_hill_chart_contour(ax=ax, n_contours=25, data_type=data_type)
 
         if plot_blade_angles:
             line_coords = hill_values.find_contours_at_angles(case=data_type if data_type == 'nD' else None)

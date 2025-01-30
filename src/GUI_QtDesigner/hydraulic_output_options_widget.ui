@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>251</width>
-    <height>421</height>
+    <height>461</height>
    </rect>
   </property>
   <property name="font">
@@ -18,17 +18,147 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QGroupBox" name="groupBoxContour">
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>20</y>
-     <width>201</width>
-     <height>381</height>
+     <y>10</y>
+     <width>211</width>
+     <height>181</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Hill Chart Contour Plots</string>
+   </property>
+   <widget class="QCheckBox" name="checkBoxContour_2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>100</y>
+      <width>171</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Physical Size (n, Q)</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="labelContour">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>20</y>
+      <width>101</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Select Outputs:</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBoxContour_1">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>171</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Unit Values (n11, Q11)</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBoxContour_3">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>140</y>
+      <width>191</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Normalized</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QPushButton" name="pushButtonContour">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>200</y>
+     <width>81</width>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">
-    <string>Apply</string>
+    <string>Plot</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBoxSlice_1">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>260</y>
+     <width>211</width>
+     <height>141</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>2D Slices</string>
+   </property>
+   <widget class="QLabel" name="labelSlice_1">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>20</y>
+      <width>101</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Select Outputs:</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBoxSlice_1">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>171</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Selecetd Combinations</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBoxSlice_2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>100</y>
+      <width>171</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>All Combinations</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QPushButton" name="pushButtonSlice">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>410</y>
+     <width>81</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Plot</string>
    </property>
   </widget>
  </widget>

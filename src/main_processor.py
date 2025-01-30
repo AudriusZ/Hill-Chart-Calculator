@@ -77,42 +77,52 @@ class MainProcessor():
     def create_contour_plot(self):        
         fig = {}
         fig[1],_ = self.processor.plot_individual_hill_chart_contour(data_type='default',plot_blade_angles=True, show_standalone=False)            
-        #fig[2],_ = self.processor.plot_individual_hill_chart_contour(data_type='nD', plot_blade_angles=True, show_standalone=False)            
-        #fig[3],_ = self.processor.plot_individual_hill_chart_contour(data_type='normalized', plot_blade_angles=True, show_standalone=False)                    
+        fig[2],_ = self.processor.plot_individual_hill_chart_contour(data_type='nD', plot_blade_angles=True, show_standalone=False)            
+        fig[3],_ = self.processor.plot_individual_hill_chart_contour(data_type='normalized', plot_blade_angles=True, show_standalone=False)                    
         return fig
     
-    def create_plot_curve_slices(self):
+    def create_plot_curve_slices(self, mode = 'Default', normalize = False):
         fig = {}
-        normalize=False        
+        
         
         # Define the matrix of possible values for each parameter position
-        
-        param_matrix = {
-            'x_var': ['n', 'Q', 'blade_angle', 'H','D'],
-            'y_var': ['efficiency', 'Q'],
-            'slice_by': ['n11', 'Q11', 'blade_angle'],            
-            'const_1': ['n','H'],
-            'const_2': ['Q','D']
-        }
+        if mode == 'Default':
+            preset_combinations = [
+            ('n', 'efficiency', 'blade_angle', 'H', 'D'),
+            ('n', 'power', 'blade_angle', 'H', 'D'),
 
-        """
-        param_matrix = {
-            'x_var': ['n', 'Q', 'blade_angle', 'H'],
-            'y_var': ['efficiency', 'power', 'n', 'Q'],
-            'slice_by': ['n11', 'Q11', 'blade_angle'],
-            'const_1': ['n', 'Q', 'H'],
-            'const_2': ['D']
-        }
-        """
+            ('Q', 'efficiency', 'n11', 'H', 'D'),
+            ('Q', 'power', 'n11', 'H', 'D'),
+            ('blade_angle', 'efficiency', 'n11', 'H', 'D'),
+            ('blade_angle', 'power', 'n11', 'H', 'D'),
 
-        # Generate all possible parameter combinations dynamically
-        preset_combinations = list(product(
-            param_matrix['x_var'],
-            param_matrix['y_var'],
-            param_matrix['slice_by'],
-            param_matrix['const_1'],
-            param_matrix['const_2']
-        ))
+            ('n', 'efficiency', 'Q11', 'H', 'D'),
+            ('n', 'power', 'Q11', 'H', 'D'),
+
+            ('blade_angle', 'efficiency', 'Q11', 'H', 'D'),
+            ('blade_angle', 'power', 'Q11', 'H', 'D')
+        ]
+        elif mode == 'All':
+            param_matrix = {
+                'x_var': ['n', 'Q', 'blade_angle', 'H','D'],
+                'y_var': ['efficiency', 'Q'],
+                'slice_by': ['n11', 'Q11', 'blade_angle'],            
+                'const_1': ['n','H'],
+                'const_2': ['Q','D']
+            }
+
+            # Generate all possible parameter combinations dynamically
+            preset_combinations = list(product(
+                param_matrix['x_var'],
+                param_matrix['y_var'],
+                param_matrix['slice_by'],
+                param_matrix['const_1'],
+                param_matrix['const_2']
+            ))
+        else:
+            preset_combinations = [
+            ('n', 'efficiency', 'blade_angle', 'H', 'D')
+            ]
 
         
 
