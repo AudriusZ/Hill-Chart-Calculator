@@ -262,6 +262,10 @@ class HillChart:
                 print("No data available.")
                 return
 
+            # Ensure selected_values is always in ascending order
+            if selected_values[0] > selected_values[1]:
+                selected_values = [selected_values[1], selected_values[0]]
+                var1, var2 = var2, var1  # Swap var1 and var2 accordingly
             
             for i in range(len(self.data.Q11)):
                 if selected_values == [1, 2]:  # H, Q provided
