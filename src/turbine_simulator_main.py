@@ -284,11 +284,11 @@ class MainWindow(QMainWindow):
         try:            
             #parameters = self.surface_fitting_widget.get_all_input_values()
             
-            """
+            
             figs = self.main_processor.create_contour_plot()                        
             for fig in figs.values():
                 self.plot_manager.embed_plot(fig, "Contour Plot", add_export_button=True)
-            """
+            
 
             figs = self.main_processor.create_plot_curve_slices()            
             for fig in figs.values():
@@ -567,9 +567,10 @@ if __name__ == "__main__":
     window.turbine_hydraulics_action()
     window.main_processor.default_pathname()
     window.main_processor.default_turbine_parameters()
+    window.set_output_options_hydraulic()
     window.app_state.update_actions("Load Data", True)
     window.app_state.update_actions("Sizing", True)
-    window.app_state.update_actions("Surface Fit Settings", True)
+    window.app_state.update_actions("Surface Fit Settings", True)    
     window.show()    
     sys.exit(app.exec())
 

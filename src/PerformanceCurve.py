@@ -135,7 +135,14 @@ class PerformanceCurve(HillChart):
                 if getattr(self.data, key) is not None and len(getattr(self.data, key)) > 0 else ''
                 for key in ['blade_angle', 'n', 'Q', 'H', 'D', 'efficiency']
             }
-                        
+
+            # Identify variables with non-constant values
+            excluded_vars = {
+                key for key in format_dict.keys()
+                if getattr(self.data, key) is not None and len(set(getattr(self.data, key))) > 1
+            }
+
+            """
             # Define a mapping from title_type to sets of excluded variables
             excluded_vars_map = {
                 'default': {x_var, y_var, 'blade_angle', 'efficiency'},
@@ -143,12 +150,13 @@ class PerformanceCurve(HillChart):
                 'const_n': {'efficiency', 'Q', 'H'},
                 'const_efficiency': {'n', 'Q', 'H'}
             }
+            
 
             # Get the excluded variables based on the title_type
             excluded_vars = excluded_vars_map.get(title_type)
             if excluded_vars is None:
                 raise ValueError(f"title_type '{title_type}' is not recognized. Available labels: 'default', 'const_blade', 'const_n', 'const_efficiency'.")
-
+            """
             # Construct the title by excluding the specified variables
             included_titles = [title for key, title in title_dict.items() if key not in excluded_vars]
             title = ', '.join(included_titles)

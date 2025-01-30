@@ -77,8 +77,8 @@ class MainProcessor():
     def create_contour_plot(self):        
         fig = {}
         fig[1],_ = self.processor.plot_individual_hill_chart_contour(data_type='default',plot_blade_angles=True, show_standalone=False)            
-        fig[2],_ = self.processor.plot_individual_hill_chart_contour(data_type='nD', plot_blade_angles=True, show_standalone=False)            
-        fig[3],_ = self.processor.plot_individual_hill_chart_contour(data_type='normalized', plot_blade_angles=True, show_standalone=False)                    
+        #fig[2],_ = self.processor.plot_individual_hill_chart_contour(data_type='nD', plot_blade_angles=True, show_standalone=False)            
+        #fig[3],_ = self.processor.plot_individual_hill_chart_contour(data_type='normalized', plot_blade_angles=True, show_standalone=False)                    
         return fig
     
     def create_plot_curve_slices(self):
@@ -86,6 +86,16 @@ class MainProcessor():
         normalize=False        
         
         # Define the matrix of possible values for each parameter position
+        
+        param_matrix = {
+            'x_var': ['n', 'Q', 'blade_angle', 'H','D'],
+            'y_var': ['efficiency', 'Q'],
+            'slice_by': ['n11', 'Q11', 'blade_angle'],            
+            'const_1': ['n','H'],
+            'const_2': ['Q','D']
+        }
+
+        """
         param_matrix = {
             'x_var': ['n', 'Q', 'blade_angle', 'H'],
             'y_var': ['efficiency', 'power', 'n', 'Q'],
@@ -93,6 +103,7 @@ class MainProcessor():
             'const_1': ['n', 'Q', 'H'],
             'const_2': ['D']
         }
+        """
 
         # Generate all possible parameter combinations dynamically
         preset_combinations = list(product(
@@ -109,6 +120,7 @@ class MainProcessor():
         for i, params in enumerate(preset_combinations):
             fig[i], _ = self.processor.plot_slice_projection(*params, normalize=normalize, show_standalone=False)
 
+        """
         # Handle constant efficiency cases separately
         const_efficiency_matrix = {
             'x_var': ['H', 'Q'],
@@ -122,7 +134,8 @@ class MainProcessor():
 
         for i, params in enumerate(const_efficiency_combinations, start=len(preset_combinations)):
             fig[i], _ = self.processor.plot_individual_const_efficiency(*params, normalize=normalize, show_standalone=False)
-
+        
+        """
         """
         fig[0],_ = self.processor.plot_slice_projection('Q', 'efficiency', 'n11', 'n', 'D', normalize=normalize, show_standalone=False)        
         fig[1],_ = self.processor.plot_slice_projection('Q', 'power', 'n11', 'n', 'D', normalize=normalize, show_standalone=False)
