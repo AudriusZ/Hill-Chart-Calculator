@@ -322,7 +322,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
             self.update_status(f"Error during Contour plots action: {str(e)}")
 
-    def set_output_options_hydraulic_2D_slice(self):
+    def set_output_options_hydraulic_2D_slice(self, mode = 'Default'):
         """
         Set hydraulic output options to show
         """
@@ -330,7 +330,7 @@ class MainWindow(QMainWindow):
             #parameters = self.surface_fitting_widget.get_all_input_values()
             
 
-            figs = self.main_processor.create_plot_curve_slices()            
+            figs = self.main_processor.create_plot_curve_slices(mode = mode)            
             for fig in figs.values():
                 fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=1)
                 # Change title font size for each subplot
@@ -494,8 +494,9 @@ class MainWindow(QMainWindow):
         """
         if not hasattr(self, "hydraulic_output_options_widget"):
             self.hydraulic_output_options_widget = OutputOptionsHydraulicWidget()
-            self.hydraulic_output_options_widget.ui.pushButtonContour.clicked.connect(self.set_output_options_hydraulic_contour)
-            self.hydraulic_output_options_widget.ui.pushButtonSlice.clicked.connect(self.set_output_options_hydraulic_2D_slice)
+            self.hydraulic_output_options_widget.ui.pushButtonContour.clicked.connect(self.set_output_options_hydraulic_contour)            
+            self.hydraulic_output_options_widget.ui.pushButtonSlice_1.clicked.connect(lambda: self.set_output_options_hydraulic_2D_slice('Default'))
+            self.hydraulic_output_options_widget.ui.pushButtonSlice_2.clicked.connect(lambda: self.set_output_options_hydraulic_2D_slice('All'))
         self.hydraulic_output_options_widget.show()
 
 
@@ -602,7 +603,7 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     window = MainWindow()    
-    """
+    
     window.turbine_hydraulics_action()
     window.main_processor.default_pathname()
     window.main_processor.default_turbine_parameters()
@@ -610,8 +611,8 @@ if __name__ == "__main__":
     window.app_state.update_actions("Load Data", True)
     window.app_state.update_actions("Sizing", True)
     window.app_state.update_actions("Surface Fit Settings", True)    
-    """
     
+
     window.show()    
     sys.exit(app.exec())
 

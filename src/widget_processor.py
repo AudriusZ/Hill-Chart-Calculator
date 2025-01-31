@@ -1,6 +1,8 @@
 
 from PyQt6.QtWidgets import (
-    QWidget
+    QWidget,
+    QCheckBox,
+    QPushButton  
     )
 
 from PyQt6.QtGui import QIntValidator
@@ -218,20 +220,22 @@ class OutputOptionsHydraulicWidget(BaseWidget):
         self.setWindowTitle("Output Options (Hydraulic)")
         
         self.disable_and_style_checkboxes()
+        self.disable_and_style_pushbutton()
 
     def disable_and_style_checkboxes(self):
-        """Disable all checkboxes and apply a gray-out effect."""
-        checkboxes = [
-            self.ui.checkBoxContour_1,
-            self.ui.checkBoxContour_2,
-            self.ui.checkBoxContour_3,
-            self.ui.checkBoxSlice_1,
-            self.ui.checkBoxSlice_2
-        ]
-
-        for checkbox in checkboxes:
+        """Disable all checkboxes dynamically and apply a gray-out effect."""
+        for checkbox in self.findChildren(QCheckBox):  # Find all QCheckBox elements
             checkbox.setEnabled(False)  # Disable checkbox
             checkbox.setStyleSheet("color: gray;")  # Apply gray color
+
+    def disable_and_style_pushbutton(self):
+        """Disable pushbutton and apply a gray-out effect."""       
+
+        # Disable pushButtonSlice
+        push_button = self.findChild(QPushButton, "pushButtonSlice")
+        if push_button:
+            push_button.setEnabled(False)
+
 
     
         
@@ -474,7 +478,7 @@ if __name__ == "__main__":
     from PyQt6.QtWidgets import QApplication
     import sys
     app = QApplication(sys.argv)  # Create the application instance
-    sizing = SurfaceFittingWidget()       # Instantiate your widget
-    sizing.show()                 # Show the widget
+    Options = OutputOptionsHydraulicWidget()       # Instantiate your widget
+    Options.show()                 # Show the widget
     sys.exit(app.exec())          # Execute the app's main loop
  
