@@ -8,6 +8,7 @@ class PerformanceCurve(HillChart):
         # Initialize using the existing HillChart instance
         super().__init__()
         self.data = hill_values.data  # Use the data from the passed HillChart instance
+        self.message_callback = hill_values.message_callback
 
     def slice_hill_chart_data(self, selected_n11=None, selected_Q11=None, selected_blade_angle = None):
         if selected_n11 is not None:
@@ -177,10 +178,10 @@ class PerformanceCurve(HillChart):
             ax.grid(True)
             ax.legend()
 
-            print(f"{f'{y_var} vs {x_var}'} curve created successfully")
+            self.emit_message(f"{f'Curve | {y_var} vs {x_var} |'} created successfully.")
 
         except Exception as e:
-            print(f"Error in plotting {y_var} vs {x_var}: {e}")
+            self.emit_message(f"Error in plotting {y_var} vs {x_var}: {e}")
 
 
 
@@ -259,10 +260,10 @@ class PerformanceCurve(HillChart):
                 for x, y in zip(x_data, y_data):
                     writer.writerow([x, y])
 
-            print(f"Data saved successfully to {file_name}")
+            self.emit_message(f"Data saved successfully to {file_name}")
 
         except Exception as e:
-            print(f"Error saving {y_var} vs {x_var} data to CSV: {e}")
+            self.emit_message(f"Error saving {y_var} vs {x_var} data to CSV: {e}")
 
     def plot_and_save_chart(self, x_var, y_var, ax, title_type='default', label_type='default', save_data = True):
         
@@ -279,7 +280,7 @@ class PerformanceCurve(HillChart):
                 # Save the chart data to CSV
                 self.save_2D_chart_to_csv(x_var, y_var, file_name=file_name, title_type=title_type, label_type=label_type)
 
-                print(f"Plot and save operation for {x_var} vs {y_var} completed successfully.")
+                self.emit_message(f"Plot and save operation for {x_var} vs {y_var} completed successfully.")
             
         except Exception as e:
-            print(f"Error during plot and save operation for {x_var} vs {y_var}: {e}")
+            self.emit_message(f"Error during plot and save operation for {x_var} vs {y_var}: {e}")

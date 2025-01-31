@@ -15,12 +15,35 @@ import matplotlib.figure as figure
 class HillChart:
     def __init__(self):        
         self.data = TurbineData()    
+        
+
+        self.message_callback = None  # To store the callback function
+
+    def set_message_callback(self, callback):
+        """Set a callback for logging messages."""
+        self.message_callback = callback
+
+    def emit_message(self, message, overwrite=False):
+        """
+        Emit a message to the GUI or console.
+
+        Args:
+            message (str): The message to display.
+            overwrite (bool): If True, overwrite the previous message.
+        """
+        if self.message_callback:
+            self.message_callback(message, overwrite)
+        else:
+            if overwrite:
+                print(f"\r{message}", end="", flush=True)
+            else:
+                print(message)
+
 
     def read_hill_chart_values(self, filename):
         try:
             with open(filename, newline='', encoding='utf-8-sig') as csvfile:
-                reader = csv.DictReader(csvfile)
-                #print("CSV Headers:", reader.fieldnames)  # Should now correctly show headers without BOM
+                reader = csv.DictReader(csvfile)                
                 
                 self.data.blade_angle = []
                 self.data.Q11 = []
@@ -35,7 +58,7 @@ class HillChart:
                     self.data.efficiency.append(float(row['Efficiency'].strip()))
 
         except Exception as e:
-            print(f"Error reading BEP values from CSV: {e}")
+            self.emit_message(f"Error reading BEP values from CSV: {e}")
             raise       
     def get_data(self, data):
         self.data = data    
@@ -131,7 +154,7 @@ class HillChart:
 
             # Ensure that n11 values are identical for each blade angle
             if len(np.unique(n11[mask])) != 1:
-                print(f"Inconsistent n11 values found for n11={n}")
+                self.emit_message(f"Inconsistent n11 values found for n11={n}")
                 continue
 
             # Sort the subsets based on blade_angle to ensure proper interpolation
@@ -222,7 +245,7 @@ class HillChart:
         try:
             # Check if efficiency list is not empty
             if not self.data.efficiency:
-                print("No efficiency data available.")
+                self.emit_message("No efficiency data available.")
                 return
 
             # Find the index of the maximum efficiency
@@ -250,16 +273,16 @@ class HillChart:
                 self.BEP_data.efficiency = [max_efficiency]
                 self.BEP_data.blade_angle = [max_blade_angle]
 
-            #print("Filtered to maximum efficiency data.")
+            #self.emit_message("Filtered to maximum efficiency data.")
         except Exception as e:
-            print(f"Error filtering data for maximum efficiency: {e}")
+            self.emit_message(f"Error filtering data for maximum efficiency: {e}")
             raise
 
     def calculate_cases(self, selected_values, var1, var2):
         try:
             #self.read_hill_chart_values()
             if not self.data:
-                print("No data available.")
+                self.emit_message("No data available.")
                 return
 
             # Ensure selected_values is always in ascending order
@@ -305,7 +328,7 @@ class HillChart:
                     Q = D**2 * self.data.Q11[i] * (H**0.5)
 
                 else:
-                    print("Invalid selected values, no calculation performed.")
+                    self.emit_message("Invalid selected values, no calculation performed.")
                     continue
                 
                 self.data.H.append(H)
@@ -318,7 +341,7 @@ class HillChart:
                 self.data.Ns.append(Ns)
 
         except Exception as e:
-            print(f"Error in case calculations: {e}")
+            self.emit_message(f"Error in case calculations: {e}")
             raise    
     
     def normalize(self, attribute_name, norm_value):
@@ -437,9 +460,10 @@ class HillChart:
             ax.set_zlabel('Efficiency')
             ax.set_title('Hill Chart')
             # Add a color bar to the existing plot            
-            print("3D hill chart created successfully")
+            self.emit_message("3D hill chart created successfully.")
+            
         except Exception as e:
-            print(f"Error in plotting 3D hill chart: {e}")
+            self.emit_message(f"Error in plotting 3D hill chart: {e}")
 
     def plot_3d_scatter(self, ax=None):
         try:
@@ -448,9 +472,9 @@ class HillChart:
             
             # Plot the scatter on the provided Axes3D object
             scatter = ax.scatter(self.data.n11, self.data.Q11, self.data.efficiency, c='red', marker='o')
-            print("3D scatter plot created successfully")
+            self.emit_message("3D scatter plot created successfully.")
         except Exception as e:
-            print(f"Error in plotting 3D scatter plot: {e}")
+            self.emit_message(f"Error in plotting 3D scatter plot: {e}")
 
     def plot_hill_chart_contour(self, ax=None, n_contours=35, data_type='default'):
         try:
@@ -514,12 +538,12 @@ class HillChart:
             ax.set_title(title)
 
             plt.show(block=False)
-            print("Hill chart contour created successfully")
+            self.emit_message("Hill chart contour created successfully.")
 
             return fig, ax
 
         except Exception as e:
-            print(f"Error in plotting hill chart contour: {e}")
+            self.emit_message(f"Error in plotting hill chart contour: {e}")
    
     
 

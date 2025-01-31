@@ -25,7 +25,7 @@ class HillChartProcessor:
         self.extrapolate_blade = None
         self.extrapolate_n11 = None
 
-        #self.simulator.set_message_callback(self.emit_message)
+        #self.raw_data.set_message_callback(self.emit_message)
 
     def set_message_callback(self, callback):
         """Set the message callback."""
@@ -38,6 +38,28 @@ class HillChartProcessor:
             self.message_callback(message)
         else:
             print(message)  # Default to console output
+
+    def deepcopy_with_callback(self, instance):
+        """
+        Perform a deepcopy while avoiding issues with non-pickleable objects.
+        Temporarily removes message_callback before copying and restores it afterward.
+        """
+        # Check if instance has message_callback
+        deleted = False
+        
+        if hasattr(instance, "message_callback"):
+            temp_message_callback = instance.message_callback
+            del instance.message_callback
+            deleted = True
+        
+        # Perform deepcopy
+        copied_instance = copy.deepcopy(instance)
+        copied_instance.set_message_callback(self.emit_message)
+        # Restore the original instance's callback if it was deleted
+        if deleted:
+            instance.set_message_callback(temp_message_callback)
+
+        return copied_instance
 
     def set_file_path(self, file_path):
         self.datapath = file_path
@@ -100,7 +122,7 @@ class HillChartProcessor:
         return self.raw_data
     
     def prepare_BEP_data(self):        
-        BEP_values = copy.deepcopy(self.raw_data)
+        BEP_values = self.deepcopy_with_callback(self.raw_data)
         BEP_values.filter_for_maximum_efficiency()
         BEP_values.calculate_cases(self.selected_values, self.var1, self.var2)
         BEP_data = BEP_values.return_values()
@@ -110,7 +132,7 @@ class HillChartProcessor:
     def prepare_core_data(self):
         self.read_raw_data()
         self.prepare_BEP_data()
-        hill_values = copy.deepcopy(self.raw_data)
+        hill_values = self.deepcopy_with_callback(self.raw_data)
 
         if self.extrapolate_n11:
             hill_values.extrapolate_along_n11(min_n11=self.n11_min, max_n11=self.n11_max, n_n11=self.n_n11)
@@ -200,7 +222,8 @@ class HillChartProcessor:
         # Read and overlay raw data as a scatter plot
         
         self.raw_data.read_hill_chart_values(self.datapath)
-        self.raw_data.plot_3d_scatter(ax=ax1)
+        raw_data = self.deepcopy_with_callback(self.raw_data)
+        raw_data.plot_3d_scatter(ax=ax1)
 
         # Show standalone if requested, otherwise return the figure
         if show_standalone:
@@ -221,7 +244,7 @@ class HillChartProcessor:
         Returns:
             fig, ax (if show_standalone=False)
         """
-        hill_values = copy.deepcopy(self.hill_values)  # Make a copy to avoid modifying original data
+        hill_values = self.deepcopy_with_callback(self.hill_values)  # Make a copy to avoid modifying original data
         BEP_data = self.BEP_data
 
         if data_type == 'nD':  # Case for nD
@@ -281,7 +304,7 @@ class HillChartProcessor:
             fig = ax.figure
 
         # Make a deep copy of hill values
-        slice_values = copy.deepcopy(hill_values)
+        slice_values = self.deepcopy_with_callback(hill_values)
         slice_values = PerformanceCurve(slice_values)
 
         # Determine slicing method by explicitly passing the correct argument
@@ -596,7 +619,7 @@ class HillChartProcessor:
             fig = ax.figure
 
         # Make a deep copy of raw data
-        fixed_hillchart_point = copy.deepcopy(raw_data)
+        fixed_hillchart_point = self.deepcopy_with_callback(raw_data)
         fixed_hillchart_point = PerformanceCurve(fixed_hillchart_point) 
 
         # Filter for maximum efficiency

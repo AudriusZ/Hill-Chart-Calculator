@@ -317,8 +317,6 @@ class MainWindow(QMainWindow):
             figs = self.main_processor.create_contour_plot()                        
             for fig in figs.values():
                 self.plot_manager.embed_plot(fig, "Contour Plot", add_export_button=True)
-            
-            self.update_status(f"Contour plots created successfully.") 
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
@@ -341,8 +339,6 @@ class MainWindow(QMainWindow):
 
                 # Embed the modified figure
                 self.plot_manager.embed_plot(fig, "2D Slices", add_export_button=True)
-            
-            self.update_status(f"2D slices generated successfully.") 
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
@@ -606,7 +602,7 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     window = MainWindow()    
-    
+    """
     window.turbine_hydraulics_action()
     window.main_processor.default_pathname()
     window.main_processor.default_turbine_parameters()
@@ -614,6 +610,8 @@ if __name__ == "__main__":
     window.app_state.update_actions("Load Data", True)
     window.app_state.update_actions("Sizing", True)
     window.app_state.update_actions("Surface Fit Settings", True)    
+    """
+    
     window.show()    
     sys.exit(app.exec())
 

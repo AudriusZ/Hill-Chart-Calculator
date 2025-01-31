@@ -33,6 +33,7 @@ class MainProcessor():
         """Pass the callback to all processors."""
         self.message_callback = callback
         self.maximised_output_processor.set_message_callback(callback)
+        self.processor.set_message_callback(callback)
 
 
     def emit_message(self, message):
@@ -257,7 +258,7 @@ class MainProcessor():
             # Unpack the result (includes fig if embedded)
             self.BEP_data, self.hill_values, _, fig = result                
 
-            self.emit_message("3D Hill Chart generated successfully.")
+            #self.emit_message("3D Hill Chart generated successfully.")
             return fig  # Return the result, including 'fig'            
             
         except Exception as e:
