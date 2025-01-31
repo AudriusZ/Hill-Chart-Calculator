@@ -1,5 +1,5 @@
 
-#pyinstaller --onefile --name Turbine_Simulator_1.0.2 --icon=src/icon.ico --noconsole --add-data "src/logo.png;src/" src/turbine_simulator_main.py
+#pyinstaller --onefile --name Turbine_Simulator_1.1.1 --icon=src/icon.ico --noconsole --add-data "src/logo.png;src/" src/turbine_simulator_main.py
 
 from main_processor import MainProcessor
 
@@ -603,7 +603,7 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     window = MainWindow()    
-    
+    """
     window.turbine_hydraulics_action()
     window.main_processor.default_pathname()
     window.main_processor.default_turbine_parameters()
@@ -611,7 +611,7 @@ if __name__ == "__main__":
     window.app_state.update_actions("Load Data", True)
     window.app_state.update_actions("Sizing", True)
     window.app_state.update_actions("Surface Fit Settings", True)    
-    
+    """
 
     window.show()    
     sys.exit(app.exec())
