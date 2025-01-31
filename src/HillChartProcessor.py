@@ -15,14 +15,29 @@ class HillChartProcessor:
         self.root_window.withdraw()  # Hide the root window as it's not needed
 
         # Attributes to hold core data
+        self.raw_data = HillChart()
         self.BEP_data = None
         self.hill_values = None
-        self.raw_data = None
+        
         
         #other attributes
         self.datapath = None
         self.extrapolate_blade = None
         self.extrapolate_n11 = None
+
+        #self.simulator.set_message_callback(self.emit_message)
+
+    def set_message_callback(self, callback):
+        """Set the message callback."""
+        self.emit_message = callback
+        #self.simulator.set_message_callback(callback)
+    
+    def emit_message(self, message):
+        """Emit a message using the callback if available."""
+        if self.message_callback:
+            self.message_callback(message)
+        else:
+            print(message)  # Default to console output
 
     def set_file_path(self, file_path):
         self.datapath = file_path
@@ -80,11 +95,9 @@ class HillChartProcessor:
     def get_BEP_data(self):
         return self.BEP_data
 
-    def read_raw_data(self):
-        raw_data = HillChart()        
-        raw_data.read_hill_chart_values(self.datapath)
-        self.raw_data = raw_data
-        return raw_data
+    def read_raw_data(self):        
+        self.raw_data.read_hill_chart_values(self.datapath)
+        return self.raw_data
     
     def prepare_BEP_data(self):        
         BEP_values = copy.deepcopy(self.raw_data)
@@ -185,9 +198,9 @@ class HillChartProcessor:
         hill_values.plot_hill_chart(ax=ax1)
 
         # Read and overlay raw data as a scatter plot
-        raw_data = HillChart()
-        raw_data.read_hill_chart_values(self.datapath)
-        raw_data.plot_3d_scatter(ax=ax1)
+        
+        self.raw_data.read_hill_chart_values(self.datapath)
+        self.raw_data.plot_3d_scatter(ax=ax1)
 
         # Show standalone if requested, otherwise return the figure
         if show_standalone:
