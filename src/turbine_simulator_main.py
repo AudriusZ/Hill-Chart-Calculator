@@ -278,7 +278,35 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
             self.update_status(f"Error during Turbine Sizing action: {str(e)}")
     
-    
+    def set_output_options_hydraulic(self):
+        """
+        Set hydraulic output options to show
+        """
+        try:            
+            #parameters = self.surface_fitting_widget.get_all_input_values()
+            
+            
+            figs = self.main_processor.create_contour_plot()                        
+            for fig in figs.values():
+                self.plot_manager.embed_plot(fig, "Contour Plot", add_export_button=True)
+            
+
+            figs = self.main_processor.create_plot_curve_slices()            
+            for fig in figs.values():
+                fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.3, hspace=1)
+                # Change title font size for each subplot
+                for ax in fig.get_axes():  # Get all subplots (axes) in the figure
+                    ax.set_title(ax.get_title(), fontsize=10)  # Keep existing title but adjust formatting
+
+                # Embed the modified figure
+                self.plot_manager.embed_plot(fig, "2D Slices", add_export_button=True)
+            
+            self.update_status(f"Output options set.") 
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+            self.update_status(f"Error during Output options action: {str(e)}")
+
     def set_output_options_hydraulic_contour(self):
         """
         Set hydraulic output options to show
@@ -579,7 +607,8 @@ if __name__ == "__main__":
     """
     window.turbine_hydraulics_action()
     window.main_processor.default_pathname()
-    window.main_processor.default_turbine_parameters()    
+    window.main_processor.default_turbine_parameters()
+    #window.set_output_options_hydraulic()
     window.app_state.update_actions("Load Data", True)
     window.app_state.update_actions("Sizing", True)
     window.app_state.update_actions("Surface Fit Settings", True)    
