@@ -1,5 +1,6 @@
 
 #pyinstaller --onefile --name Turbine_Simulator_1.1.1 --icon=src/icon.ico --noconsole --add-data "src/logo.png;src/" src/turbine_simulator_main.py
+#fixed
 
 from main_processor import MainProcessor
 
